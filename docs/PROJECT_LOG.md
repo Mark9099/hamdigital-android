@@ -2,6 +2,29 @@
 
 Newest first.
 
+## 2026-10-09: 0.4.0, stage 4 (WSPR receive)
+
+- wsprd from WSJT-X (commit 2b9d654, GPL v3) is copied to `cpp/wsprd`: `wsprd.c`, the utils, `fano`, `jelinek`,
+  `nhash`, `tab`, and `metric_tables.c` (which `wsprd.c` includes). `wsprd.c`'s `main()` is compiled as `wsprd_main`.
+  The OSD decoder (`osdwspr.f90`, Fortran) is only used with `-o`, which the app never passes, so `wspr_run.c` has a
+  stub for it.
+- **No FFTW build:** `cpp/fftw_kiss/` implements the FFTW calls wsprd (and JS8Call's decoder) use on top of KISS FFT
+  from ft8_lib: c2c and in-place r2c, unnormalised, with no-op wisdom functions. KISS handles all their sizes
+  (factors 2, 3, 5): wsprd uses 1474560, 46080 and 512, and JS8 uses 180000.
+- `wspr_run.c` runs wsprd the way WSJT-X does (`-a <data dir> -f <dial MHz> yymmdd_hhmm.wav`) and returns
+  `wspr_spots.txt`. Before each run it resets getopt (`optind = 1`, plus `optreset` on Android) and holds a mutex,
+  because wsprd uses globals.
+- `core/WsprDecoder.kt` keeps a 125 s ring and the UTC time of the newest sample. At 1:54 after each even minute it
+  writes the slot's 114 s as a WAV in the cache, named the way WSJT-X names them (wsprd takes the date and time from
+  the name), and runs wsprd on a worker thread. The dial comes from the IC-705 over CI-V; with no radio connected,
+  frequencies show as audio Hz. The WAV is deleted afterwards. The spots (call, locator, dBm in W/mW, drift, km) are kept.
+- `ui/WsprScreen.kt`: the radio bar, a 2-minute slot bar, a waterfall of 1400–1600 Hz at 1.5 Hz resolution (8192-point
+  FFT), and the spot list. `Spectrum` now takes a `minHz` and the waterfall scale follows it.
+- PC test (`tools/test/run_wspr.sh`): WSJT-X's `samples/WSPR/150426_0918.wav` gives 9 spots (ND6P, W5BIT, G8VDQ, WD4LHT,
+  NM7J, KI7CI, DJ6OL, W3HH, W3BI). Three runs in one process give the same spots each time.
+- Also checked: WSJT-X's real FT4 sample decodes 7 messages (contest CQs, reports, RR73), and its FT8 sample 8.
+- Not yet tested on the phone with the radio.
+
 ## 2026-10-09: 0.3.0, stage 3 (FT8 and FT4 receive)
 
 - ft8_lib (commit 9fec6ca, MIT) is copied to `cpp/ft8_lib`. `cpp/ft8_slot.c` decodes a slot the way ft8_lib's demo does

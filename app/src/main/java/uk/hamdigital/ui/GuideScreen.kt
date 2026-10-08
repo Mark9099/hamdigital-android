@@ -84,8 +84,15 @@ private val GUIDE = listOf(
         B + "Transmitting (answering a CQ, calling CQ, the QSO sequence) comes in stage 7.",
 
     "WSPR" to
-        "Coming in stage 4, using wsprd from WSJT-X: decodes the two-minute WSPR slots and lists the beacons heard (call, locator, power, " +
-        "signal, drift and distance). Transmitting your own WSPR beacon follows in stage 7.",
+        "Decodes WSPR beacons with wsprd, the decoder inside WSJT-X. WSPR stations transmit for 110.6 seconds starting one second " +
+        "after each even UTC minute; the app records each two-minute slot and decodes it 1:54 after the even minute (a few seconds).\n\n" +
+        B + "The slot bar shows the time into the two minutes; the waterfall shows the WSPR window, 1400-1600 Hz of audio, where the " +
+        "signals are thin lines that drift slowly.\n" +
+        B + "Columns: UTC (the slot), dB (signal to noise in 2500 Hz), DT (time offset), MHz (the station's frequency - the IC-705's " +
+        "dial plus the audio offset; with the radio not connected, the audio frequency in Hz), Dr (drift, Hz a minute), the station's " +
+        "call, locator and power, and km from your locator.\n" +
+        B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
+        B + "Transmitting your own WSPR beacon comes in stage 7.",
 
     "RTTY and PSK31" to
         "Coming in stage 5, using fldigi's modems: RTTY at 45.45 baud with 170 Hz shift, and PSK31; tap the signal on the waterfall to tune " +
@@ -97,6 +104,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.4.0 (October 2026): WSPR decoding (wsprd from WSJT-X): the 2-minute slot bar, a waterfall of the WSPR window, and the " +
+        "spots with frequency, drift, call, locator, power and distance.\n" +
         B + "0.3.0 (October 2026): FT8 and FT4 decoding (ft8_lib): slot bar, the list of messages with signal, time offset, frequency " +
         "and distance; CQs and messages to you highlighted; All / CQ / To me. Signal reports and time offsets checked against WSJT-X.\n" +
         B + "0.2.0 (October 2026): IC-705 control over the USB lead (CI-V): its frequency and mode on every mode's page and the menu; " +

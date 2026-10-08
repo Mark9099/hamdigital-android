@@ -14,14 +14,22 @@ endif()
 
 file(GLOB FT8_SOURCES CONFIGURE_DEPENDS ft8_lib/ft8/*.c ft8_lib/fft/*.c ft8_lib/common/monitor.c) # ft8_lib (MIT): FT8 / FT4
 
+set(WSPR_SOURCES wsprd/wsprd.c wsprd/wsprd_utils.c wsprd/wsprsim_utils.c wsprd/fano.c wsprd/jelinek.c wsprd/nhash.c wsprd/tab.c) # wsprd from WSJT-X (GPL v3); metric_tables.c is included by wsprd.c
+set_source_files_properties(wsprd/wsprd.c PROPERTIES COMPILE_DEFINITIONS "main=wsprd_main") # its main() becomes a callable function
+
 add_library(hamdigital SHARED
     ${HAMPROP_CORE}/hamprop_common/src/cw_decoder.cpp # CW decoder (shared)
     cw_jni.cpp                                       # CW decoder: JNI
     ${FT8_SOURCES}                                   # FT8 / FT4
     ft8_slot.c                                       # FT8 / FT4: a slot at a time
-    ft8_jni.c)                                       # FT8 / FT4: JNI
+    ft8_jni.c                                        # FT8 / FT4: JNI
+    fftw_kiss/fftw_kiss.c                            # FFTW's API on KISS FFT (for wsprd and JS8)
+    ${WSPR_SOURCES}                                  # WSPR
+    wspr_run.c                                       # WSPR: a slot at a time
+    wspr_jni.c)                                      # WSPR: JNI
 
-target_include_directories(hamdigital PRIVATE ${HAMPROP_CORE}/hamprop_common/src ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ft8_lib)
-set_source_files_properties(${FT8_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
+target_include_directories(hamdigital PRIVATE ${HAMPROP_CORE}/hamprop_common/src ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ft8_lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/fftw_kiss)           # <fftw3.h> is the stand-in
+set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
 target_compile_options(hamdigital PRIVATE -O2)       # optimised (the decoders run in real time)
 target_link_libraries(hamdigital log m)              # logcat, maths

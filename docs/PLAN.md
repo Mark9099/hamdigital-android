@@ -38,7 +38,7 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
    that mode's frequency in USB-D. Show the radio's frequency on each page.
 3. **FT8 and FT4 receive (ft8_lib) (0.3.0).** Done. Slot timing from the UTC clock, decode each slot, and a list of the stations
    heard (call, report, DT, offset, message, distance from the locator). CQ calls are highlighted.
-4. **WSPR receive (wsprd + FFTW).** Two-minute slots and a list of the spots heard.
+4. **WSPR receive (wsprd; FFTW calls on KISS FFT) (0.4.0).** Done. Two-minute slots and a list of the spots heard.
 5. **RTTY and PSK31 receive (fldigi).** Tap the waterfall to tune, then show the decoded text.
 6. **JS8Call receive (JS8 decoder + varicode).** JS8 Normal mode, the stations heard, and their messages.
 7. **Transmit.** PTT over CI-V and transmit audio to the IC-705's USB sound card. FT8 and FT4 QSO sequencing, the WSPR

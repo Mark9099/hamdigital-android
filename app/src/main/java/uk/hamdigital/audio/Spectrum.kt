@@ -1,5 +1,5 @@
 // The waterfall's spectrum: a Hann-windowed FFT of the receive audio, one row of 0..1 levels every [hop] samples, from
-// 0 Hz to [maxHz]. Levels are in dB above the row's noise floor (its 20th-percentile bin), 0 to [rangeDb] dB, so the
+// [minHz] to [maxHz]. Levels are in dB above the row's noise floor (its 20th-percentile bin), 0 to [rangeDb] dB, so the
 // picture keeps its contrast whatever the volume.
 package uk.hamdigital.audio
 
@@ -9,8 +9,9 @@ import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.sin
 
-class Spectrum(val rate: Int, val size: Int = 2048, val hop: Int = 1024, val maxHz: Int = 3000, private val rangeDb: Float = 30f) {
-    val bins = maxHz * size / rate                   // bins shown (0 .. maxHz)
+class Spectrum(val rate: Int, val size: Int = 2048, val hop: Int = 1024, val maxHz: Int = 3000, private val rangeDb: Float = 30f, val minHz: Int = 0) {
+    private val first = minHz * size / rate           // first bin shown
+    val bins = maxHz * size / rate - first           // bins shown (minHz .. maxHz)
     val rows = ConcurrentLinkedQueue<FloatArray>()    // new rows, for the screen to take
     private val win = FloatArray(size) { (0.5 - 0.5 * cos(2 * PI * it / size)).toFloat() } // Hann window
     private val ring = FloatArray(size)               // the last [size] samples
@@ -31,7 +32,7 @@ class Spectrum(val rate: Int, val size: Int = 2048, val hop: Int = 1024, val max
     private fun row() {
         for (i in 0 until size) { re[i] = ring[(pos + i) % size] * win[i]; im[i] = 0f } // oldest first, windowed
         fft()                                         // in place
-        val p = FloatArray(bins) { val r = re[it]; val q = im[it]; 10 * log10(r * r + q * q + 1e-12f) } // power, dB
+        val p = FloatArray(bins) { val r = re[first + it]; val q = im[first + it]; 10 * log10(r * r + q * q + 1e-12f) } // power, dB
         val floor = p.copyOf().apply { sort() }[bins / 5] // noise floor
         rows.add(FloatArray(bins) { ((p[it] - floor) / rangeDb).coerceIn(0f, 1f) }) // 0..1
         while (rows.size > 64) rows.poll()           // the screen is not keeping up: drop the oldest

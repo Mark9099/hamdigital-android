@@ -1,0 +1,4 @@
+wsprd from WSJT-X (https://sourceforge.net/projects/wsjt/, GitHub mirror saitohirga/WSJT-X), commit 2b9d654 (2024-03-12), GPL v3 (LICENSE).
+Copied unchanged: wsprd.c, wsprd_utils.c/h, wsprsim_utils.c/h, fano.c/h, jelinek.c/h, nhash.c/h, tab.c, metric_tables.c.
+Built with: -Dmain=wsprd_main for wsprd.c (CMakeLists.txt); <fftw3.h> is ../fftw_kiss (FFTW calls on KISS FFT);
+osdwspr_ (Fortran OSD, only used with -o) is a stub in ../wspr_run.c.

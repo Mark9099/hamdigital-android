@@ -114,11 +114,11 @@ fun Waterfall(spec: Spectrum, modifier: Modifier, rows: Int = 200, marks: List<P
         Canvas(Modifier.fillMaxWidth().weight(1f).then(if (onTap != null) Modifier.pointerTapHz(spec, onTap) else Modifier)) {
             tick                                      // (redraw on each new row)
             drawImage(bmp.asImageBitmap(), IntOffset.Zero, IntSize(w, rows), dstSize = IntSize(size.width.toInt(), size.height.toInt()), filterQuality = FilterQuality.Low) // stretched to fit
-            marks.forEach { (hz, c) -> val x = hz / spec.maxHz * size.width; drawLine(c, androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Offset(x, size.height), 2f) } // markers
+            marks.forEach { (hz, c) -> val x = (hz - spec.minHz) / (spec.maxHz - spec.minHz) * size.width; drawLine(c, androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Offset(x, size.height), 2f) } // markers
         }
-        Row(Modifier.fillMaxWidth()) { for (k in 0 until 6) Text(if (k == 0) "0 Hz" else "${k * spec.maxHz / 6}", Modifier.weight(1f), color = Pal.Dim, fontSize = 10.sp) } // scale
+        Row(Modifier.fillMaxWidth()) { for (k in 0 until 6) { val hz = spec.minHz + k * (spec.maxHz - spec.minHz) / 6; Text(if (k == 0) "$hz Hz" else "$hz", Modifier.weight(1f), color = Pal.Dim, fontSize = 10.sp) } } // scale
     }
 }
 
 private fun Modifier.pointerTapHz(spec: Spectrum, onTap: (Float) -> Unit) =
-    this.pointerInput(spec) { detectTapGestures { p -> onTap(p.x / size.width * spec.maxHz) } } // tap: that frequency
+    this.pointerInput(spec) { detectTapGestures { p -> onTap(spec.minHz + p.x / size.width * (spec.maxHz - spec.minHz)) } } // tap: that frequency

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icon foreground (108 dp canvas, 72 dp safe zone): a waterfall frame with digital-mode signals (FT8-style blocks
+     and a PSK trace) in it - the look of a digital-modes program. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3" android:fillColor="#00000000" android:pathData="M32,34h44v40h-44z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M38,40h6v12h-6z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M50,48h6v12h-6z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M64,40h6v12h-6z" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M42,58h2v12h-2z" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M66,56h2v14h-2z" />
+</vector>

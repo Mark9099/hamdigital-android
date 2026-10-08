@@ -2,6 +2,29 @@
 
 Newest first.
 
+## 2026-10-09: 0.5.0, stage 5 (RTTY and PSK31 receive)
+
+- fldigi 4.1.23 (GPL v3) goes into `cpp/fldigi`. The DSP building blocks are copied unchanged: fftfilt, filters,
+  pskcoeff, pskvaricode and their headers, with an empty `config.h`. fldigi's full checkout fails on Windows, so only
+  the needed folders were checked out.
+- New receive-only editions keep fldigi's algorithms unchanged. `rtty_rx.cxx` covers the mark/space fftfilt filters,
+  optimal ATC, the bit state machine, Baudot with unshift-on-space, and AFC. `psk31_rx.cxx` covers the PSKcore FIRs,
+  bitclk timing, BPSK phase decision, quality/DCD, varicode, phase AFC and S/N-IMD. The UI, settings, other variants
+  and transmit are removed. One change: fldigi took the RTTY metric from its waterfall, so here it comes from the
+  filter envelopes. Details are in `fldigi/ANDROID_CHANGES.txt`.
+- fldigi's headers are not on the global include path, because its `complex.h` would shadow the C library's. fldigi's
+  files find their headers next to them.
+- `fldigi_jni.cpp` keeps one receiver per mode, with a lock between the audio thread and the screen. It provides
+  process, state (frequency, metric, s/n, DCD, IMD), text, and control (frequency, AFC, squelch, reverse, reset, shift).
+- `ui/KeyboardScreen.kt` (RTTY and PSK31): the radio bar, a 0–3000 Hz waterfall (3.9 Hz bins) where a tap tunes and
+  red lines mark the tones or carrier, RX frequency, s/n, DCD and a quality bar, AFC, a squelch slider (PSK 25, RTTY
+  0), RTTY Reverse and shift (170/85/425/850), and the decoded text, kept per mode up to 20k characters, with
+  Copy/Share/Clear.
+- PC test (`tools/test/run_fldigi.sh`) on generated signals with noise and 3–4 Hz of mistuning. RTTY 45.45/170 copies
+  the whole message at +10 and 0 dB (2500 Hz) and garbles below -5. PSK31 copies fully to -5 dB and with 1–2 errors at
+  -8 and -10 dB. Both AFCs pull in. At first "73" came out as "UE": that was the test generator, which didn't re-send
+  FIGS after a space as transmitters do for receivers using unshift-on-space. It is fixed in the test.
+
 ## 2026-10-09: 0.4.0, stage 4 (WSPR receive)
 
 - wsprd from WSJT-X (commit 2b9d654, GPL v3) is copied to `cpp/wsprd`: `wsprd.c`, the utils, `fano`, `jelinek`,

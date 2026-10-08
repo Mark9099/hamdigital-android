@@ -17,6 +17,9 @@ file(GLOB FT8_SOURCES CONFIGURE_DEPENDS ft8_lib/ft8/*.c ft8_lib/fft/*.c ft8_lib/
 set(WSPR_SOURCES wsprd/wsprd.c wsprd/wsprd_utils.c wsprd/wsprsim_utils.c wsprd/fano.c wsprd/jelinek.c wsprd/nhash.c wsprd/tab.c) # wsprd from WSJT-X (GPL v3); metric_tables.c is included by wsprd.c
 set_source_files_properties(wsprd/wsprd.c PROPERTIES COMPILE_DEFINITIONS "main=wsprd_main") # its main() becomes a callable function
 
+set(FLDIGI_SOURCES fldigi/rtty_rx.cxx fldigi/psk31_rx.cxx fldigi/fftfilt.cxx fldigi/filters.cxx fldigi/pskcoeff.cxx fldigi/pskvaricode.cxx) # fldigi (GPL v3): receive-only RTTY / PSK31 + its filters
+set_source_files_properties(${FLDIGI_SOURCES} PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/fldigi) # its headers by plain name
+
 add_library(hamdigital SHARED
     ${HAMPROP_CORE}/hamprop_common/src/cw_decoder.cpp # CW decoder (shared)
     cw_jni.cpp                                       # CW decoder: JNI
@@ -26,10 +29,12 @@ add_library(hamdigital SHARED
     fftw_kiss/fftw_kiss.c                            # FFTW's API on KISS FFT (for wsprd and JS8)
     ${WSPR_SOURCES}                                  # WSPR
     wspr_run.c                                       # WSPR: a slot at a time
-    wspr_jni.c)                                      # WSPR: JNI
+    wspr_jni.c                                       # WSPR: JNI
+    ${FLDIGI_SOURCES}                                # RTTY, PSK31
+    fldigi_jni.cpp)                                  # RTTY, PSK31: JNI
 
 target_include_directories(hamdigital PRIVATE ${HAMPROP_CORE}/hamprop_common/src ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ft8_lib
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_kiss)           # <fftw3.h> is the stand-in
-set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
+set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} ${FLDIGI_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
 target_compile_options(hamdigital PRIVATE -O2)       # optimised (the decoders run in real time)
 target_link_libraries(hamdigital log m)              # logcat, maths

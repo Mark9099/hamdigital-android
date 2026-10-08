@@ -1,0 +1,32 @@
+fldigi (https://github.com/w1hkj/fldigi, version 4.1.23, 2022-06-23), GPL v3 (LICENSE). Authors: Dave Freese W1HKJ
+and the fldigi contributors (see each file's header); originally from gmfsk by Tomi Manninen OH2BNS.
+
+Copied unchanged:
+  fftfilt.cxx, filters.cxx            (src/filters)    - the overlap-add FFT filter, FIR filters, moving average, Goertzel
+  pskcoeff.cxx, pskvaricode.cxx       (src/psk)        - PSK filter coefficients, PSK varicode
+  fftfilt.h, filters.h, complex.h, misc.h, gfft.h, pskcoeff.h, pskvaricode.h (src/include)
+  config.h                            - an empty stand-in for fldigi's generated (autoconf) config.h
+
+Receive-only editions (new files, fldigi's code with its algorithms unchanged):
+  rtty_rx.h / rtty_rx.cxx   from src/cw_rtty/rtty.cxx + src/include/rtty.h:
+    kept    - rx_init, restart (receive part, as set_params), mixer, reset_filters, decode_char, parity, baudot_dec
+              (unshift-on-space on, fldigi's default), is_mark_space, is_mark, rx (the start / data / stop state
+              machine, the CR-CR / LF-LF suppression), rx_process (the mark and space fftfilt RTTY filters, envelope and
+              noise trackers, "optimal ATC" decision, AFC from the mark tone's phase at fldigi's slow AFC speed).
+    removed - the user interface (scopes, viewers, status lines), progdefaults / progStatus settings (now set_params,
+              set_freq, set_reverse, set_afc, set_squelch), Synop decoding, the signal search, FSK keying and transmit.
+    changed - Metric(): fldigi measured the tones' power density on its waterfall; here the mark and space filters'
+              envelopes against their noise floors give the s/n and the 0..100 metric (20 dB = 100). Decoded characters
+              go into a string (take_text) instead of fldigi's put_rx_char.
+  psk31_rx.h / psk31_rx.cxx from src/psk/psk.cxx + src/include/psk.h, BPSK31 only:
+    kept    - the PSK31 set-up from psk::psk (PSKcore FIR pair decimating by 16, the Goertzel S/N-IMD filters),
+              rx_init, rx_bit (PSK varicode), rx_symbol (BPSK path: phase decision, quality, DCD on the 0xAAAAAAAA
+              preamble / off on six all-zero runs / else squelch), phaseafc, afc, signalquality, calcSN_IMD, rx_process
+              (NCO mix, FIR filters, bitclk / syncbuf symbol timing).
+    removed - the other PSK modes (PSK63..1000, QPSK, 8PSK, 16PSK, PSK-R, FEC, multi-carrier, vestigial carrier, OFDM),
+              PSKmail, the user interface, settings (now set_freq, set_afc, set_squelch), the signal search (it used
+              fldigi's waterfall) and transmit.
+    changed - decoded characters go into a string (take_text) instead of put_rx_char.
+
+Tested on the PC with generated signals (tools/test/test_fldigi.cxx): RTTY 45.45/170 copies fully to 0 dB SNR (2500 Hz)
+and PSK31 to -5 dB, PSK31 nearly fully at -10 dB; both AFCs pull a few Hz of mistuning in.

@@ -18,9 +18,9 @@ enum class Mode(
         listOf("160" to 1836, "80" to 3568, "60" to 5287, "40" to 7038, "30" to 10138, "20" to 14095, "17" to 18104, "15" to 21094, "12" to 24924, "10" to 28124, "6" to 50293)),
     JS8("JS8Call", "Keyboard chat built on FT8", 12000, "JS8Call decoder (GPL v3)", 6,
         listOf("80" to 3578, "40" to 7078, "30" to 10130, "20" to 14078, "17" to 18104, "15" to 21078, "12" to 24922, "10" to 28078, "6" to 50318)),
-    RTTY("RTTY", "45.45 baud Baudot teleprinter", 8000, "fldigi (GPL v3)", 5,
+    RTTY("RTTY", "45.45 baud Baudot teleprinter", 8000, "fldigi (GPL v3)", 0,
         listOf("80" to 3580, "40" to 7040, "30" to 10140, "20" to 14080, "17" to 18100, "15" to 21080, "10" to 28080)),
-    PSK31("PSK31", "Keyboard chat in a narrow signal", 8000, "fldigi (GPL v3)", 5,
+    PSK31("PSK31", "Keyboard chat in a narrow signal", 8000, "fldigi (GPL v3)", 0,
         listOf("80" to 3580, "40" to 7040, "30" to 10142, "20" to 14070, "17" to 18100, "15" to 21070, "12" to 24920, "10" to 28120)),
     CW("CW", "Morse decoder", 16000, "HamPropCore CW decoder (from Tab5CWDecoder)", 0,
         listOf("80" to 3560, "40" to 7030, "30" to 10116, "20" to 14060, "17" to 18086, "15" to 21060, "12" to 24906, "10" to 28060));

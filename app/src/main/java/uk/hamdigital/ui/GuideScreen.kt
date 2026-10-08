@@ -95,8 +95,18 @@ private val GUIDE = listOf(
         B + "Transmitting your own WSPR beacon comes in stage 7.",
 
     "RTTY and PSK31" to
-        "Coming in stage 5, using fldigi's modems: RTTY at 45.45 baud with 170 Hz shift, and PSK31; tap the signal on the waterfall to tune " +
-        "it in, and the text appears below. Typing and sending follow in stage 7.",
+        "Keyboard modes, decoded by fldigi's receivers (the demodulators from the fldigi program).\n\n" +
+        B + "Tune the IC-705 to a band's RTTY or PSK31 frequency (a band chip), then tap a signal in the waterfall to tune to it. " +
+        "PSK31 is a single narrow trace; tap its centre. RTTY is a pair of traces (170 Hz apart); tap between them. Red lines show where " +
+        "the receiver is tuned.\n" +
+        B + "AFC (on as standard) follows a signal that drifts and corrects small tuning errors.\n" +
+        B + "Squelch: the text is shown only while the signal quality (the green bar) is above it, so noise does not print rubbish. " +
+        "Slide it to the left to see weak signals; PSK31 starts at 25, RTTY at 0 (off).\n" +
+        B + "s/n is the signal to noise. PSK31 shows DCD while it is locked on to a signal.\n" +
+        B + "RTTY: the amateur standard is 45.45 baud with 170 Hz shift. If the text is nonsense, try Reverse (the station's mark and " +
+        "space are the other way round). Other shifts are 85, 425 and 850 Hz.\n" +
+        B + "The text is kept while the app runs; Copy, Share and Clear are at the top right.\n" +
+        B + "Typing and sending come in stage 7.",
 
     "JS8Call" to
         "Coming in stage 6, using the JS8Call decoder: the JS8 Normal speed (15 s slots) with the stations heard and their messages, " +
@@ -104,6 +114,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.5.0 (October 2026): RTTY and PSK31 decoding with fldigi's receivers: tap the waterfall to tune, AFC, squelch, RTTY " +
+        "shift and Reverse, the decoded text with Copy / Share / Clear.\n" +
         B + "0.4.0 (October 2026): WSPR decoding (wsprd from WSJT-X): the 2-minute slot bar, a waterfall of the WSPR window, and the " +
         "spots with frequency, drift, call, locator, power and distance.\n" +
         B + "0.3.0 (October 2026): FT8 and FT4 decoding (ft8_lib): slot bar, the list of messages with signal, time offset, frequency " +

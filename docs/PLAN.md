@@ -36,7 +36,7 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
    IC-705's USB sound card (or the microphone) and a waterfall on every page. CW decoder working.
 2. **IC-705 control (CI-V over USB) (0.2.0).** Done. Read and set frequency and mode, so a band chip on a page tunes the radio to
    that mode's frequency in USB-D. Show the radio's frequency on each page.
-3. **FT8 and FT4 receive (ft8_lib).** Slot timing from the UTC clock, decode each slot, and a list of the stations
+3. **FT8 and FT4 receive (ft8_lib) (0.3.0).** Done. Slot timing from the UTC clock, decode each slot, and a list of the stations
    heard (call, report, DT, offset, message, distance from the locator). CQ calls are highlighted.
 4. **WSPR receive (wsprd + FFTW).** Two-minute slots and a list of the spots heard.
 5. **RTTY and PSK31 receive (fldigi).** Tap the waterfall to tune, then show the decoded text.

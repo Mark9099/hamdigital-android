@@ -69,9 +69,19 @@ private val GUIDE = listOf(
         B + "Pause stops decoding; Clear empties the text; Copy and Share (top right) pass on the decoded text.",
 
     "FT8 and FT4" to
-        "Coming in stage 3, using ft8_lib (the open-source FT8 / FT4 library also used by the FT8CN app): decodes every 15 s (FT8) or 7.5 s " +
-        "(FT4) slot, a list of the stations heard with their signal reports and distances, and CQ calls picked out. Transmit and QSO " +
-        "sequencing follow in stage 7. The page shows the waterfall and the frequencies now.",
+        "Decodes FT8 (15 s slots) and FT4 (7.5 s slots) with ft8_lib, the open-source FT8 / FT4 library also used by the FT8CN app. Slots " +
+        "start on the UTC clock (FT8 at :00, :15, :30, :45), so the phone's clock must be right - Android sets it from the network.\n\n" +
+        B + "The slot bar shows how far through the slot it is; at the slot's end the audio is decoded (a fraction of a second) and the " +
+        "messages appear at the top of the list, newest slot first, with a line between slots.\n" +
+        B + "Columns: UTC (the slot's start), dB (signal to noise in 2500 Hz, as WSJT-X reports it), DT (time offset in seconds - if nearly " +
+        "every station shows the same large DT, the phone's clock is out), Hz (audio frequency), the message, and km (distance to the " +
+        "sender's locator, when sent and yours is set).\n" +
+        B + "CQ calls are green; messages to your callsign amber. All / CQ / To me filters the list; Clear (top right) empties it. The " +
+        "list is kept while the app runs, so you can look at another mode and come back.\n" +
+        B + "The waterfall above the list shows the audio; FT8 signals are short stepped traces 50 Hz wide.\n" +
+        B + "Expect about three quarters of what WSJT-X decodes from the same audio - ft8_lib does not yet make WSJT-X's extra passes " +
+        "for the weakest signals under stronger ones.\n" +
+        B + "Transmitting (answering a CQ, calling CQ, the QSO sequence) comes in stage 7.",
 
     "WSPR" to
         "Coming in stage 4, using wsprd from WSJT-X: decodes the two-minute WSPR slots and lists the beacons heard (call, locator, power, " +
@@ -87,6 +97,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.3.0 (October 2026): FT8 and FT4 decoding (ft8_lib): slot bar, the list of messages with signal, time offset, frequency " +
+        "and distance; CQs and messages to you highlighted; All / CQ / To me. Signal reports and time offsets checked against WSJT-X.\n" +
         B + "0.2.0 (October 2026): IC-705 control over the USB lead (CI-V): its frequency and mode on every mode's page and the menu; " +
         "band chips tune it and set USB-D or CW; Settings > Radio control (CI-V address, Reconnect). Android offers to open the app when " +
         "the radio is plugged in.\n" +

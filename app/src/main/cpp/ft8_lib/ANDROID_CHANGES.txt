@@ -1,0 +1,9 @@
+ft8_lib (https://github.com/kgoba/ft8_lib), commit 9fec6ca (2025-08-24), MIT licence (LICENSE).
+Copied unchanged: ft8/, fft/ (KISS FFT), common/monitor.c, monitor.h, common.h.
+Used by ../ft8_jni.c for FT8 and FT4 decoding (and, from stage 7, encoding).
+
+Changed:
+- ft8/decode.c ftx_find_candidates(): the start-time search covers -34 .. 67 symbols for FT4 (-1.6 .. +3.2 s, as FT8's
+  -10 .. 20 symbols) instead of -10 .. 20 for both. With FT4's 48 ms symbols upstream only searched -0.48 .. +0.96 s,
+  so FT4 signals starting more than about half a second late were never decoded (found with ft8_lib's own
+  gen_ft8 -ft4 test signal, which its decode_ft8 could not decode).

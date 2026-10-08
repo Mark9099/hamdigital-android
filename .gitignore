@@ -13,3 +13,4 @@
 # Release APKs (built files; rebuild with gradlew assembleRelease)
 /dist/
 /.kotlin/
+/tools/test/build/

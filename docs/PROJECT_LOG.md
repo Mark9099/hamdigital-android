@@ -2,6 +2,33 @@
 
 Newest first.
 
+## 2026-10-09: 0.3.0, stage 3 (FT8 and FT4 receive)
+
+- ft8_lib (commit 9fec6ca, MIT) is copied to `cpp/ft8_lib`. `cpp/ft8_slot.c` decodes a slot the way ft8_lib's demo does
+  (monitor, candidates, LDPC, unpack, dropping duplicates, callsign hash table kept between slots) and has no JNI code,
+  so the PC test compiles the same file. `ft8_jni.c` is the thin JNI wrapper.
+- SNR: signal power at the message's own tones (re-encoded), against the median noise in about ±60 Hz beside it over
+  the slot, converted to 2500 Hz. Against WSJT-X on ft8_lib's 31 test recordings, signals of -15 dB and up average
+  -0.1 dB different, rms 4.7 dB. The weakest signals scatter more, because overlapping signals add to their tone power.
+- DT: ft8_lib's times are one symbol late, so the correction is t - 0.5 - symbol period. It matches WSJT-X to rms
+  0.04 s, and generated FT8 and FT4 signals come out within 0.03 s.
+- **ft8_lib fix (FT4):** the start-time search covered -10 to 20 symbols for both modes, which is only -0.48 to +0.96 s
+  for FT4. It is now -34 to 67 symbols for FT4, the same time span as FT8. Upstream's own decoder could not decode
+  upstream's own generated FT4 signal; now it decodes. Recorded in `ft8_lib/ANDROID_CHANGES.txt`.
+- Decode rate: 266 of WSJT-X's 362 messages (73%) on the test set, typical for ft8_lib. More candidates, a lower
+  sync threshold or more LDPC iterations each added at most one message, so ft8_lib's defaults are kept. The gap is
+  WSJT-X's signal-subtraction passes.
+- `core/SlotDecoder.kt` keeps a 30 s ring of 12 kHz audio and the UTC time of the newest sample. At 14.7 s into each
+  FT8 slot (7.3 s for FT4) it copies that slot's audio, filling with silence if the audio started late, and decodes it
+  on a single worker thread. It parses the calls, the locator (RR73 excluded), CQ and "to me", and the distance from
+  your locator (`core/Locator.kt`). Up to 600 messages are kept while the app runs.
+- `ui/Ft8Screen.kt` (FT8 and FT4): the radio bar, a slot progress bar with the decode status, a waterfall (beside the
+  list on a phone held sideways), All / CQ / To me filters, and the list (UTC, dB, DT, Hz, message, km) with CQ in
+  green and "to me" in amber.
+- PC test: `tools/test/test_ft8.c` and `run_ft8.sh`, built with zig cc. `win_compat.h` supplies `stpcpy`, which
+  Windows lacks.
+- Not yet tested on the phone with the radio.
+
 ## 2026-10-08: 0.2.0, stage 2 (IC-705 CI-V over USB)
 
 - `rig/Ic705.kt`: CI-V on the IC-705's first USB serial port (CDC-ACM, using usb-serial-for-android 3.11.0 from JitPack,

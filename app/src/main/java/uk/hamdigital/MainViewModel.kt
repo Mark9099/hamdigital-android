@@ -31,6 +31,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val screen = MutableStateFlow<Screen>(Screen.Menu) // the screen under it
 
     init {
+        viewModelScope.launch { settings.collect { uk.hamdigital.rig.Ic705.civAddress = it.civAddr } } // the radio's CI-V address, as set
         viewModelScope.launch {                       // the startup screen: skipped if turned off, else 8 s (a tap skips it sooner)
             if (!store.flow.first().showSplash) splash.value = false else { delay(8000); splash.value = false }
         }

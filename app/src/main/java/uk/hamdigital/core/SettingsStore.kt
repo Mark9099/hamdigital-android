@@ -5,6 +5,7 @@ package uk.hamdigital.core
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +25,7 @@ data class Settings(
     val locator: String = "",                         // your Maidenhead locator (4 or 6 characters)
     val audio: AudioChoice = AudioChoice.AUTO,        // receive audio source
     val showSplash: Boolean = true,                   // startup screen at start
+    val civAddr: Int = 0xA4,                          // the IC-705's CI-V address (its default)
 )
 
 class SettingsStore(private val ctx: Context) {
@@ -31,6 +33,7 @@ class SettingsStore(private val ctx: Context) {
     private val kLoc = stringPreferencesKey("locator")
     private val kAudio = stringPreferencesKey("audio")
     private val kSplash = booleanPreferencesKey("show_splash")
+    private val kCiv = intPreferencesKey("civ_address")
 
     val flow: Flow<Settings> = ctx.store.data.map { p -> // the settings, as they change
         Settings(
@@ -38,6 +41,7 @@ class SettingsStore(private val ctx: Context) {
             locator = p[kLoc] ?: "",
             audio = AudioChoice.entries.firstOrNull { it.name == p[kAudio] } ?: AudioChoice.AUTO,
             showSplash = p[kSplash] ?: true,
+            civAddr = p[kCiv] ?: 0xA4,
         )
     }
 
@@ -47,6 +51,7 @@ class SettingsStore(private val ctx: Context) {
             p[kLoc] = s.locator.trim().let { if (it.length >= 4) it.take(2).uppercase() + it.drop(2).take(2) + it.drop(4).lowercase() else it.uppercase() } // AB12cd
             p[kAudio] = s.audio.name
             p[kSplash] = s.showSplash
+            p[kCiv] = s.civAddr
         }
     }
 }

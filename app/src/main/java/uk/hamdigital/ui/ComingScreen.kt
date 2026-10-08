@@ -24,21 +24,16 @@ fun ComingScreen(vm: MainViewModel, m: Mode) {
     val s by vm.settings.collectAsStateWithLifecycle() // the audio choice
     val spec = remember(m) { Spectrum(m.rate) }       // the waterfall's FFT at the mode's rate
     val rx = rememberRx(m.rate, 512, s.audio) { b, n -> spec.feed(b, n) } // audio in while the page is open
-    var band by rememberSaveable(m) { mutableStateOf(m.dialsKHz.firstOrNull { it.first == "20" }?.first ?: m.dialsKHz.first().first) } // band chosen (20 m first)
     ModeFrame(m.title, { vm.back() }) {
         RxStatus(rx)                                  // audio source, level
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { // bands
-            m.dialsKHz.forEach { (b, _) -> SmallChip("$b m", b == band) { band = b } }
-        }
-        val khz = m.dialsKHz.first { it.first == band }.second // its dial frequency
-        Text("Dial %.3f MHz, USB-D (data) on the IC-705".format(khz / 1000.0), color = Pal.Text, fontSize = 15.sp, modifier = Modifier.padding(vertical = 2.dp))
+        RigBar(m)                                     // the radio's frequency, the bands
         Waterfall(spec, Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp)) // the audio
         Surface(color = Color(0xFF111820), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) { // what is coming
             Column(Modifier.padding(10.dp)) {
                 Text("${m.title} decoder: stage ${m.stage}", color = Pal.Amber, fontSize = 14.sp)
                 Text("The decoder comes from ${m.source}. Until it is added, this page shows the receive audio so the radio's " +
-                    "USB lead and level can be checked: signals show as bright traces. The radio is tuned by hand for now; " +
-                    "setting the frequency over the USB lead (CI-V) comes in stage 2.", color = Pal.Text2, fontSize = 13.sp, lineHeight = 17.sp)
+                    "USB lead and level can be checked: signals show as bright traces. With the IC-705 connected, a band " +
+                    "chip tunes it to that band's ${m.title} frequency in USB-D.", color = Pal.Text2, fontSize = 13.sp, lineHeight = 17.sp)
             }
         }
     }

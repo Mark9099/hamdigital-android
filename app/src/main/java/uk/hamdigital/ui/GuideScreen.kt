@@ -34,8 +34,15 @@ private val GUIDE = listOf(
         "(FT8, FT4, WSPR, JS8Call) need the phone's clock to be right to within a second - Android sets it from the network.",
 
     "The IC-705 connection" to
-        "One USB lead carries the radio's receive audio to the app (and, from stage 2, frequency and mode control over CI-V, and from stage 7 " +
-        "the transmit audio and PTT).\n\n" +
+        "One USB lead carries the radio's receive audio to the app and its CI-V control (frequency and mode; from stage 7 also the transmit " +
+        "audio and PTT).\n\n" +
+        B + "The first time the radio is plugged in, Android asks whether HF Digital Modes may use it - allow it (tick \"Always\" to skip the " +
+        "question next time). The menu then shows \"IC-705 connected: audio + control\" with its frequency and mode.\n" +
+        B + "Each mode's page shows the radio's frequency and mode at the top, with the mode's bands as chips: tap one to tune the radio to " +
+        "that band's usual frequency for the mode, in USB-D (USB with DATA on) - or CW on the CW page. A note shows if the radio is in the " +
+        "wrong mode for the page. Without the radio connected, the chips show the frequency to tune by hand.\n" +
+        B + "Settings > Radio control: the connection, the CI-V address (A4, the IC-705's default) and Reconnect. On the radio leave CI-V " +
+        "USB Echo Back off and CI-V Transceive on (the defaults).\n" +
         B + "Receive audio level: MENU > SET > Connectors > USB AF/SQL > AF Output Level. Aim for the level bar at the top right of a page " +
         "to sit around the middle on band noise; red means too loud.\n" +
         B + "Settings > Receive audio chooses the IC-705 when it is plugged in (else the microphone), the IC-705 only, or the microphone - " +
@@ -45,7 +52,7 @@ private val GUIDE = listOf(
     "The menu" to
         "A tile for each mode: its name, what it is for, and whether its decoder is in this version (\"Decoder ready\") or still to come " +
         "(\"Waterfall now\" - the page shows the radio's audio as a waterfall so the connection can be checked, and lists the mode's " +
-        "frequencies). Settings and this Guide are under the tiles.",
+        "frequencies). Above the tiles: your station, and the radio's connection with its frequency and mode. Settings and this Guide are under the tiles.",
 
     "Waterfall" to
         "Each mode's page shows the receive audio as a waterfall: frequency across (0-3000 Hz of audio), time downwards, newest at the top. " +
@@ -80,6 +87,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.2.0 (October 2026): IC-705 control over the USB lead (CI-V): its frequency and mode on every mode's page and the menu; " +
+        "band chips tune it and set USB-D or CW; Settings > Radio control (CI-V address, Reconnect). Android offers to open the app when " +
+        "the radio is plugged in.\n" +
         B + "0.1.0 (October 2026): first version. Startup screen, mode menu, Settings and Guide in HF Propagation's look; receive audio from " +
         "the IC-705's USB sound card (or the microphone) with a waterfall on every mode's page and each mode's frequencies; the CW decoder working.",
 )

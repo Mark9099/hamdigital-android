@@ -27,6 +27,8 @@ import uk.hamdigital.MainViewModel
 import uk.hamdigital.Screen
 import uk.hamdigital.audio.AudioIn
 import uk.hamdigital.core.Mode
+import uk.hamdigital.rig.Ic705
+import uk.hamdigital.rig.RigState
 
 @Composable
 fun AppScreens(vm: MainViewModel) {
@@ -62,10 +64,16 @@ private fun MenuScreen(vm: MainViewModel) {
                 Text("HF Digital Modes", fontFamily = OrbitronFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Pal.Cyan)
                 Text(if (s.callsign.isNotBlank()) "${s.callsign}  •  ${s.locator.ifBlank { "no locator" }}" else "Set your callsign and locator in Settings",
                     color = Pal.Text2, fontSize = 14.sp)
+                val rig by Ic705.state.collectAsStateWithLifecycle() // the radio's CI-V
+                val civ = rig.link == RigState.Link.CONNECTED // control working
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                    Icon(Icons.Filled.Usb, null, tint = if (radio != null) Pal.Green else Pal.Dim, modifier = Modifier.size(18.dp))
-                    Text(if (radio != null) "  $radio connected (USB audio)" else "  Radio not connected - plug the IC-705 in with a USB lead",
-                        color = if (radio != null) Pal.Green else Pal.Muted, fontSize = 13.sp)
+                    Icon(Icons.Filled.Usb, null, tint = if (radio != null || civ) Pal.Green else Pal.Dim, modifier = Modifier.size(18.dp))
+                    Text(when {
+                        radio != null && civ -> "  IC-705 connected: audio + control  •  ${rig.freqText} ${rig.modeText}"
+                        civ -> "  IC-705 control connected (no USB audio found)  •  ${rig.freqText} ${rig.modeText}"
+                        radio != null -> "  $radio connected (USB audio)  •  ${rig.message.ifEmpty { "control not connected" }}"
+                        else -> "  Radio not connected - plug the IC-705 in with a USB lead"
+                    }, color = if (radio != null || civ) Pal.Green else Pal.Muted, fontSize = 13.sp)
                 }
                 Text("Choose a mode", color = Pal.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
             }

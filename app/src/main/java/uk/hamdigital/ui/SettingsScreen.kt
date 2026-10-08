@@ -22,6 +22,8 @@ import uk.hamdigital.BuildConfigInfo
 import uk.hamdigital.MainViewModel
 import uk.hamdigital.audio.AudioIn
 import uk.hamdigital.core.AudioChoice
+import uk.hamdigital.rig.Ic705
+import uk.hamdigital.rig.RigState
 
 private val LOCATOR = Regex("^[A-Ra-r]{2}[0-9]{2}([A-Xa-x]{2})?$") // a 4- or 6-character Maidenhead locator
 
@@ -56,6 +58,20 @@ fun SettingsScreen(vm: MainViewModel) {
             Text(if (radio != null) "Found now: $radio (USB audio)" else "No USB audio found now. Connect the IC-705's USB-C socket to this phone or tablet " +
                 "(a USB-C to USB-C lead, or an OTG adapter). The IC-705 needs no settings for receive audio; its USB audio level is MENU > SET > " +
                 "Connectors > USB AF/SQL > AF Output Level.", color = if (radio != null) Pal.Green else Pal.Muted, fontSize = 13.sp, lineHeight = 17.sp)
+
+            Heading("Radio control (CI-V)")
+            val rig by Ic705.state.collectAsStateWithLifecycle() // the radio's CI-V
+            Text(if (rig.link == RigState.Link.CONNECTED) "Connected: ${rig.freqText} ${rig.modeText}" else rig.message.ifEmpty { "Not connected" },
+                color = if (rig.link == RigState.Link.CONNECTED) Pal.Green else Pal.Muted, fontSize = 14.sp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                var addr by remember(s.civAddr) { mutableStateOf("%02X".format(s.civAddr)) } // being typed (hex)
+                CompactField(addr, { v -> addr = v.uppercase().filter { it in "0123456789ABCDEF" }.take(2); if (addr.length == 2) addr.toIntOrNull(16)?.takeIf { it in 1..0xDF }?.let { a -> vm.updateSettings { it.copy(civAddr = a) } } },
+                    "CI-V address (hex)", Modifier.width(170.dp))
+                OutlinedButton({ Ic705.disconnect(); Ic705.connect(ctx) }) { Text("Reconnect") } // after changing it, or a lost link
+            }
+            Text("The app controls the radio over the same USB lead as the audio: it reads the frequency and mode, and a band chip on a mode's " +
+                "page tunes it. The IC-705's address is A4 unless changed (MENU > SET > Connectors > CI-V > CI-V Address). Leave \"CI-V USB " +
+                "Echo Back\" off and \"CI-V Transceive\" on (the defaults).", color = Pal.Muted, fontSize = 13.sp, lineHeight = 17.sp)
 
             Heading("Startup screen")
             Row(verticalAlignment = Alignment.CenterVertically) {

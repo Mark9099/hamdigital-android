@@ -19,7 +19,7 @@ import uk.hamdigital.ui.HamDigitalTheme
 import uk.hamdigital.ui.SplashScreen
 
 /** The app's version, for the startup screen and Settings (kept here so it is not tied to the generated BuildConfig). */
-object BuildConfigInfo { const val VERSION = "0.1.0" }
+object BuildConfigInfo { const val VERSION = "0.2.0" }
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()     // state (survives rotation)
@@ -36,5 +36,15 @@ class MainActivity : ComponentActivity() {
                 AnimatedVisibility(splash, enter = EnterTransition.None, exit = fadeOut(tween(600))) { SplashScreen(vm) } // fades away
             }
         } }
+    }
+
+    override fun onResume() {
+        super.onResume()                              // Android's part
+        uk.hamdigital.rig.Ic705.connect(this)         // the radio's CI-V, if plugged in (asks for USB access the first time)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)                     // Android's part
+        if (intent.action == android.hardware.usb.UsbManager.ACTION_USB_DEVICE_ATTACHED) uk.hamdigital.rig.Ic705.connect(this) // plugged in while open
     }
 }

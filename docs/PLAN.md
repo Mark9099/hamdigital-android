@@ -34,7 +34,7 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
 
 1. **Skeleton (0.1.0).** Done. Startup screen, mode menu, page per mode, Settings, Guide. Receive audio from the
    IC-705's USB sound card (or the microphone) and a waterfall on every page. CW decoder working.
-2. **IC-705 control (CI-V over USB).** Read and set frequency and mode, so a band chip on a page tunes the radio to
+2. **IC-705 control (CI-V over USB) (0.2.0).** Done. Read and set frequency and mode, so a band chip on a page tunes the radio to
    that mode's frequency in USB-D. Show the radio's frequency on each page.
 3. **FT8 and FT4 receive (ft8_lib).** Slot timing from the UTC clock, decode each slot, and a list of the stations
    heard (call, report, DT, offset, message, distance from the locator). CQ calls are highlighted.

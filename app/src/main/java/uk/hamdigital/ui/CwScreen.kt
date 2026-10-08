@@ -68,7 +68,8 @@ fun CwScreen(vm: MainViewModel) {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) } // the transcript
         TextButton({ ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share the decoded text")) }) { Text("Share", color = Pal.Text2) }
     }) {
-        RxStatus(rx, "Dial e.g. %.3f MHz CW".format(Mode.CW.dialsKHz.first { it.first == "20" }.second / 1000.0)) // audio, level
+        RxStatus(rx)                                  // audio, level
+        if (!sideways) RigBar(Mode.CW)                // the radio, the bands (on its side there is no room)
         val controls: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { // the main controls
                 Button({ listening = !listening; paused.set(!listening) }, colors = ButtonDefaults.buttonColors(containerColor = if (listening) Pal.Red else Color(0xFF1F8A4C))) { Text(if (listening) "Pause" else "Listen") }

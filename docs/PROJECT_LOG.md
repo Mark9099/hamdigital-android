@@ -2,6 +2,23 @@
 
 Newest first.
 
+## 2026-10-08: 0.2.0, stage 2 (IC-705 CI-V over USB)
+
+- `rig/Ic705.kt`: CI-V on the IC-705's first USB serial port (CDC-ACM, using usb-serial-for-android 3.11.0 from JitPack,
+  MIT). It asks for USB permission (a mutable PendingIntent tied to the package), then opens the port with DTR on and
+  RTS kept low, because the IC-705 can key on RTS. A reader thread collects frames and polls frequency (03), mode (04)
+  and data mode (1A 06) every second. It also takes the radio's transceive broadcasts (00/01), ignores echoed frames
+  from E0, and notices when the lead is unplugged.
+- Commands: set frequency (05, 5-byte BCD), set mode (06) to USB + DATA (1A 06 01 01) or CW + DATA off, and PTT (1C 00)
+  ready for stage 7.
+- `ui/RigBar.kt` on every mode page shows the radio's frequency and mode, with "(USB-D needed)" when the mode is wrong
+  and TX while transmitting. Band chips tune the radio. Without a radio, the chips show the frequency to tune by hand.
+- The menu shows audio and control status with the frequency. Settings has a Radio control section: status, CI-V
+  address (hex, default A4) and Reconnect.
+- Manifest: the activity takes USB_DEVICE_ATTACHED for Icom (vendor 0x0C26, IC-705 0x0036), so Android offers to open
+  the app and can remember the permission. Connecting happens on resume and when the radio is plugged in.
+- Guide updated (IC-705 connection, menu, version history). Builds. Not yet tried with the radio.
+
 ## 2026-10-08: 0.1.0, stage 1 (skeleton)
 
 - New project `Documents\AndroidStudioProjects\HamDigital`, package `uk.hamdigital`, app name "HF Digital Modes".

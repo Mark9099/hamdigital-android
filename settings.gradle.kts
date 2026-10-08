@@ -11,6 +11,7 @@ dependencyResolutionManagement {
     repositories {
         google()                                     // AndroidX
         mavenCentral()                               // kotlinx
+        maven("https://jitpack.io")                  // usb-serial-for-android (IC-705 CI-V)
     }
 }
 rootProject.name = "HamDigital"                      // project name

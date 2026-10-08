@@ -18,6 +18,7 @@ typedef struct fftwf_plan_s *fftwf_plan;             // a prepared transform
 #define FFTW_ESTIMATE (1U << 6)
 #define FFTW_PATIENT (1U << 5)
 #define FFTW_EXHAUSTIVE (1U << 3)
+#define FFTW_ESTIMATE_PATIENT (1U << 7)              // (FFTW 3.3; JS8Call uses it)
 
 void *fftwf_malloc(size_t n);                        // memory for transforms
 void fftwf_free(void *p);

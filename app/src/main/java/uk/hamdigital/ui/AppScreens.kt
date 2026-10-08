@@ -50,6 +50,7 @@ private fun ModePage(vm: MainViewModel, m: Mode) = when (m) {
     Mode.FT8, Mode.FT4 -> Ft8Screen(vm, m)                     // working: ft8_lib
     Mode.WSPR -> WsprScreen(vm)                                // working: wsprd
     Mode.RTTY, Mode.PSK31 -> KeyboardScreen(vm, m)             // working: fldigi
+    Mode.JS8 -> Js8Screen(vm)                                  // working: JS8Call's decoder
     else -> ComingScreen(vm, m)                                // the waterfall until its decoder arrives
 }
 

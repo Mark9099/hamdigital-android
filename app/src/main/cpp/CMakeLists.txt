@@ -1,6 +1,8 @@
 # Native part of the app: the decoders, all open-source C/C++ code, and the JNI bridges to them.
 #  - CW: the Morse decoder shared with HF Propagation and the Tab5 (HamPropCore hamprop_common/src/cw_decoder.cpp).
-#  - Later stages add ft8_lib (FT8 / FT4), wsprd (WSPR), the JS8Call decoder and fldigi's RTTY and PSK31 (docs/PLAN.md).
+#  - FT8 / FT4: ft8_lib (MIT). WSPR: wsprd from WSJT-X (GPL v3). RTTY / PSK31: fldigi's demodulators (GPL v3).
+#  - JS8: JS8Call's decoder and message unpacking (GPL v3), without Qt / Boost (js8/ANDROID_CHANGES.txt).
+#  - fftw_kiss: FFTW's API on KISS FFT, for wsprd and JS8. Each library's folder has its LICENSE and ANDROID_CHANGES.txt.
 cmake_minimum_required(VERSION 3.22.1)
 project(hamdigital C CXX)                             # C and C++ decoders
 
@@ -20,6 +22,10 @@ set_source_files_properties(wsprd/wsprd.c PROPERTIES COMPILE_DEFINITIONS "main=w
 set(FLDIGI_SOURCES fldigi/rtty_rx.cxx fldigi/psk31_rx.cxx fldigi/fftfilt.cxx fldigi/filters.cxx fldigi/pskcoeff.cxx fldigi/pskvaricode.cxx) # fldigi (GPL v3): receive-only RTTY / PSK31 + its filters
 set_source_files_properties(${FLDIGI_SOURCES} PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/fldigi) # its headers by plain name
 
+set(JS8_SOURCES js8/JS8.cpp js8/js8_run.cpp js8/js8_unpack.cpp) # JS8Call's decoder (GPL v3; C++20, Eigen) + its message unpacking
+set_source_files_properties(${JS8_SOURCES} js8_jni.cpp PROPERTIES COMPILE_OPTIONS "-std=c++20;-w" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # <vendor/Eigen/Dense>, commons.h
+set_source_files_properties(js8/jsc_map.cpp PROPERTIES COMPILE_OPTIONS "-w;-O0" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # the JSC word table (262144 entries: nothing to optimise, much faster to build)
+
 add_library(hamdigital SHARED
     ${HAMPROP_CORE}/hamprop_common/src/cw_decoder.cpp # CW decoder (shared)
     cw_jni.cpp                                       # CW decoder: JNI
@@ -31,7 +37,10 @@ add_library(hamdigital SHARED
     wspr_run.c                                       # WSPR: a slot at a time
     wspr_jni.c                                       # WSPR: JNI
     ${FLDIGI_SOURCES}                                # RTTY, PSK31
-    fldigi_jni.cpp)                                  # RTTY, PSK31: JNI
+    fldigi_jni.cpp                                   # RTTY, PSK31: JNI
+    ${JS8_SOURCES}                                   # JS8
+    js8/jsc_map.cpp                                  # JS8: the JSC word table
+    js8_jni.cpp)                                     # JS8: JNI
 
 target_include_directories(hamdigital PRIVATE ${HAMPROP_CORE}/hamprop_common/src ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ft8_lib
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_kiss)           # <fftw3.h> is the stand-in

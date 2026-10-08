@@ -1,0 +1,28 @@
+JS8Call (https://github.com/js8call/js8call, commit a7ff1be, 2025-12-05), GPL v3 (LICENSE). JS8.cpp: (C) 2025 Allan
+Bazinet W6BAZ; varicode / DecodedText / JSC: (C) 2018 Jordan Sherer KN4CRD; distributed as part of JS8Call under the GPL.
+
+Copied unchanged:
+  commons.h, jsc_map.cpp (the JSC word table), vendor/Eigen (Eigen 3, MPL 2.0, header-only).
+
+JS8.cpp / JS8.hpp - JS8Call's decoder, made from the originals by tools/port_js8.py; the decoder itself is unchanged:
+  - Boost removed (Boost need not be built for Android); js8_compat.h stands in for the three parts used:
+      boost::augmented_crc<12, 0xc06>   -> js8compat::augmented_crc (bitwise; checked identical to ft8_lib's FT8 CRC,
+                                           which matches boost::augmented_crc as used by WSJT-X, on 1000 payloads)
+      boost::math::ccmath::round        -> js8compat::cround (constexpr, half away from zero)
+      boost::multi_index_container      -> js8compat::SyncIndex (a vector): syncjs8()'s 40th-percentile normalisation
+                                           and strongest-first candidate selection with near-duplicate removal, the
+                                           same as the code that used the container's three indices
+  - Qt removed: <QDebug> (unused), the Worker / Decoder QObject pair (thread, semaphore, signals, JS8.moc). The
+    decoding pass (Worker::Impl) is kept as JS8::Engine, run on the caller's thread.
+  - The rest - modes A/B/C/E/I, LDPC, the baseline, sync, demodulation, encode() - is as JS8Call has it.
+
+js8_unpack.cpp / .h - the receive half of JS8Call's DecodedText.cpp, varicode.cpp and jsc.cpp, ported from Qt to the
+  C++ standard library function by function with the same results (sorted-key QMap behaviour and huffDecode's scan kept).
+jsc.h - the Tuple / JSC::map declarations jsc_map.cpp needs (JS8Call's jsc.h also has the Qt compression API).
+js8_run.cpp / .h - runs a 15 s JS8 Normal slot as JS8Call's main window schedules a full-cycle decode (kposA = 0,
+  kszA = 15 s, submode A, nfa..nfb 0..5000 Hz) and unpacks each frame; defines dec_data, specData and fftw_mutex.
+
+Tested on the PC (tools/test/run_js8.sh) with JS8Call's media/tests recordings: 26 decodes from the seven Normal-mode
+files, against the 31 the old Fortran decoder's file names give (A_1_4: 5 of 4, A_2_5: 5 of 5, A_2_9: 8 of 9, ...);
+messages unpack as JS8Call shows them ("KN4ZXG: @HB HEARTBEAT FM16", "K0OG: KN4CRD SNR +02"). The two Slow-mode (E)
+files give none, as expected (the app decodes Normal only).

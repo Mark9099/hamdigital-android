@@ -109,11 +109,20 @@ private val GUIDE = listOf(
         B + "Typing and sending come in stage 7.",
 
     "JS8Call" to
-        "Coming in stage 6, using the JS8Call decoder: the JS8 Normal speed (15 s slots) with the stations heard and their messages, " +
-        "directed messages to you picked out. Sending follows in stage 7.",
+        "Receives JS8 (the JS8Call keyboard-chat mode, Normal speed: 15 s slots like FT8) with JS8Call's own decoder.\n\n" +
+        B + "At the end of each slot the frames heard are decoded and turned into text as JS8Call shows it: heartbeats " +
+        "(\"G4ABC: @HB HEARTBEAT IO91\"), CQs, directed messages (\"G4ABC: M7JVY SNR -10\") and free text. Longer messages " +
+        "arrive over several slots; a diamond marks a message's end. Text in [brackets] was decoded with low confidence.\n" +
+        B + "Band activity: the text at each audio offset, newest first. Tap a line (or the waterfall) to set the receive " +
+        "offset - the red lines mark it and the 50 Hz a JS8 signal takes; the decoder tries there first.\n" +
+        B + "Calls: the stations heard, with signal, locator (from their heartbeats) and distance.\n" +
+        B + "To me: messages addressed to your callsign (Settings).\n" +
+        B + "Clear empties all three. Sending (heartbeats, replies, messages) comes in stage 7.",
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.6.0 (October 2026): JS8Call receive (JS8 Normal) with JS8Call's decoder: Band activity, Calls and To me. Every " +
+        "mode now decodes.\n" +
         B + "0.5.0 (October 2026): RTTY and PSK31 decoding with fldigi's receivers: tap the waterfall to tune, AFC, squelch, RTTY " +
         "shift and Reverse, the decoded text with Copy / Share / Clear.\n" +
         B + "0.4.0 (October 2026): WSPR decoding (wsprd from WSJT-X): the 2-minute slot bar, a waterfall of the WSPR window, and the " +

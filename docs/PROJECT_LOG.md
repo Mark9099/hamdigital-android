@@ -2,6 +2,34 @@
 
 Newest first.
 
+## 2026-10-09: 0.6.0, stage 6 (JS8Call receive), so every mode now decodes
+
+- JS8Call's C++ decoder (`JS8.cpp`, commit a7ff1be, GPL v3) is in `cpp/js8`. `tools/port_js8.py` makes the Android
+  copy from the original. Boost is replaced by `js8_compat.h`: an augmented CRC, a constexpr round, and a vector-based
+  SyncIndex with the same 40th-percentile normalisation and candidate selection. The Qt Worker/Decoder is replaced by
+  `JS8::Engine`, running the same decoding pass on the caller's thread. Eigen is vendored, as JS8Call does. Details
+  are in `js8/ANDROID_CHANGES.txt`.
+- Message unpacking (`js8_unpack.cpp`) is a port of the receive half of JS8Call's DecodedText, Varicode and JSC from Qt
+  to std C++, function by function. The JSC word table (`jsc_map.cpp`, 262144 entries) is copied unchanged and built
+  at -O0. JSC words are Latin-1 and are converted to UTF-8.
+- `js8_run.cpp` runs a 15 s Normal slot the way JS8Call schedules a full-cycle decode (kposA 0, kszA 15 s, submode A,
+  0–5000 Hz). `js8_jni.cpp` returns tab-separated frames.
+- `core/SlotAudio.kt`: the slot-timed 30 s ring, moved out of SlotDecoder. FT8, FT4 and JS8 now share it.
+  `core/Js8Decoder.kt` decodes at 14.6 s and builds Band activity (frames within 10 Hz in the last 5 minutes are
+  joined, ♢ marks a message's end, low-confidence frames are shown in [ ]), Calls (with the grid from heartbeats and
+  km), and To me.
+- `ui/Js8Screen.kt`: the radio bar, slot bar, a waterfall with the RX offset (and its 50 Hz) marked where a tap sets
+  nfqso, and tabs for Band activity, Calls and To me.
+- PC test (`tools/test/run_js8.sh`, needing `-D_USE_MATH_DEFINES -DEIGEN_DONT_VECTORIZE` for zig on Windows):
+  - The CRC stand-in equals ft8_lib's FT8 CRC on 1000 payloads.
+  - JS8Call's own test recordings give 26 decodes from 7 Normal files, against the 31 the old Fortran decoder's file
+    names give.
+  - Messages unpack as JS8Call shows them.
+  - A_2_1's single weak (-21 dB) station decodes only with the window shifted 2 s. JS8Call improves on this by
+    re-decoding sliding windows during the cycle; this is a possible later improvement.
+  - Widening 100–3000 Hz to JS8Call's 0–5000 Hz made no difference, so JS8Call's range is kept.
+- The debug APK is 54 MB (debug symbols, 3 ABIs, the JSC table). The release build will be smaller.
+
 ## 2026-10-09: 0.5.0, stage 5 (RTTY and PSK31 receive)
 
 - fldigi 4.1.23 (GPL v3) goes into `cpp/fldigi`. The DSP building blocks are copied unchanged: fftfilt, filters,

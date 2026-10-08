@@ -36,6 +36,13 @@ class MainActivity : ComponentActivity() {
                 AnimatedVisibility(splash, enter = EnterTransition.None, exit = fadeOut(tween(600))) { SplashScreen(vm) } // fades away
             }
         } }
+        devCommand(intent)                            // (debug builds) a development check asked for by adb
+    }
+
+    /** Debug builds only: "--ez dev_test true" runs the decoders on test recordings (DevTest, docs/DEV_COMMANDS.md). */
+    private fun devCommand(i: android.content.Intent?) {
+        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (debuggable && i?.getBooleanExtra("dev_test", false) == true) DevTest.run(this)
     }
 
     override fun onResume() {
@@ -45,6 +52,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)                     // Android's part
+        devCommand(intent)                            // (debug builds) adb commands while running
         if (intent.action == android.hardware.usb.UsbManager.ACTION_USB_DEVICE_ATTACHED) uk.hamdigital.rig.Ic705.connect(this) // plugged in while open
     }
 }

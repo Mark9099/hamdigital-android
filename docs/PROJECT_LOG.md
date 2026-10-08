@@ -2,6 +2,19 @@
 
 Newest first.
 
+## 2026-10-09: first run on the phone (S23), decoders checked on ARM
+
+- 0.6.0 installed on the S23. The startup screen, menu, and the FT8, JS8 and PSK31 pages work. The microphone feeds
+  the waterfall, and the FT8 and JS8 slot decodes run at the slot end without trouble. Testing with the IC-705 needs
+  the phone's USB socket, which adb was using.
+- New debug-only check, `DevTest.kt` (`--ez dev_test true`, docs/DEV_COMMANDS.md). It runs the decoders on recordings
+  copied into the app's files with run-as. Shared storage doesn't work, because the app can't read folders adb made
+  there. Results on the phone match the PC:
+  - FT8 ft8_lib 191111_110630: 12, websdr_test6: 20, WSJT-X sample: 8 (54–68 ms each).
+  - FT4 WSJT-X sample: 7 (28 ms).
+  - JS8 A_1_4: 5, A_2_9: 8 (170–270 ms; SNRs within 1–3 dB of the PC build, because of Eigen's NEON code).
+  - WSPR WSJT-X sample: the same 9 spots (2 s).
+
 ## 2026-10-09: 0.6.0, stage 6 (JS8Call receive), so every mode now decodes
 
 - JS8Call's C++ decoder (`JS8.cpp`, commit a7ff1be, GPL v3) is in `cpp/js8`. `tools/port_js8.py` makes the Android

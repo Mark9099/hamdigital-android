@@ -75,6 +75,28 @@ object WsprNet {
         }
     }
 
+    /** A station that reported hearing your beacon (from WSPRnet's database). */
+    data class HeardBy(val call: String, val grid: String, val bestSnr: Int, val reports: Int, val lastUtc: String, val freqHz: Long, val km: Int)
+
+    /** Who heard [call] in the last [hours] hours (WSPRnet's spots, through wspr.live's public database), best report
+     *  first. Blocking (call it off the main thread); throws if the database cannot be reached. */
+    fun heardMe(call: String, hours: Int = 24): List<HeardBy> {
+        val c = call.uppercase().filter { it.isLetterOrDigit() || it == '/' } // (only a callsign goes into the query)
+        if (c.isEmpty()) return emptyList()
+        val sql = "SELECT rx_sign, rx_loc, max(snr), count(), toString(max(time)), max(frequency), max(distance) FROM wspr.rx " +
+            "WHERE tx_sign = '$c' AND time > now() - INTERVAL $hours HOUR GROUP BY rx_sign, rx_loc ORDER BY max(snr) DESC LIMIT 1000 FORMAT TSV"
+        val u = URL("https://db1.wspr.live/?query=" + URLEncoder.encode(sql, "UTF-8"))
+        val conn = u.openConnection() as HttpURLConnection
+        try {
+            conn.connectTimeout = 15_000; conn.readTimeout = 30_000
+            if (conn.responseCode != 200) throw Exception("HTTP ${conn.responseCode}")
+            return conn.inputStream.bufferedReader().readLines().mapNotNull { ln ->
+                val f = ln.split('\t'); if (f.size < 7) return@mapNotNull null
+                HeardBy(f[0], f[1], f[2].toIntOrNull() ?: 0, f[3].toIntOrNull() ?: 0, f[4].drop(11).take(5), f[5].toLongOrNull() ?: 0, f[6].toIntOrNull() ?: 0)
+            }
+        } finally { conn.disconnect() }
+    }
+
     private fun post(form: List<Pair<String, String>>): String { // one form, as application/x-www-form-urlencoded
         val body = form.joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, "UTF-8")}" }.toByteArray()
         val c = URL(POST_URL).openConnection() as HttpURLConnection

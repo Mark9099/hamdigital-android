@@ -88,7 +88,7 @@ fun CwScreen(vm: MainViewModel) {
         if (sideways) TextButton(log) { Text("Log", color = Pal.Text2) } // (on its side the send box, with its Log chip, is not shown)
     }) {
         RxStatus(rx)                                  // audio, level
-        if (!sideways) RigBar(Mode.CW)                // the radio, the bands (on its side there is no room)
+        if (!sideways) RigBar(Mode.CW) else AutoTune(Mode.CW) // the radio, the bands (on its side there is no room: just the tuning)
         val controls: @Composable () -> Unit = {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { // the main controls
                 Button({ listening = !listening; paused.set(!listening) }, colors = ButtonDefaults.buttonColors(containerColor = if (listening) Pal.Red else Color(0xFF1F8A4C))) { Text(if (listening) "Pause" else "Listen") }

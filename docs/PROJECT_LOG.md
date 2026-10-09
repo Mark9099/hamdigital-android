@@ -2,6 +2,48 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.0 (countries, maps, tuning on opening a mode)
+
+- **Asked for by the user:** a country for every station on every page (the Logbook included); a Logbook map of the
+  logged contacts that zooms to fit them; a WSPR map of the stations; and opening a mode tuning the radio to that mode.
+- **Countries: `core/Cty.kt`**, HF Propagation's cty.dat reader (AD1C, country-files.com).
+  - Exact calls first, then the longest prefix; portable forms are handled.
+  - Downloaded at start-up if missing or more than 30 days old (on a thread), as HF Propagation does. Until the first
+    download there are no countries. `Cty.loaded` tells pages when the list arrives.
+- **Where countries show:**
+  - a country column on FT8/FT4 decodes (the sender);
+  - a second line on WSPR spots (the rows had no room for another column);
+  - next to the call in JS8 Calls and in Logbook rows;
+  - in Logbook search and the summary line (a country count);
+  - in the form, as a Country field filled in from the call until it is typed over.
+  
+  `Qso.country` is written as ADIF COUNTRY, and `Logbook.add` fills it in from the call when it's empty. Older entries
+  show the looked-up country (`countryName`).
+- **Map: `ui/WorldMap.kt`.**
+  - HF Propagation's `world.bin` (Natural Earth 1:50m, public domain; `tools/gen_world_asset.py` copied too), its
+    `WorldData` reader and flat projection (`map/`), and its colours, path scaling and east–west wrap.
+  - Dots with great-circle lines from your locator (a white diamond), labels that don't overlap, pinch zoom (1–120×) and pan.
+  - Fits on open, and with Fit: longitudes are taken relative to your own, so a spread across 180° stays together,
+    and the view is filled to about 80%.
+  - Tap a dot for its details. A hollow dot is placed at the country's middle (cty.dat) when there's no locator.
+  - `MapDialog` is a full-screen dialog, so a mode page keeps decoding behind it.
+- **Logbook map** (a Map button beside the counts) maps the contacts the list shows, one dot per station at its
+  latest contact, coloured by band, with a band legend.
+- **WSPR map** (Map in the top bar) has two views:
+  - Heard here: this page's spots, the best report per call.
+  - Heard me: who reported the user's call in the last 24 h, from wspr.live (`WsprNet.heardMe`: a ClickHouse query
+    over https, with only callsign characters allowed into it).
+  
+  Dots are coloured by SNR (HF Propagation's steps).
+- **Opening a mode tunes the radio** (`AutoTune` in `RigBar`, also called by the pages that hide RigBar when sideways).
+  - Once per opening, as soon as the radio's frequency is known, it tunes to the mode's dial on the band the radio is
+    on (else the nearest band the mode has), with USB-D or CW.
+  - Nothing happens if the radio is already within 50 Hz in the right mode.
+  - Never while something is being sent or due to be: `Transmitter.on`, an FT8/FT4 contact with TX on, the WSPR
+    beacon on, or JS8 frames queued.
+- **About (Settings):** credits for Natural Earth, cty.dat (AD1C), FT8CN, WSPRnet and wspr.live.
+- Built; not yet checked on the phone (it was off USB).
+
 ## 2026-10-09: 0.9.1 (WSPR on the air: dial fix, WSPRnet upload)
 
 - **Root cause: WSPR received nothing from the band chips.** `Mode.dialsKHz` held whole kHz, so WSPR's dials were

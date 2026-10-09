@@ -1,6 +1,7 @@
 // The radio bar on every mode's page: the IC-705's frequency and mode (over CI-V), and the mode's bands as chips - a tap
 // tunes the radio to that band's usual frequency for the mode and sets USB-D (or CW). Without the radio connected the
-// chips just show the frequency to tune by hand.
+// chips just show the frequency to tune by hand. Opening a mode's page tunes the radio to that mode's frequency on the
+// band it is already on (FT8 on 7.074 -> WSPR 7.0386), with USB-D or CW, once; never while something is being sent.
 package uk.hamdigital.ui
 
 import androidx.compose.foundation.horizontalScroll
@@ -23,7 +24,39 @@ import uk.hamdigital.rig.Ic705
 import uk.hamdigital.rig.RigState
 import kotlin.math.abs
 
-/** The radio's frequency and mode, then the mode's band chips. Returns nothing; the radio is the state. */
+/** Opening mode [m]'s page: the radio to that mode's frequency on the band it is on (and USB-D / CW), once the radio's
+ *  frequency is known; once each time the page is opened; never while something is being sent. (Part of RigBar; pages
+ *  that hide RigBar when sideways call it themselves.) */
+@Composable
+fun AutoTune(m: Mode) {
+    val rig by Ic705.state.collectAsStateWithLifecycle() // the radio
+    val on = rig.link == RigState.Link.CONNECTED
+    var tuned by rememberSaveable(m) { mutableStateOf(false) } // done for this opening
+    LaunchedEffect(m, on, rig.freqHz > 0) {
+        if (tuned || !on || rig.freqHz <= 0) return@LaunchedEffect // (not until the radio's frequency is known)
+        tuned = true
+        if (busyTransmitting()) return@LaunchedEffect // never while sending, or with a contact, beacon or message under way
+        val dial = dialFor(m, rig.freqHz)             // this mode's frequency nearest the radio's
+        val wantCw = m == Mode.CW
+        val modeOk = if (wantCw) rig.mode.startsWith("CW") else rig.mode == "USB" && rig.data // already right?
+        if (abs(Math.round(dial * 1000) - rig.freqHz) > 50 || !modeOk) Ic705.tune(dial, wantCw)
+    }
+}
+
+/** Mode [m]'s usual frequency (kHz) for the band the radio is on ([hz]); if the mode has none there, the nearest one it has. */
+private fun dialFor(m: Mode, hz: Long): Double {
+    val band = uk.hamdigital.core.Logbook.band(hz)    // "40m"
+    m.dialsKHz.firstOrNull { "${it.first}m" == band }?.let { return it.second } // the same band
+    return m.dialsKHz.minBy { kotlin.math.abs(kotlin.math.ln(it.second * 1000 / hz)) }.second // else the nearest (by ratio)
+}
+
+/** Something is being sent or is due to be: a transmission, an FT8 / FT4 contact with transmit on, the WSPR beacon, or
+ *  a JS8 message still queued - then a page must not move the radio. */
+private fun busyTransmitting(): Boolean = uk.hamdigital.audio.Transmitter.on.value || uk.hamdigital.core.FtQso.FT8.state.value.enabled ||
+    uk.hamdigital.core.FtQso.FT4.state.value.enabled || uk.hamdigital.core.WsprBeacon.state.value.enabled || uk.hamdigital.core.Js8Tx.queued.value > 0
+
+/** The radio's frequency and mode, then the mode's band chips. Returns nothing; the radio is the state. Opening the page
+ *  tunes the radio to this mode's frequency on the band it is on (unless something is being sent). */
 @Composable
 fun RigBar(m: Mode) {
     val ctx = LocalContext.current
@@ -32,6 +65,7 @@ fun RigBar(m: Mode) {
     var picked by rememberSaveable(m) { mutableStateOf(m.dialsKHz.firstOrNull { it.first == "20" }?.first ?: m.dialsKHz.first().first) } // band chosen by hand (no radio)
     val onBand = m.dialsKHz.firstOrNull { abs(Math.round(it.second * 1000) - rig.freqHz) <= 3000 }?.first // the band the radio is on, for this mode (within 3 kHz)
     val shown = if (on) onBand else picked             // chip lit
+    AutoTune(m)                                       // opening the page: the radio to this mode
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         if (on) {
             Text(rig.freqText, color = Pal.Text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 20.sp) // 14.074.000

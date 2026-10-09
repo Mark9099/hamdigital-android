@@ -1,6 +1,6 @@
 // FT8 and FT4 page (one screen, two modes): the radio and its bands, a slot bar (time left in the slot, what the last
 // decode found), the waterfall, and the messages heard - newest slot at the top - with UTC, signal (dB), time offset,
-// audio frequency, the message, and the distance to the sender's locator. CQ calls are green, messages to you amber.
+// audio frequency, the message, the sender's country and the distance to its locator. CQ calls are green, messages to you amber.
 // Show: everything, CQs only, or to you only. Decoding by ft8_lib (MIT). Transmit (FtTxPanel): double-tap a line to answer
 // that station, or Call CQ; the contact then runs itself (FtQso) and is logged; tap the waterfall for the TX offset.
 package uk.hamdigital.ui
@@ -118,6 +118,7 @@ private fun DecodeRow(d: FtDecode, firstOfSlot: Boolean, worked: Boolean, onPick
         Text("%.1f".format(d.dt), Modifier.width(COLS[2]), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text("${d.freq}", Modifier.width(COLS[3]), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text(d.text, Modifier.weight(1f), color = Pal.Text, fontSize = 14.sp, fontFamily = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(uk.hamdigital.core.Cty.country(d.from), Modifier.widthIn(max = 92.dp).padding(horizontal = 4.dp), color = Pal.Text2, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) // the sender's country (cty.dat)
         if (worked) Text("B4 ", color = Pal.Amber, fontSize = 11.sp, fontFamily = mono) // worked before (WSJT-X's mark)
         Text(d.km?.let { "$it" } ?: "", color = Pal.Muted, fontSize = 12.sp, fontFamily = mono)
     }

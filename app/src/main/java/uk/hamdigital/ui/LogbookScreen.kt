@@ -80,6 +80,13 @@ fun LogbookScreen(vm: MainViewModel) {
     var menu by remember { mutableStateOf(false) }        // the ⋮ menu open
     var askAll by remember { mutableStateOf(false) }      // "delete everything?" showing
     var note by remember { mutableStateOf("") }           // the result of an import / save
+    var mapOpen by remember { mutableStateOf(false) }     // the map showing
+    val ctyReady by uk.hamdigital.core.Cty.loaded.collectAsStateWithLifecycle() // (countries arrive after the download)
+    val q = query.trim()
+    val shown = remember(all, q, bandSel, modeSel, ctyReady) { // the contacts that match
+        all.filter { c -> (bandSel.isEmpty() || c.bandName == bandSel) && (modeSel.isEmpty() || c.mode == modeSel) &&
+            (q.isEmpty() || listOf(c.call, c.grid, c.name, c.qth, c.comment, c.countryName).any { it.contains(q, ignoreCase = true) }) }
+    }
     val saveTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> // save a copy where you choose
         if (uri != null) scope.launch {
             note = withContext(Dispatchers.IO) { try { ctx.contentResolver.openOutputStream(uri)?.use { it.write(Logbook.export().toByteArray()) }; "Saved ${plural(all.size, "contact")} (ADIF)" } catch (e: Exception) { "Could not save: ${e.message}" } }
@@ -126,15 +133,14 @@ fun LogbookScreen(vm: MainViewModel) {
             SmallChip("All modes", modeSel.isEmpty()) { modeSel = "" }
             modes.forEach { m -> SmallChip(m, modeSel == m) { modeSel = if (modeSel == m) "" else m } }
         }
-        val q = query.trim()
-        val shown = remember(all, q, bandSel, modeSel) {  // the contacts that match
-            all.filter { c -> (bandSel.isEmpty() || c.bandName == bandSel) && (modeSel.isEmpty() || c.mode == modeSel) &&
-                (q.isEmpty() || listOf(c.call, c.grid, c.name, c.qth, c.comment).any { it.contains(q, ignoreCase = true) }) }
-        }
         val grids = shown.mapNotNull { c -> c.grid.take(4).uppercase().takeIf { it.length == 4 } }.distinct().size // locator squares
-        Text("${shown.size} contact${if (shown.size == 1) "" else "s"}" + (if (shown.size != all.size) " of ${all.size}" else "") +
-            "  •  ${plural(shown.map { it.call }.distinct().size, "station")}  •  ${plural(grids, "square")}  •  ${plural(shown.map { it.bandName }.filter { it.isNotEmpty() }.distinct().size, "band")}",
-            color = Pal.Text2, fontSize = 13.sp, modifier = Modifier.padding(vertical = 6.dp))
+        val countries = shown.map { it.countryName }.filter { it.isNotEmpty() }.distinct().size // countries (DXCC entities)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+            Text("${shown.size} contact${if (shown.size == 1) "" else "s"}" + (if (shown.size != all.size) " of ${all.size}" else "") +
+                "  •  ${plural(shown.map { it.call }.distinct().size, "station")}  •  ${plural(countries, "country", "countries")}  •  ${plural(grids, "square")}  •  " +
+                plural(shown.map { it.bandName }.filter { it.isNotEmpty() }.distinct().size, "band"), color = Pal.Text2, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            FilledTonalButton({ mapOpen = true }, enabled = shown.isNotEmpty(), contentPadding = PaddingValues(horizontal = 14.dp)) { Text("Map") } // the contacts shown, on a map
+        }
         LazyColumn(Modifier.fillMaxSize()) {
             items(shown, key = { it.id }) { c -> QsoRow(c, s.locator) { editing = c; isNew = false } } // tap: change it
             if (shown.isEmpty()) item {
@@ -145,18 +151,59 @@ fun LogbookScreen(vm: MainViewModel) {
         }
     }
     editing?.let { e -> QsoEditor(e, isNew) { editing = null } } // the form, over the list
+    if (mapOpen) LogMap(shown, s.locator) { mapOpen = false } // the map of the contacts shown
     if (askAll) AlertDialog({ askAll = false }, confirmButton = { TextButton({ Logbook.deleteAll(); askAll = false; note = "The log was emptied" }) { Text("Delete all", color = Pal.Red) } },
         dismissButton = { TextButton({ askAll = false }) { Text("Keep them") } }, title = { Text("Delete all ${all.size} contacts?") },
         text = { Text("This cannot be undone. Save a copy first (⋮ > Save to a file) if you may want them again.") })
 }
 
-/** One contact in the list: time, call, band and mode; reports, locator, distance, name and comment under it. */
+/** The map of [list] (the contacts the Logbook shows): one dot per station - at its locator, else its country's middle -
+ *  coloured by the band of the latest contact, with what was logged when tapped. */
+@Composable
+private fun LogMap(list: List<Qso>, myGrid: String, onClose: () -> Unit) {
+    val home = Locator.toLatLon(myGrid)               // you
+    val byCall = list.groupBy { it.call }             // (newest first within each)
+    var unplaced = 0                                  // no locator, country unknown
+    val points = byCall.mapNotNull { (call, qs) ->
+        val c = qs.first()                            // the latest contact
+        val ll = Locator.toLatLon(c.grid) ?: qs.firstNotNullOfOrNull { Locator.toLatLon(it.grid) } // its locator (from any contact)
+        val ent = if (ll == null) uk.hamdigital.core.Cty.lookup(call) else null // else its country's middle
+        val at = ll ?: ent?.let { it.lat to it.lon } ?: run { unplaced++; return@mapNotNull null }
+        val km = if (myGrid.isNotEmpty() && ll != null) Locator.toLatLon(myGrid)?.let { h -> greatKm(h.first, h.second, at.first, at.second) } else null
+        val detail = listOfNotNull(SHOWN.format(Instant.ofEpochMilli(c.startMs)) + " UTC", "${c.bandName} ${c.mode}".trim(),
+            if (c.rstSent.isNotEmpty() || c.rstRcvd.isNotEmpty()) "sent ${c.rstSent.ifEmpty { "-" }}, rcvd ${c.rstRcvd.ifEmpty { "-" }}" else null,
+            c.grid.ifEmpty { null }, km?.let { "$it km" }, c.countryName.ifEmpty { null }, c.name.ifEmpty { null },
+            if (qs.size > 1) "${qs.size} contacts" else null).joinToString("  •  ")
+        MapPoint(at.first, at.second, call, detail, bandColor(c.bandName), exact = ll != null)
+    }
+    val bands = list.map { it.bandName }.filter { it.isNotEmpty() }.distinct().sortedBy { Logbook.BANDS.indexOf(it) }
+    MapDialog("Contacts map", points, home, onClose,
+        note = "${points.size} station${if (points.size == 1) "" else "s"}" + (if (unplaced > 0) " ($unplaced not placed: no locator or known country)" else "") +
+            (if (home == null) ". Set your locator in Settings to show yourself." else ". Pinch to zoom, drag to move, tap a dot."),
+        legend = {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) { // the bands' colours
+                bands.forEach { b -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.size(10.dp).background(bandColor(b), androidx.compose.foundation.shape.CircleShape)); Text(" $b", color = Pal.Text2, fontSize = 12.sp) } }
+            }
+        })
+}
+
+/** Great-circle distance in km. */
+private fun greatKm(la1: Double, lo1: Double, la2: Double, lo2: Double): Int {
+    val r = Math.PI / 180
+    return (6371 * Math.acos((Math.sin(la1 * r) * Math.sin(la2 * r) + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.cos((lo2 - lo1) * r)).coerceIn(-1.0, 1.0))).toInt()
+}
+
+/** One contact in the list: time, call, country, band and mode; reports, locator, distance, name and comment under it. */
 @Composable
 private fun QsoRow(c: Qso, myGrid: String, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(SHOWN.format(Instant.ofEpochMilli(c.startMs)), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(128.dp))
-            Text(c.call, color = Pal.Cyan, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { // call, country
+                Text(c.call, color = Pal.Cyan, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
+                Text("  ${c.countryName}", color = Pal.Text2, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             Text("${c.bandName}  ${c.mode}".trim(), color = Pal.Text, fontSize = 13.sp)
         }
         val km = if (c.grid.isNotEmpty() && myGrid.isNotEmpty()) Locator.km(myGrid, c.grid) else null // distance
@@ -185,6 +232,8 @@ fun QsoEditor(initial: Qso, isNew: Boolean, onClose: () -> Unit) {
     var power by remember { mutableStateOf(initial.power) }; var comment by remember { mutableStateOf(initial.comment) }
     var myCall by remember { mutableStateOf(initial.myCall) }; var myGrid by remember { mutableStateOf(initial.myGrid) }
     var askDelete by remember { mutableStateOf(false) }
+    var country by remember { mutableStateOf(initial.country.ifEmpty { uk.hamdigital.core.Cty.country(initial.call) }) } // from the call (cty.dat) ..
+    var countryAuto by remember { mutableStateOf(initial.country.isEmpty()) } // .. until typed over
 
     val day = parseDate(date); val tOn = parseTime(on); val tOff = parseTime(off) // what was typed, understood (null: not valid)
     val hz = freq.trim().toDoubleOrNull()?.let { (it * 1e6 + 0.5).toLong() } // MHz -> Hz
@@ -206,7 +255,7 @@ fun QsoEditor(initial: Qso, isNew: Boolean, onClose: () -> Unit) {
         var end = day.atTime(tOff!!).toInstant(ZoneOffset.UTC).toEpochMilli(); if (end < start) end += 86_400_000 // (ended after midnight)
         return initial.copy(call = call.trim().uppercase(), grid = grid.trim(), mode = mode.trim().uppercase(), rstSent = sent.trim(), rstRcvd = rcvd.trim(),
             startMs = start, endMs = end, freqHz = hz ?: 0, band = if (hz != null && hz > 0) "" else band, name = name.trim(), qth = qth.trim(),
-            power = power.trim(), comment = comment.trim(), myCall = myCall.trim().uppercase(), myGrid = myGrid.trim())
+            power = power.trim(), comment = comment.trim(), country = country.trim(), myCall = myCall.trim().uppercase(), myGrid = myGrid.trim())
     }
 
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
@@ -221,7 +270,7 @@ fun QsoEditor(initial: Qso, isNew: Boolean, onClose: () -> Unit) {
                 Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val caps = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        CompactField(call, { call = it.uppercase().filter { c -> c.isLetterOrDigit() || c == '/' }.take(20) }, "Call", Modifier.weight(1f), keyboardOptions = caps)
+                        CompactField(call, { call = it.uppercase().filter { c -> c.isLetterOrDigit() || c == '/' }.take(20); if (countryAuto) country = uk.hamdigital.core.Cty.country(call) }, "Call", Modifier.weight(1f), keyboardOptions = caps)
                         CompactField(grid, { grid = it.filter { c -> c.isLetterOrDigit() }.take(8) }, "Locator", Modifier.weight(1f), isError = !gridOk, keyboardOptions = caps)
                     }
                     val before = Logbook.withCall(call).filter { it.id != initial.id } // worked before (not counting this one)
@@ -254,6 +303,7 @@ fun QsoEditor(initial: Qso, isNew: Boolean, onClose: () -> Unit) {
                         CompactField(power, { power = it.filter { c -> c.isDigit() || c == '.' }.take(6) }, "Your power (W)", Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                         Spacer(Modifier.weight(1f))
                     }
+                    CompactField(country, { country = it.take(40); countryAuto = false }, "Country", Modifier.fillMaxWidth()) // (filled in from the call)
                     CompactField(comment, { comment = it.take(200) }, "Comment", Modifier.fillMaxWidth())
                     Text("Your station", color = Pal.Cyan, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.padding(top = 4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -270,7 +320,7 @@ fun QsoEditor(initial: Qso, isNew: Boolean, onClose: () -> Unit) {
     }
 }
 
-private fun plural(n: Int, what: String) = "$n $what" + if (n == 1) "" else "s" // "1 band", "3 bands"
+private fun plural(n: Int, one: String, many: String = one + "s") = "$n " + if (n == 1) one else many // "1 band", "3 bands"
 
 private fun parseDate(s: String): LocalDate? = try {   // "2026-10-09" or "20261009"
     val d = s.trim(); if (d.length == 8 && d.all { it.isDigit() }) LocalDate.parse(d, DateTimeFormatter.BASIC_ISO_DATE) else LocalDate.parse(d)

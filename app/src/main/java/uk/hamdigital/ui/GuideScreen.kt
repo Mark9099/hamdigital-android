@@ -62,7 +62,14 @@ private val GUIDE = listOf(
         "A tile for each mode: its name, what it is for, and whether its decoder is in this version (\"Decoder ready\") or still to come " +
         "(\"Waterfall now\" - the page shows the radio's audio as a waterfall so the connection can be checked, and lists the mode's " +
         "frequencies). Above the tiles: your station, and the radio's connection with its frequency and mode. Under the tiles: the " +
-        "Logbook (with how many contacts it holds), Settings and this Guide.",
+        "Logbook (with how many contacts it holds), Settings and this Guide.\n\n" +
+        B + "Opening a mode tunes the IC-705 to that mode's frequency on the band it is on, with USB-D (or CW for CW): from FT8 " +
+        "on 7.074 the WSPR page goes to 7.0386, CW to 7.030. If the mode has no frequency on that band, the nearest band it has. " +
+        "It does this once each time the page is opened (a band chip still moves it), and never while something is being sent or " +
+        "is due to be - an FT8 / FT4 contact with TX on, the WSPR beacon, or a JS8 message.\n" +
+        B + "Countries: the stations' countries (DXCC entities) come from cty.dat, the list logging and contest programs use " +
+        "(country-files.com, by AD1C). The app downloads it the first time it has the internet and once a month after; until then " +
+        "no countries are shown.",
 
     "Waterfall" to
         "Each mode's page shows the receive audio as a waterfall: frequency across (0-3000 Hz of audio), time downwards, newest at the top. " +
@@ -86,8 +93,8 @@ private val GUIDE = listOf(
         B + "The slot bar shows how far through the slot it is; at the slot's end the audio is decoded (a fraction of a second) and the " +
         "messages appear at the top of the list, newest slot first, with a line between slots.\n" +
         B + "Columns: UTC (the slot's start), dB (signal to noise in 2500 Hz, as WSJT-X reports it), DT (time offset in seconds - if nearly " +
-        "every station shows the same large DT, the phone's clock is out), Hz (audio frequency), the message, and km (distance to the " +
-        "sender's locator, when sent and yours is set).\n" +
+        "every station shows the same large DT, the phone's clock is out), Hz (audio frequency), the message, the sender's country, " +
+        "and km (distance to the sender's locator, when sent and yours is set).\n" +
         B + "CQ calls are green; messages to your callsign amber. All / CQ / To me filters the list; Clear (top right) empties it. The " +
         "list is kept while the app runs, so you can look at another mode and come back.\n" +
         B + "The waterfall above the list shows the audio; FT8 signals are short stepped traces 50 Hz wide.\n" +
@@ -115,7 +122,11 @@ private val GUIDE = listOf(
         "signals are thin lines that drift slowly.\n" +
         B + "Columns: UTC (the slot), dB (signal to noise in 2500 Hz), DT (time offset), MHz (the station's frequency - the IC-705's " +
         "dial plus the audio offset; with the radio not connected, the audio frequency in Hz), Dr (drift, Hz a minute), the station's " +
-        "call, locator and power, and km from your locator.\n" +
+        "call, locator and power with its country under them, and km from your locator.\n" +
+        B + "Map (top right): where the stations are, over the page (decoding carries on). Heard here: the stations this page has " +
+        "decoded, each at its best report. Heard me: the stations that reported your beacon to WSPRnet in the last 24 hours, " +
+        "fetched from WSPRnet's database (through wspr.live; needs the internet). Dots are coloured by the report (dB), with a line " +
+        "from you; it opens zoomed to fit them all - pinch to zoom, drag to move, Fit to see them all again, tap a dot for its details.\n" +
         B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
         B + "Beacon: transmits \"YOURCALL GRID POWER\" (your callsign, 4-character locator and the power chosen) in the chosen share " +
         "of the two-minute slots - 20 % is usual: about one slot in five, picked at random so beacons on the frequency rarely " +
@@ -152,7 +163,7 @@ private val GUIDE = listOf(
         "arrive over several slots; a diamond marks a message's end. Text in [brackets] was decoded with low confidence.\n" +
         B + "Band activity: the text at each audio offset, newest first. Tap a line (or the waterfall) to set the receive " +
         "offset - the red lines mark it and the 50 Hz a JS8 signal takes; the decoder tries there first.\n" +
-        B + "Calls: the stations heard, with signal, locator (from their heartbeats) and distance.\n" +
+        B + "Calls: the stations heard, with country, signal, locator (from their heartbeats) and distance.\n" +
         B + "To me: messages addressed to your callsign (Settings).\n" +
         B + "Clear empties all three.\n" +
         B + "Sending: HB sends a heartbeat (your call and locator), CQ a CQ. Tap a station in Calls to put it in To (and listen on " +
@@ -168,12 +179,16 @@ private val GUIDE = listOf(
         "Callsign); on JS8Call and FT8 / FT4, Log at the top. The form opens over the page, which keeps decoding behind it, filled in " +
         "with the time, the radio's frequency, the mode and the usual report (599 for CW, RTTY and PSK31).\n" +
         B + "The form: call, locator, date and times (UTC - HH:MM or HH:MM:SS), frequency in MHz (the band follows from it; with no " +
-        "frequency choose the band), mode (tap one or type another, e.g. SSB, JT65), reports, name, QTH, your power, a comment, and " +
+        "frequency choose the band), mode (tap one or type another, e.g. SSB, JT65), reports, name, QTH, your power, the country " +
+        "(filled in from the call; type over it if it is wrong), a comment, and " +
         "your call and locator for that contact (for /P or another station). Save is greyed until it makes sense - the line under the " +
         "title says what is missing. Typing a call shows if you have worked it before, when and on what.\n" +
-        B + "The list: newest first, with the time, call, band and mode, then the reports, locator, distance, name, QTH and comment. " +
-        "Search finds a call, locator, name, QTH or comment; the chips show one band or one mode. The line above the list counts the " +
-        "contacts, different stations, locator squares and bands. Tap a contact to change or delete it.\n" +
+        B + "The list: newest first, with the time, call, country, band and mode, then the reports, locator, distance, name, QTH and comment. " +
+        "Search finds a call, locator, name, QTH, comment or country; the chips show one band or one mode. The line above the list counts the " +
+        "contacts, different stations, countries, locator squares and bands. Tap a contact to change or delete it.\n" +
+        B + "Map (beside the counts): the contacts the list shows (so search or choose a band first to map just those), one dot per " +
+        "station coloured by band, with a line from you. It opens zoomed to fit them all; pinch to zoom, drag to move, Fit to see " +
+        "them all again, tap a dot for the contact. A station with no locator logged is placed at its country's middle (a hollow dot).\n" +
         B + "The menu (⋮): Share sends the log file to another app (email, Drive, a logging app). Save to a file puts a copy where you " +
         "choose. Import reads another program's ADIF (.adi) file - contacts already in the log (the same call, band and mode within " +
         "2 minutes) are skipped. Delete all empties the log, after asking.\n" +
@@ -182,6 +197,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.0 (October 2026): countries (cty.dat) on the FT8 / FT4, WSPR, JS8Call and Logbook pages and in the log form " +
+        "(logged as ADIF COUNTRY); a map of the Logbook's contacts and of WSPR stations (heard here, and who heard you), zoomed to " +
+        "fit; opening a mode tunes the radio to that mode's frequency.\n" +
         B + "0.9.1 (October 2026): WSPR receives from the band chips - they tuned 200-700 Hz below the WSPR frequency, outside " +
         "the window wsprd searches - and can upload its spots to WSPRnet (off until turned on). The beacon's power is remembered.\n" +
         B + "0.9.0 (October 2026): the Logbook - every contact listed, searched, filtered by band and mode, changed, deleted, " +

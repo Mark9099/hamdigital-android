@@ -27,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import uk.hamdigital.MainViewModel
 import uk.hamdigital.audio.Spectrum
+import uk.hamdigital.core.Cty
+import uk.hamdigital.core.Locator
 import uk.hamdigital.core.Mode
 import uk.hamdigital.core.WsprBeacon
 import uk.hamdigital.core.WsprDecoder
@@ -57,7 +59,11 @@ fun WsprScreen(vm: MainViewModel) {
         WsprNet.enabled = s.wsprUpload; WsprNet.myCall = s.callsign; WsprNet.myGrid = s.locator } // you, the level, the power reported; spot upload
     val marks = listOf(b.txHz.toFloat() to Pal.Red)     // where the beacon transmits
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
-    ModeFrame("WSPR", { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {
+    var mapOpen by remember { mutableStateOf(false) }   // the map showing
+    ModeFrame("WSPR", { vm.back() }, actions = {
+        TextButton({ mapOpen = true }) { Text("Map", color = Pal.Text2) } // where the stations are
+        TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) }
+    }) {
         RxStatus(rx)                                        // audio, level
         RigBar(Mode.WSPR)                                   // the radio, the bands
         WsprTxPanel(gate) { d -> vm.updateSettings { it.copy(wsprDbm = d) } } // the beacon (the power chosen is kept)
@@ -91,6 +97,43 @@ fun WsprScreen(vm: MainViewModel) {
             }
         }
     }
+    if (mapOpen) WsprMap(list, s.callsign, s.locator) { mapOpen = false } // the stations on a map (decoding carries on behind it)
+}
+
+/** The WSPR map: "Heard here" - the stations this page decoded (best report each) - or "Heard me" - the stations that
+ *  reported your beacon to WSPRnet in the last 24 hours (fetched from wspr.live). Dots coloured by the report (dB). */
+@Composable
+private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClose: () -> Unit) {
+    var tab by remember { mutableIntStateOf(0) }      // 0 heard here, 1 heard me
+    var heard by remember { mutableStateOf<List<WsprNet.HeardBy>?>(null) } // heard me (null: not fetched yet)
+    var err by remember { mutableStateOf("") }        // why it could not be fetched
+    LaunchedEffect(tab) {                             // fetch "heard me" when first shown
+        if (tab == 1 && heard == null) { err = ""
+            try { heard = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { WsprNet.heardMe(myCall) } } catch (e: Exception) { err = "Could not reach WSPRnet's database (wspr.live): ${e.message}" } }
+    }
+    val home = Locator.toLatLon(myGrid)
+    val points = if (tab == 0) spots.filter { it.call != "..." }.groupBy { it.call }.mapNotNull { (call, ss) -> // best report of each
+        val sp = ss.maxBy { it.snr }; val ll = Locator.toLatLon(sp.grid); val ent = if (ll == null) Cty.lookup(call) else null
+        val at = ll ?: ent?.let { it.lat to it.lon } ?: return@mapNotNull null
+        MapPoint(at.first, at.second, call, listOfNotNull("${sp.snr} dB at ${sp.utc} UTC", sp.watts.ifEmpty { null }, sp.grid.ifEmpty { null },
+            sp.km?.let { "$it km" }, Cty.country(call).ifEmpty { null }, if (ss.size > 1) "heard ${ss.size} times" else null).joinToString("  •  "), snrColor(sp.snr), exact = ll != null)
+    } else (heard ?: emptyList()).mapNotNull { hb ->
+        val ll = Locator.toLatLon(hb.grid.take(6)) ?: return@mapNotNull null
+        MapPoint(ll.first, ll.second, hb.call, listOfNotNull("best ${hb.bestSnr} dB", "${hb.reports} report${if (hb.reports == 1) "" else "s"}, last ${hb.lastUtc} UTC",
+            uk.hamdigital.core.Logbook.band(hb.freqHz).ifEmpty { null }, hb.grid, "${hb.km} km", Cty.country(hb.call).ifEmpty { null }).joinToString("  •  "), snrColor(hb.bestSnr))
+    }
+    MapDialog("WSPR map", points, home, onClose,
+        note = when {
+            tab == 0 -> if (spots.isEmpty()) "Nothing heard yet on this page." else "${points.size} stations heard here (their best report). Tap a dot."
+            err.isNotEmpty() -> err
+            heard == null -> "Asking WSPRnet who heard $myCall in the last 24 hours..."
+            else -> "${points.size} stations reported hearing $myCall in the last 24 hours (WSPRnet, through wspr.live). Tap a dot."
+        },
+        top = { Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 2.dp)) {
+            SmallChip("Heard here", tab == 0) { tab = 0 }; SmallChip(if (myCall.isBlank()) "Heard me (set callsign)" else "Heard me", tab == 1) { if (myCall.isNotBlank()) tab = 1 } } },
+        legend = { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { // the report colours
+            listOf(0 to "0 dB +", -10 to "-10", -15 to "-15", -20 to "-20", -25 to "below").forEach { (v, t) -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } } })
 }
 
 @Composable
@@ -103,7 +146,10 @@ private fun SpotRow(d: WsprSpot, firstOfSlot: Boolean) {
         Text("%.1f".format(d.dt), Modifier.width(36.dp), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text(if (d.freqMHz >= 0.1) "%.6f".format(d.freqMHz) else "%.0f Hz".format(d.freqMHz * 1e6), Modifier.width(84.dp), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono) // RF, or audio when the dial is not known
         Text("${d.drift}", Modifier.width(24.dp), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
-        Text("${if (d.call == "...") "<...>" else d.call}  ${d.grid}  ${d.watts}", Modifier.weight(1f), color = Pal.Text, fontSize = 14.sp, fontFamily = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f)) {                 // call, locator, power; the country under them
+            Text("${if (d.call == "...") "<...>" else d.call}  ${d.grid}  ${d.watts}", color = Pal.Text, fontSize = 14.sp, fontFamily = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Cty.country(d.call).takeIf { it.isNotEmpty() }?.let { Text(it, color = Pal.Text2, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        }
         Text(d.km?.let { "$it" } ?: "", color = Pal.Muted, fontSize = 12.sp, fontFamily = mono)
     }
 }

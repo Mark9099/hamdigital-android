@@ -29,10 +29,13 @@ data class Qso(
     val qth: String = "",                             // where they are
     val power: String = "",                           // your transmit power (W)
     val comment: String = "",                         // anything else
+    val country: String = "",                         // their country (DXCC entity; filled in from the call by cty.dat when logged)
     val extra: Map<String, String> = emptyMap(),      // other ADIF fields, kept as read (upper-case names)
     val id: Long = 0,                                 // the log's own number for it (not stored in the file)
 ) {
     val bandName: String get() = band.ifEmpty { Logbook.band(freqHz) } // "40m" ("" if not known)
+    /** The country: as logged, else worked out from the call now (older entries, or cty.dat not loaded when logged). */
+    val countryName: String get() = country.ifEmpty { Cty.country(call) }
 }
 
 object Logbook {
@@ -65,7 +68,7 @@ object Logbook {
     val BANDS = listOf("2190m", "630m", "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m", "2m", "70cm")
 
     /** Add a contact (FT8 / FT4 when complete, or typed in). */
-    @Synchronized fun add(ctx: Context, q: Qso) { init(ctx); _qsos.value = (listOf(q.copy(id = nextId++)) + _qsos.value).sortedByDescending { it.startMs }; save() }
+    @Synchronized fun add(ctx: Context, q: Qso) { init(ctx); _qsos.value = (listOf(q.copy(id = nextId++, country = q.country.ifEmpty { Cty.country(q.call) })) + _qsos.value).sortedByDescending { it.startMs }; save() } // (with its country)
 
     /** Replace contact [q] (same id) with its edited version. */
     @Synchronized fun update(q: Qso) { _qsos.value = _qsos.value.map { if (it.id == q.id) q else it }.sortedByDescending { it.startMs }; save() }
@@ -113,7 +116,7 @@ object Logbook {
     /** The fields the app has boxes for (everything else goes to extra; OPERATOR is kept there too, as well as standing in
      *  for STATION_CALLSIGN when that is missing). */
     private val KNOWN = setOf("CALL", "GRIDSQUARE", "MODE", "SUBMODE", "RST_SENT", "RST_RCVD", "QSO_DATE", "TIME_ON", "QSO_DATE_OFF", "TIME_OFF",
-        "BAND", "FREQ", "STATION_CALLSIGN", "MY_GRIDSQUARE", "NAME", "QTH", "TX_PWR", "COMMENT")
+        "BAND", "FREQ", "STATION_CALLSIGN", "MY_GRIDSQUARE", "NAME", "QTH", "TX_PWR", "COMMENT", "COUNTRY")
 
     private fun record(q: Qso): String {              // one contact as an ADIF record
         val s = java.time.Instant.ofEpochMilli(q.startMs).atZone(ZoneOffset.UTC); val e = java.time.Instant.ofEpochMilli(q.endMs).atZone(ZoneOffset.UTC)
@@ -123,7 +126,7 @@ object Logbook {
             f("QSO_DATE", DATE.format(s)) + f("TIME_ON", TIME.format(s)) + f("QSO_DATE_OFF", DATE.format(e)) + f("TIME_OFF", TIME.format(e)) +
             f("BAND", q.bandName) + f("FREQ", if (q.freqHz > 0) "%.6f".format(java.util.Locale.ROOT, q.freqHz / 1e6) else "") +
             f("STATION_CALLSIGN", q.myCall) + f("MY_GRIDSQUARE", q.myGrid) + f("NAME", q.name) + f("QTH", q.qth) + f("TX_PWR", q.power) +
-            f("COMMENT", q.comment) + q.extra.entries.joinToString("") { (k, v) -> f(k, v) } + "<EOR>\n"
+            f("COMMENT", q.comment) + f("COUNTRY", q.country) + q.extra.entries.joinToString("") { (k, v) -> f(k, v) } + "<EOR>\n"
     }
 
     /** ADIF (.adi) text -> contacts. Fields are <NAME:LENGTH> or <NAME:LENGTH:TYPE> then LENGTH characters of data; any
@@ -163,7 +166,7 @@ object Logbook {
         return Qso(call, r["GRIDSQUARE"]?.trim().orEmpty(), mode, r["RST_SENT"]?.trim().orEmpty(), r["RST_RCVD"]?.trim().orEmpty(), start, end, freq,
             (r["STATION_CALLSIGN"] ?: r["OPERATOR"] ?: "").trim().uppercase(), r["MY_GRIDSQUARE"]?.trim().orEmpty(),
             band = if (bandField == band(freq)) "" else bandField, // (kept only when the frequency does not give it)
-            name = r["NAME"]?.trim().orEmpty(), qth = r["QTH"]?.trim().orEmpty(), power = r["TX_PWR"]?.trim().orEmpty(), comment = r["COMMENT"]?.trim().orEmpty(),
+            name = r["NAME"]?.trim().orEmpty(), qth = r["QTH"]?.trim().orEmpty(), power = r["TX_PWR"]?.trim().orEmpty(), comment = r["COMMENT"]?.trim().orEmpty(), country = r["COUNTRY"]?.trim().orEmpty(),
             extra = r.filterKeys { it !in KNOWN } + if (sideband) mapOf("SUBMODE" to r["SUBMODE"]!!.trim()) else emptyMap()) // (the sideband is kept and written back)
     }
 }

@@ -64,7 +64,7 @@ fun Js8Screen(vm: MainViewModel) {
         TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) }
     }) {
         RxStatus(rx)                                      // audio, level
-        if (!sideways) RigBar(Mode.JS8)                   // the radio, the bands
+        if (!sideways) RigBar(Mode.JS8) else AutoTune(Mode.JS8) // the radio, the bands (sideways: just the tuning)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("Slot %.1f s".format((now % 15_000) / 1000f), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(78.dp))
             LinearProgressIndicator({ (now % 15_000) / 15_000f }, Modifier.weight(1f).height(5.dp), color = Pal.Cyan, trackColor = Pal.Tert)
@@ -98,7 +98,10 @@ fun Js8Screen(vm: MainViewModel) {
                         1 -> {
                             items(calls) { c ->
                                 Row(Modifier.fillMaxWidth().clickable { to = c.call; offset = c.freq; dec.nfqso = c.freq }.padding(vertical = 3.dp)) { // tap: send to this station
-                                    Text(c.call, Modifier.weight(1f), color = Pal.Text, fontSize = 15.sp, fontFamily = FontFamily.Monospace)
+                                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { // call, country
+                                        Text(c.call, color = Pal.Text, fontSize = 15.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                        Text("  " + uk.hamdigital.core.Cty.country(c.call), color = Pal.Text2, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
                                     Text("%+d".format(c.snr), Modifier.width(40.dp), color = Pal.Text2, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
                                     Text(c.grid, Modifier.width(52.dp), color = Pal.Text2, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
                                     Text(c.km?.let { "$it km" } ?: "", Modifier.width(70.dp), color = Pal.Muted, fontSize = 12.sp)

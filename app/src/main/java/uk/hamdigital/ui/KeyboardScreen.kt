@@ -71,7 +71,7 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     }) {
         RxStatus(rx)                                      // audio, level
         if (txMsg.isNotEmpty()) Text(txMsg, color = Pal.Red, fontSize = 12.sp) // why it did not transmit
-        if (!sideways) RigBar(m)                          // the radio, the bands
+        if (!sideways) RigBar(m) else AutoTune(m)         // the radio, the bands (sideways: just the tuning)
         val f = st[0].toFloat()                           // the receive frequency
         val marks = if (k == KbNative.RTTY) listOf(f - shift / 2f to Pal.Red, f + shift / 2f to Pal.Red) else listOf(f to Pal.Red) // tones / carrier
         val wf: @Composable (Modifier) -> Unit = { mod -> Waterfall(spec, mod, marks = marks) { hz -> KbNative.control(k, 0, hz.toDouble()) } } // tap: tune there

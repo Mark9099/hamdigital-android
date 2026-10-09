@@ -30,7 +30,7 @@ fun RigBar(m: Mode) {
     val rig by Ic705.state.collectAsStateWithLifecycle() // the radio
     val on = rig.link == RigState.Link.CONNECTED      // talking to it
     var picked by rememberSaveable(m) { mutableStateOf(m.dialsKHz.firstOrNull { it.first == "20" }?.first ?: m.dialsKHz.first().first) } // band chosen by hand (no radio)
-    val onBand = m.dialsKHz.firstOrNull { abs(it.second * 1000L - rig.freqHz) <= 3000 }?.first // the band the radio is on, for this mode (within 3 kHz)
+    val onBand = m.dialsKHz.firstOrNull { abs(Math.round(it.second * 1000) - rig.freqHz) <= 3000 }?.first // the band the radio is on, for this mode (within 3 kHz)
     val shown = if (on) onBand else picked             // chip lit
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         if (on) {
@@ -41,7 +41,7 @@ fun RigBar(m: Mode) {
             if (rig.tx) Text("  TX", color = Pal.Red, fontWeight = FontWeight.Bold, fontSize = 15.sp)                       // transmitting
         } else {
             val khz = m.dialsKHz.first { it.first == picked }.second // tune by hand
-            Text("Tune %.3f MHz %s".format(khz / 1000.0, if (m == Mode.CW) "CW" else "USB-D"), color = Pal.Text, fontSize = 15.sp, modifier = Modifier.weight(1f, false))
+            Text("Tune %s MHz %s".format(if (khz % 1.0 != 0.0) "%.4f".format(khz / 1000.0) else "%.3f".format(khz / 1000.0), if (m == Mode.CW) "CW" else "USB-D"), color = Pal.Text, fontSize = 15.sp, modifier = Modifier.weight(1f, false))
             Text("  ${rig.message.ifEmpty { "IC-705 not connected" }}", color = Pal.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.weight(1f))
             if (rig.link == RigState.Link.NONE && Ic705.findDevice(ctx) != null) TextButton({ Ic705.connect(ctx) }) { Text("Connect") } // plugged in but not open
         }

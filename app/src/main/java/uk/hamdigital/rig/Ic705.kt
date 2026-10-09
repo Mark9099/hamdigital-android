@@ -192,7 +192,7 @@ object Ic705 {
     }
 
     /** Tune to a mode's dial frequency and set its mode. */
-    fun tune(khz: Int, cw: Boolean) { setFrequency(khz * 1000L); setMode(cw) }
+    fun tune(khz: Double, cw: Boolean) { setFrequency(Math.round(khz * 1000)); setMode(cw) }
 
     /** Key / unkey the transmitter (over WiFi this also opens the transmit audio stream). */
     fun ptt(on: Boolean) { if (net) IcomNet.ptt(on) else send(0x1C, 0x00, if (on) 0x01 else 0x00) }

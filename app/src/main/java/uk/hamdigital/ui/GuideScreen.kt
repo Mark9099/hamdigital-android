@@ -120,8 +120,14 @@ private val GUIDE = listOf(
         B + "Beacon: transmits \"YOURCALL GRID POWER\" (your callsign, 4-character locator and the power chosen) in the chosen share " +
         "of the two-minute slots - 20 % is usual: about one slot in five, picked at random so beacons on the frequency rarely " +
         "collide - starting one second after the even minute. The other slots are received as usual, so you can see who hears " +
-        "you on WSPRnet.org. Choose the power the IC-705 is set to; tap the waterfall to move the beacon's offset (red line, " +
-        "1410-1590 Hz). Beacon: off stops it, ending a transmission in progress.",
+        "you on WSPRnet.org. Choose the power the IC-705 is set to (the app remembers it); tap the waterfall to move the beacon's offset (red line, " +
+        "1410-1590 Hz). Beacon: off stops it, ending a transmission in progress. Your own beacon slots are not decoded.\n" +
+        B + "WSPRnet upload (off until you turn it on): after each slot the spots you heard go to wsprnet.org under your callsign " +
+        "and locator, as WSJT-X sends them - the stations you hear then see you on the WSPRnet map and in its database. A slot " +
+        "with no spots is reported as \"listening\" (with your beacon's details if it is on). It needs the radio's frequency over " +
+        "CI-V and an internet connection; the line beside the switch says what the last upload did.\n" +
+        B + "The band chips tune to WSJT-X's WSPR dial frequencies (e.g. 7.0386 and 14.0956 MHz), which put the WSPR window at " +
+        "1400-1600 Hz of audio.",
 
     "RTTY and PSK31" to
         "Keyboard modes, decoded by fldigi's receivers (the demodulators from the fldigi program).\n\n" +
@@ -176,6 +182,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.9.1 (October 2026): WSPR receives from the band chips - they tuned 200-700 Hz below the WSPR frequency, outside " +
+        "the window wsprd searches - and can upload its spots to WSPRnet (off until turned on). The beacon's power is remembered.\n" +
         B + "0.9.0 (October 2026): the Logbook - every contact listed, searched, filtered by band and mode, changed, deleted, " +
         "shared, saved and imported (ADIF); a Log button on every mode's page; B4 marks stations already worked on FT8 / FT4. A " +
         "page opened while the WiFi link was reconnecting no longer stays at \"No audio\": the status line follows the link.\n" +

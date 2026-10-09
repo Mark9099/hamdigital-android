@@ -8,22 +8,22 @@ enum class Mode(
     val rate: Int,                                    // audio sample rate for its decoder (Hz)
     val source: String,                               // the open-source code its decoder comes from
     val stage: Int,                                   // plan stage that brings the decoder (0 = working)
-    val dialsKHz: List<Pair<String, Int>>,            // band -> usual dial frequency (USB, kHz)
+    val dialsKHz: List<Pair<String, Double>>,         // band -> usual dial frequency (USB, kHz; WSPR's need the 100 Hz: 7038.6)
 ) {
     FT8("FT8", "Weak-signal QSOs in 15 s slots", 12000, "ft8_lib (Kārlis Goba, MIT)", 0,
-        listOf("160" to 1840, "80" to 3573, "60" to 5357, "40" to 7074, "30" to 10136, "20" to 14074, "17" to 18100, "15" to 21074, "12" to 24915, "10" to 28074, "6" to 50313)),
+        listOf("160" to 1840.0, "80" to 3573.0, "60" to 5357.0, "40" to 7074.0, "30" to 10136.0, "20" to 14074.0, "17" to 18100.0, "15" to 21074.0, "12" to 24915.0, "10" to 28074.0, "6" to 50313.0)),
     FT4("FT4", "Fast contest mode in 7.5 s slots", 12000, "ft8_lib (Kārlis Goba, MIT)", 0,
-        listOf("80" to 3575, "40" to 7047, "30" to 10140, "20" to 14080, "17" to 18104, "15" to 21140, "12" to 24919, "10" to 28180, "6" to 50318)),
+        listOf("80" to 3575.0, "40" to 7047.0, "30" to 10140.0, "20" to 14080.0, "17" to 18104.0, "15" to 21140.0, "12" to 24919.0, "10" to 28180.0, "6" to 50318.0)),
     WSPR("WSPR", "Beacon reports in 2-minute slots", 12000, "wsprd from WSJT-X (GPL v3)", 0,
-        listOf("160" to 1836, "80" to 3568, "60" to 5287, "40" to 7038, "30" to 10138, "20" to 14095, "17" to 18104, "15" to 21094, "12" to 24924, "10" to 28124, "6" to 50293)),
+        listOf("160" to 1836.6, "80" to 3568.6, "60" to 5287.2, "40" to 7038.6, "30" to 10138.7, "20" to 14095.6, "17" to 18104.6, "15" to 21094.6, "12" to 24924.6, "10" to 28124.6, "6" to 50293.0)), // (WSJT-X's WSPR dials: the 200 Hz WSPR window is then 1400-1600 Hz of audio, where wsprd looks)
     JS8("JS8Call", "Keyboard chat built on FT8", 12000, "JS8Call decoder (GPL v3)", 0,
-        listOf("80" to 3578, "40" to 7078, "30" to 10130, "20" to 14078, "17" to 18104, "15" to 21078, "12" to 24922, "10" to 28078, "6" to 50318)),
+        listOf("80" to 3578.0, "40" to 7078.0, "30" to 10130.0, "20" to 14078.0, "17" to 18104.0, "15" to 21078.0, "12" to 24922.0, "10" to 28078.0, "6" to 50318.0)),
     RTTY("RTTY", "45.45 baud Baudot teleprinter", 8000, "fldigi (GPL v3)", 0,
-        listOf("80" to 3580, "40" to 7040, "30" to 10140, "20" to 14080, "17" to 18100, "15" to 21080, "10" to 28080)),
+        listOf("80" to 3580.0, "40" to 7040.0, "30" to 10140.0, "20" to 14080.0, "17" to 18100.0, "15" to 21080.0, "10" to 28080.0)),
     PSK31("PSK31", "Keyboard chat in a narrow signal", 8000, "fldigi (GPL v3)", 0,
-        listOf("80" to 3580, "40" to 7040, "30" to 10142, "20" to 14070, "17" to 18100, "15" to 21070, "12" to 24920, "10" to 28120)),
+        listOf("80" to 3580.0, "40" to 7040.0, "30" to 10142.0, "20" to 14070.0, "17" to 18100.0, "15" to 21070.0, "12" to 24920.0, "10" to 28120.0)),
     CW("CW", "Morse decoder", 16000, "HamPropCore CW decoder (from Tab5CWDecoder)", 0,
-        listOf("80" to 3560, "40" to 7030, "30" to 10116, "20" to 14060, "17" to 18086, "15" to 21060, "12" to 24906, "10" to 28060));
+        listOf("80" to 3560.0, "40" to 7030.0, "30" to 10116.0, "20" to 14060.0, "17" to 18086.0, "15" to 21060.0, "12" to 24906.0, "10" to 28060.0));
 
     val working get() = stage == 0                    // decoder in this version?
 }

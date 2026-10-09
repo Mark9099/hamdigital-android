@@ -1,7 +1,7 @@
 // WSPR receive: WSPR transmissions start one second after each even UTC minute and last 110.6 s. This keeps the last
 // 125 s of 12 kHz audio with its UTC time; 114 s after each even minute it saves the slot as a WAV file (as WSJT-X
 // does: named yymmdd_hhmm.wav, from the even minute) and runs wsprd on it in the background. The spots go into a list
-// (newest slot first) kept while the app runs.
+// (newest slot first) kept while the app runs, and - if turned on - to WSPRnet (WsprNet).
 package uk.hamdigital.core
 
 import android.content.Context
@@ -83,6 +83,8 @@ class WsprDecoder private constructor(ctx: Context) {
                 val got = out?.lines()?.mapNotNull { parse(slot, it, dial) } ?: emptyList()
                 _spots.value = (got + _spots.value).take(500) // newest slot first
                 lastCount.value = got.size
+                if (out != null) { val b = WsprBeacon.state.value // to WSPRnet, if turned on (with what the beacon is doing)
+                    WsprNet.slot(out.lines().filter { it.isNotBlank() }, dial, if (b.enabled) b.percent else 0, dial + b.txHz / 1e6, b.dbm) }
             } catch (e: Throwable) { message.value = "WSPR decode failed: ${e.message}" }
             wav.delete(); busy.value = false          // tidy up
         }

@@ -1,5 +1,6 @@
 // The user's settings, kept with DataStore: station (callsign, locator), where the receive audio comes from, whether
-// the startup screen shows, the radio's CI-V address, and transmitting (audio level, licence notice accepted).
+// the startup screen shows, the radio's CI-V address, transmitting (audio level, licence notice accepted), the WiFi
+// link, and WSPR (spot upload, the beacon's reported power).
 package uk.hamdigital.core
 
 import android.content.Context
@@ -33,6 +34,8 @@ data class Settings(
     val wifiPort: Int = 50001,                        // its control port (the radio's default)
     val wifiUser: String = "",                        // its Network User1 name
     val wifiPass: String = "",                        // and password
+    val wsprUpload: Boolean = false,                  // send WSPR spots to WSPRnet (off until you turn it on: it publishes under your call)
+    val wsprDbm: Int = 37,                            // the power the WSPR beacon reports (dBm; 37 = 5 W) - what the radio is set to
 )
 
 class SettingsStore(private val ctx: Context) {
@@ -45,6 +48,7 @@ class SettingsStore(private val ctx: Context) {
     private val kTxOk = booleanPreferencesKey("tx_ok")
     private val kWIp = stringPreferencesKey("wifi_ip"); private val kWPort = intPreferencesKey("wifi_port")
     private val kWUser = stringPreferencesKey("wifi_user"); private val kWPass = stringPreferencesKey("wifi_pass")
+    private val kWsprUp = booleanPreferencesKey("wspr_upload"); private val kWsprDbm = intPreferencesKey("wspr_dbm")
 
     val flow: Flow<Settings> = ctx.store.data.map { p -> // the settings, as they change
         Settings(
@@ -56,6 +60,7 @@ class SettingsStore(private val ctx: Context) {
             txLevel = p[kTxLevel] ?: 30,
             txOk = p[kTxOk] ?: false,
             wifiIp = p[kWIp] ?: "", wifiPort = p[kWPort] ?: 50001, wifiUser = p[kWUser] ?: "", wifiPass = p[kWPass] ?: "",
+            wsprUpload = p[kWsprUp] ?: false, wsprDbm = p[kWsprDbm] ?: 37,
         )
     }
 
@@ -69,6 +74,7 @@ class SettingsStore(private val ctx: Context) {
             p[kTxLevel] = s.txLevel
             p[kTxOk] = s.txOk
             p[kWIp] = s.wifiIp.trim(); p[kWPort] = s.wifiPort; p[kWUser] = s.wifiUser; p[kWPass] = s.wifiPass
+            p[kWsprUp] = s.wsprUpload; p[kWsprDbm] = s.wsprDbm
         }
     }
 }

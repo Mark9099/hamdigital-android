@@ -2,6 +2,28 @@
 
 Newest first.
 
+## 2026-10-09: 0.9.1 (WSPR on the air: dial fix, WSPRnet upload)
+
+- **Root cause: WSPR received nothing from the band chips.** `Mode.dialsKHz` held whole kHz, so WSPR's dials were
+  rounded down: 7038 instead of 7038.6, 14095 instead of 14095.6, 10138 instead of 10138.7, and so on. The 200 Hz
+  WSPR window then sat 200–700 Hz above 1400–1600 Hz of audio, outside the range wsprd searches and the waterfall shows.
+  The decoder tests had passed because they used recordings, not the band chips. Fix: the table holds fractional kHz,
+  with the WSPR dials set to WSJT-X's (1836.6, 3568.6, 5287.2, 7038.6, 10138.7, 14095.6, 18104.6, 21094.6, 24924.6,
+  28124.6, 50293.0). `Ic705.tune` rounds to the Hz, and the band bar shows four decimals where they're needed.
+- **On the air (40 m, WiFi):** 17 spots in the first full slot (13:14 UTC, -6 to -33 dB, the UK, the Netherlands,
+  Germany and Scotland, up to 826 km) and 12 in the 13:20 slot.
+- **WSPRnet upload (`core/WsprNet.kt`, ported from WSJT-X's `Network/wsprnet.cpp`, GPL v3).**
+  - Each slot's `wspr_spots.txt` lines (the file WSJT-X reads) are parsed with WSJT-X's pattern and message types
+    (CALL GRID4 DBM, CALL/x DBM, <CALL> GRID6 DBM; unresolved `<...>` skipped).
+  - Only spots within 10 kHz of the dial are sent. Each is POSTed to wsprnet.org/post/ (https, which takes the same
+    form: checked with a GET) as function=wspr, with rcall/rgrid/rqrg/version/mode=2.
+  - A slot with no spots sends function=wsprstat (tpct, tqrg and dbm from the beacon).
+  - The reply is checked for "spot(s) added", as WSJT-X does.
+  - **Off by default** (Settings `wsprUpload`), because it publishes under the user's call. Switched on the WSPR
+    page, with the last result shown beside the switch.
+- **The beacon's reported power** is now kept in Settings (`wsprDbm`); it used to go back to 5 W at each start.
+- The `<...>` of a call wsprd couldn't resolve shows as `<...>` (was `...`).
+
 ## 2026-10-09: 0.9.0 (Logbook)
 
 - **Asked for by the user:** "a fully functional logbook for QSO contacts".

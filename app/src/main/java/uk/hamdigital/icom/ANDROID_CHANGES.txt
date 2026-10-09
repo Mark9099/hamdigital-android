@@ -30,3 +30,6 @@ Added (0.11.0, for FreeDV voice): IcomAudioUdp.pushTxAudio / startTxStream / sto
 samples and a thread that sends one 20 ms packet (TX_BUFFER_SIZE samples, packed as sendTxAudioData packs them) every
 20 ms while PTT is on, paced to the clock, silence when the queue is empty. FT8CN's sendTxAudioData sends one finished
 recording at a time and cannot take speech as it is made. sendTxAudioData itself is unchanged.
+
+Added (0.12.0, for FreeDV RADE): IcomAudioUdp.txQueued - how many samples are still queued, so the app can wait for the
+end of an over (RADE's end-of-over frame, with the callsign) to go out before it stops the stream and drops PTT.

@@ -150,6 +150,8 @@ object IcomNet {
     fun streamStart() { val r = rig ?: return; if (audioReady(r)) (r.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.startTxStream() }
     /** ... queue 12 kHz 16-bit samples ... */
     fun streamPush(s: ShortArray, n: Int) { val r = rig ?: return; (r.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.pushTxAudio(s, n) }
+    /** ... (samples still waiting in the queue) ... */
+    fun streamQueued(): Int = (rig?.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.txQueued() ?: 0
     /** ... and stop. */
     fun streamStop() { (rig?.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.stopTxStream() }
 }

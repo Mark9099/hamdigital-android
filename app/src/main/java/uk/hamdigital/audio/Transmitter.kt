@@ -153,7 +153,7 @@ object Transmitter {
     fun startStream(ctx: Context, callsign: String, rate: Int, tag: String): Boolean = synchronized(streamLock) {
         blocked(ctx, callsign)?.let { lastError.value = it; return false }
         if (thread != null || streamOn) { lastError.value = "Already transmitting"; return false }
-        owner = tag; stop = false; lastError.value = ""; streamRate = rate; rsT = 0.0; rsPrev = 0
+        owner = tag; stop = false; lastError.value = ""; streamRate = rate; rsT = 0.0; rsPrev = 0; streamFrames = 0
         val link = uk.hamdigital.rig.IcomNet.rig      // (WiFi: the link it goes out on)
         if (Ic705.net) {
             if (link == null || !uk.hamdigital.rig.IcomNet.loggedIn) { lastError.value = "The WiFi link to the IC-705 is down"; return false }
@@ -193,7 +193,21 @@ object Transmitter {
                 while (rsT <= 1.0 && m < out.size) { out[m++] = (rsPrev + (cur - rsPrev) * rsT).toInt().toShort(); rsT += step }
                 rsT -= 1.0; rsPrev = cur }
             uk.hamdigital.rig.IcomNet.streamPush(out, m)
-        } else streamTrack?.let { t -> try { t.write(s, 0, n) } catch (e: Exception) { } }
+        } else streamTrack?.let { t -> try { val w = t.write(s, 0, n); if (w > 0) streamFrames += w } catch (e: Exception) { } }
+    }
+    private var streamFrames = 0L                     // USB: samples written to the sound card this stream
+
+    /** Wait (up to 3 s) until the audio written so far has gone out to the radio - before stopStream, so the end of
+     *  an over (RADE: the end-of-over frame with the callsign) is not cut off. */
+    fun drainStream() {
+        val until = System.currentTimeMillis() + 3000
+        while (streamOn && System.currentTimeMillis() < until) {
+            val left = if (Ic705.net) uk.hamdigital.rig.IcomNet.streamQueued() // WiFi: samples still in the queue
+                       else streamTrack?.let { t -> (streamFrames - (t.playbackHeadPosition.toLong() and 0xFFFFFFFFL)).toInt() } ?: 0 // USB: not yet played
+            if (left <= 0) break
+            Thread.sleep(20)
+        }
+        if (streamOn) Thread.sleep(60)               // (the last packet / buffer on its way)
     }
 
     /** End the stream: PTT off. */

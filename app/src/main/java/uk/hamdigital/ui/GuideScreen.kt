@@ -207,16 +207,21 @@ private val GUIDE = listOf(
         "frequency for its whole length.",
 
     "FreeDV" to
-        "Digital voice with codec2 (David Rowe and others) - the codec and modems of the FreeDV program. Modes 700D (the " +
-        "most used on HF), 700E and 1600; both stations must use the same one. The band chips tune to FreeDV's calling " +
-        "frequencies (7.177, 14.236 MHz ...) in USB-D. A FreeDV signal is a block about 1.1 kHz wide in the middle of the " +
-        "waterfall (grey lines).\n\n" +
+        "Digital voice, as the FreeDV program sends it. Modes: RADE (FreeDV's newest: a neural-network \"radio " +
+        "autoencoder\" by David Rowe and the FreeDV team, with Opus's FARGAN voice - natural-sounding speech, and it copes " +
+        "with weak, fading signals), and codec2's 700D (the most used of the older modes), 700E and 1600. Both stations " +
+        "must use the same one. The band chips tune to FreeDV's calling frequencies (7.177, 14.236 MHz ...) in USB-D. A " +
+        "FreeDV signal is a block in the middle of the waterfall (grey lines): 1.5 kHz wide for RADE, 1.1 kHz for 700D / 700E.\n\n" +
         B + "Receive: the light turns green and the SNR shows when the modem is in sync; the decoded speech plays on the " +
         "phone - headphones or Bluetooth if connected, never into the radio. Play: FreeDV speech, the radio's own audio (to " +
-        "tune, or hear SSB), or off. The squelch keeps it quiet without a FreeDV signal. Stations send a short text " +
-        "alongside the voice (usually their call), shown under the controls.\n" +
+        "tune, or hear SSB), or off. In 700D / 700E / 1600 the squelch keeps it quiet without a FreeDV signal (RADE is quiet " +
+        "anyway). Stations say who they are: in RADE the callsign comes at the end of each over (Callsigns heard - it needs " +
+        "a fair signal, about 10 dB, while the voice gets through far weaker); the older modes send a short text alongside " +
+        "the voice (usually their call).\n" +
         B + "Talk: hold the round button and speak into the phone's microphone, a hand's width away (or set Talk to tap on " +
-        "/ off). Your text (your call) goes out with the voice. The transmit level is Settings > Transmit level (FreeDV's " +
+        "/ off). In RADE your callsign (Settings) is sent when you let go, at the end of the over - the radio stays keyed " +
+        "a moment longer for it. In the older modes your text (your call) goes out with the voice. The transmit level is " +
+        "Settings > Transmit level (FreeDV's " +
         "audio is fuller than the data modes': start low and watch the radio's ALC). Transmitting stops after 5 minutes, " +
         "if the radio link goes, or with Halt.",
 
@@ -247,6 +252,10 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.12.0 (October 2026): FreeDV RADE - FreeDV's newest voice mode (rade_c with Opus's FARGAN vocoder), on the " +
+        "FreeDV page beside 700D, 700E and 1600, receive and talk, with callsigns sent and shown as freedv-gui does. The " +
+        "end of every FreeDV over now goes out in full before the radio unkeys. Releases: the app is on GitHub's Releases " +
+        "page, signed, and installs over the last one.\n" +
         B + "0.11.0 (October 2026): two new modes - SSTV (pictures: receive with Robot36, send with SSTV Encoder 2; LSB on " +
         "80 and 40 m) and FreeDV digital voice (codec2: 700D, 700E, 1600; talk with the phone's microphone).\n" +
         B + "0.10.5 (October 2026): from the on-air tests - JS8Call says \"Sent\" when a message has gone; RTTY and PSK31 no " +

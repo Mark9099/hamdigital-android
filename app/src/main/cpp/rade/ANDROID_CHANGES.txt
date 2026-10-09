@@ -1,0 +1,32 @@
+FreeDV RADE V1 for HF Digital Modes: where these files come from, and what was changed.
+
+src/  rade_c (github.com/freedv/rade_c, BSD 2-Clause: src/LICENSE), commit c8a3dc1 (2026-10-07).
+      The RADE V1 library sources and their headers, unchanged: rade_api, rade_enc, rade_dec (+ their _data weights),
+      rade_dsp, rade_ofdm, rade_bpf, rade_acq, rade_tx, rade_rx. The V2 headers are kept (rade_api.h's struct rade
+      holds V2 state), the V2 sources and weights are not: V2 is pre-release and "not recommended" on air (rade_c
+      README), and its weights are 62 MB more source. The command-line tools and tests are left out.
+
+opus/ Opus (github.com/xiph/opus, BSD 3-Clause: opus/COPYING, opus/AUTHORS), commit 940d4e5 - the one rade_c's
+      cmake/BuildOpus.cmake builds. Only the parts RADE uses: the LPCNet feature extractor (dnn/lpcnet_enc.c, freq.c,
+      burg.c, lpcnet_tables.c, pitchdnn.c), the FARGAN vocoder (dnn/fargan.c), the neural-network core (dnn/nnet.c,
+      nnet_default.c, parse_lpcnet_weights.c), the CELT helpers they call (celt/kiss_fft.c, pitch.c, celt_lpc.c,
+      mathops.c), and the headers they include. The weights (dnn/fargan_data.c, pitchdnn_data.c) are from the model
+      file Opus's autogen.sh downloads for that commit: opus_data-4ed9445b96698bad25d852e912b41495ddfa30c8dbc8a55f9cde5826ed793453.tar.gz
+      (sha256 checked by dnn/download_model.sh).
+      Changed: rade_c's own patches, as its build applies them - src/opus-nnet.h.diff (RADE_EXPORT on the nnet
+      functions) and src/opus-nnet.c.diff (MAX_CONV_INPUTS_ALL raised to 2048). Nothing else.
+
+rade_text.c / rade_text.h  The callsign in the end-of-over frame (LDPC(112,56), CRC-8, 6-bit characters), from wfweb
+      (github.com/adecarolis/wfweb, src/rade_text.c and include/rade_text.h at 83566ec; the files carry a BSD 2-Clause
+      licence): a self-contained port of freedv-gui's rade_text by Mooneer Salem, wire-compatible with it. Unchanged.
+
+Written for this app:
+  config.h          Opus's build settings for this subset (what its configure would write: a float build, no run-time
+                    CPU detection; dnn/vec.h picks NEON on ARM and SSE on x86 at compile time).
+  rade_v2_stubs.c   Stand-ins for the V2 functions rade_api.c refers to (behind RADE_MODE_V2, which the app never sets):
+                    they refuse V2.
+  ../rade_jni.c     The JNI bridge (uk.hamdigital.engine.RadeNative).
+
+Checked on a PC (tools/test/run_rade.sh, zig cc): a round trip of rade_c's input_sample.wav with callsign M7JVY (speech
+at every SNR down to -2 dB; the callsign decoded down to 10 dB, not at 5 dB), and rade_c's FDV_offair.wav (a real
+off-air recording, resampled to 8 kHz): 326 s decoded in 28 s, all four end-of-over callsigns (VK5KVA, VK3TPM).

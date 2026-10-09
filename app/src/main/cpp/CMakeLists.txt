@@ -54,3 +54,13 @@ target_include_directories(hamdigital PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cw ${C
 set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} ${FLDIGI_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
 target_compile_options(hamdigital PRIVATE -O2)       # optimised (the decoders run in real time)
 target_link_libraries(hamdigital codec2_hd log m)    # FreeDV, logcat, maths
+
+# FreeDV RADE V1 (rade/ANDROID_CHANGES.txt): rade_c (BSD-2) and the parts of Opus it uses (BSD-3: LPCNet features,
+# pitch DNN, FARGAN, the nnet core), with their trained weights compiled in. A library of its own, libhamrade.so: the
+# weights are large, and Opus's names stay apart from the other decoders'. Vector code: NEON on ARM, SSE on x86.
+file(GLOB RADE_SOURCES CONFIGURE_DEPENDS rade/src/*.c rade/opus/celt/*.c rade/opus/dnn/*.c rade/*.c)
+add_library(hamrade SHARED ${RADE_SOURCES} rade_jni.c)
+target_include_directories(hamrade PRIVATE rade rade/src rade/opus rade/opus/include rade/opus/celt rade/opus/dnn)
+target_compile_definitions(hamrade PRIVATE HAVE_CONFIG_H IS_BUILDING_RADE_API=1) # rade/config.h; rade_api.h's own exports
+target_compile_options(hamrade PRIVATE -O2 -w)       # optimised (the neural networks run in real time); upstream's warnings are not ours
+target_link_libraries(hamrade log m)                 # logcat, maths

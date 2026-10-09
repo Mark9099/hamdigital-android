@@ -134,6 +134,9 @@ public class IcomAudioUdp extends AudioUdp {
         }, "icom-tx-stream").start();
     }
 
+    /** Samples queued, not yet sent (the app waits for none before it stops: the end of an over is not cut off). */
+    public synchronized int txQueued() { return txCount; }
+
     /** Stop sending the queue (and forget what is left in it). */
     public void stopTxStream() { streaming = false; synchronized (this) { txCount = 0; } }
 

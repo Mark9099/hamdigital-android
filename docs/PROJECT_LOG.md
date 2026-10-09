@@ -2,6 +2,51 @@
 
 Newest first.
 
+## 2026-10-09: 0.12.0 (FreeDV RADE V1)
+
+- **Asked for by the user:** "number 4 and 8" - 8 was FreeDV RADE.
+- **Code chosen:**
+  - rade_c (freedv/rade_c, BSD-2, c8a3dc1): the C port of RADE.
+  - Opus at 940d4e5 (the commit rade_c builds) with its model file (sha256 checked): RADE's speech side, LPCNet
+    features in and FARGAN speech out.
+  - wfweb's `rade_text.c` (BSD-2 header): a self-contained, wire-compatible port of freedv-gui's callsign coder.
+- **V1 only:** rade_c's README says V2 is pre-release and not for on-air use, and its weights are 62 MB more source.
+  `rade_v2_stubs.c` stands in for the V2 functions `rade_api.c` refers to.
+- **Opus subset, not Opus's autotools build:** 15 C files and the headers they include, found from the compiler's
+  dependency output. rade_c's two patches to `dnn/nnet.h` / `nnet.c` are applied. No run-time CPU detection:
+  `dnn/vec.h` picks NEON (ARM) or SSE (x86) at compile time.
+  - Everything is in `cpp/rade/` (95 files, 71 MB of source, nearly all weights).
+  - It builds as its own library, `libhamrade.so`, about 13.8 MB per ABI.
+  - `rade/ANDROID_CHANGES.txt` lists every file's origin.
+- **PC checks** (`tools/test/test_rade.c`, `run_rade.sh`, zig cc):
+  - rade_c's `input_sample.wav`, round trip with callsign M7JVY: speech comes back at every SNR down to -2 dB. The
+    callsign decodes with no noise and at 10 dB, not at 5 dB and below. That is the end-of-over frame's own limit:
+    one frame, 56 bits LDPC coded.
+  - rade_c's `FDV_offair.wav` (real off-air, resampled 48 to 8 kHz): 326 s decoded in 28 s on this PC (SSE2 only),
+    2628 of 2717 frames in sync, and all four end-of-over callsigns: VK5KVA, VK3TPM, VK3TPM, VK5KVA. So the
+    callsign coding matches freedv-gui's.
+  - This PC has no AVX2 (an AVX2 build stopped with "Illegal instruction").
+- **App:**
+  - `rade_jni.c` and `RadeNative` make the same calls as codec2's bridge, plus `txEnd`, the end-of-over frame.
+  - `FreeDv.kt` drives both through an `Engine` interface.
+  - RADE speech runs at 16 kHz (mic and player); the modem stays at 8 kHz.
+  - Receive: real audio x 2/16384 as IQ with imag 0 (rade_api.h). FARGAN starts from 5 frames and is reset at the
+    end of each over.
+  - Transmit: 12 LPCNet frames (120 ms) per modem frame, real part x 16384, the user's level on top.
+  - RADE is the first mode chip and the page's default.
+  - In RADE the squelch chip is hidden, "Callsigns heard" replaces "Text received", and the callsign from
+    Settings is sent (no text field).
+  - Waterfall marks 750-2250 Hz for RADE.
+- **The end of an over was being cut off:** `IcomAudioUdp.stopTxStream` emptied the queue and PTT dropped at once,
+  for every FreeDV mode.
+  - The new `Transmitter.drainStream()` waits, up to 3 s, until the queue is empty (WiFi: `txQueued`) or the sound
+    card has played everything written (USB: `playbackHeadPosition`).
+  - The talk thread sends `txEnd` and drains before `stopStream`.
+- DevTest: the FreeDV round trip now goes through `Engine` (RADE included, speech doubled to 16 kHz, callsign checked);
+  `files/test/rade/*.wav` decodes a recording and reports the share of real time used.
+- APK: the debug build is 100 MB (it was 58 MB); the .so files are stored uncompressed.
+- **Not yet done:** on the phone (no device connected while this was built), on air.
+
 ## 2026-10-09: first release (0.11.1 APK on GitHub)
 
 - **Asked for by the user:** a GitHub release with a signed APK, the way HF Propagation is released.

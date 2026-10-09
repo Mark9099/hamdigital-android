@@ -53,31 +53,50 @@ object DevTest {
         }
     }
 
-    /** FreeDV round trip (as tools/test/test_freedv.c, through the JNI): 8 kHz speech [f] sent in each mode (tx), noise
-     *  added (5 dB in 3 kHz), received (rx): frames in sync, the SNR estimate, the speech's level against the input's. */
+    /** FreeDV round trip (as tools/test/test_freedv.c and test_rade.c, through the JNI): 8 kHz speech [f] sent in each
+     *  mode (tx; RADE: doubled to 16 kHz, callsign M7JVY in the end-of-over frame), noise added (5 dB in 3 kHz), received
+     *  (rx): frames in sync, the SNR estimate, the speech's level against the input's, the text / callsign received. */
     private fun freedv(f: File) {
-        val b = f.readBytes(); val speech = ShortArray(b.size / 2) { ((b[2 * it].toInt() and 0xFF) or (b[2 * it + 1].toInt() shl 8)).toShort() }
+        val b = f.readBytes(); val speech8 = ShortArray(b.size / 2) { ((b[2 * it].toInt() and 0xFF) or (b[2 * it + 1].toInt() shl 8)).toShort() }
+        val speech16 = ShortArray(speech8.size * 2) { k -> val a = speech8[k / 2]; if (k % 2 == 0) a else ((a + speech8[minOf(k / 2 + 1, speech8.size - 1)]) / 2).toShort() } // (linear, 8 -> 16 kHz)
         val rnd = java.util.Random(2)
         for (m in uk.hamdigital.core.FreeDv.FdMode.entries) {
-            val t0 = System.currentTimeMillis()
-            val tx = uk.hamdigital.engine.FreeDvNative.open(m.code); val rx = uk.hamdigital.engine.FreeDvNative.open(m.code)
-            uk.hamdigital.engine.FreeDvNative.squelch(rx, false, 0f)
-            val nsp = uk.hamdigital.engine.FreeDvNative.sizes(tx)[1]
+            val t0 = System.currentTimeMillis(); val e = m.engine
+            val speech = if (m.speechRate == 16000) speech16 else speech8
+            val tx = e.open(); val rx = e.open()
+            e.squelch(rx, false, 0f); e.setText(tx, "M7JVY")
+            val nsp = e.sizes(tx)[1]
             val mod = ArrayList<Short>(); var i = 0
-            while (i < speech.size + 4 * nsp) { val fr = ShortArray(nsp) { k -> if (i + k < speech.size) speech[i + k] else 0 }; uk.hamdigital.engine.FreeDvNative.tx(tx, fr).forEach { mod.add(it) }; i += nsp }
+            while (i < speech.size + 4 * nsp) { val fr = ShortArray(nsp) { k -> if (i + k < speech.size) speech[i + k] else 0 }; e.tx(tx, fr).forEach { mod.add(it) }; i += nsp }
+            e.txEnd(tx).forEach { mod.add(it) }; repeat(8000) { mod.add(0) } // the end of the over, and a second after
+            val tEnc = System.currentTimeMillis() - t0
             var p = 0.0; mod.forEach { p += it * it.toDouble() }; p /= mod.size
             val sd = Math.sqrt(p / Math.pow(10.0, 0.5) * 4000.0 / 3000.0) // noise for 5 dB in 3 kHz
             val noisy = ShortArray(mod.size) { (mod[it] + rnd.nextGaussian() * sd).toInt().coerceIn(-32768, 32767).toShort() }
-            var pos = 0; var frames = 0; var synced = 0; var eout = 0.0; var nout = 0; var snr = 0f
-            while (true) { val nin = uk.hamdigital.engine.FreeDvNative.sizes(rx)[0]; if (pos + nin > noisy.size) break
-                val out = uk.hamdigital.engine.FreeDvNative.rx(rx, noisy.copyOfRange(pos, pos + nin)); pos += nin; frames++
-                val st = uk.hamdigital.engine.FreeDvNative.stats(rx); if (st[0] > 0.5f) synced++; snr = st[1]
+            var pos = 0; var frames = 0; var synced = 0; var eout = 0.0; var nout = 0; var snr = 0f; var text = ""
+            while (true) { val nin = e.sizes(rx)[0]; if (pos + nin > noisy.size) break
+                val out = e.rx(rx, noisy.copyOfRange(pos, pos + nin)); pos += nin; frames++
+                val st = e.stats(rx); if (st[0] > 0.5f) synced++; snr = st[1]; text += e.text(rx)
                 out.forEach { eout += it * it.toDouble() }; nout += out.size }
             var ein = 0.0; speech.forEach { ein += it * it.toDouble() }
-            Log.i(TAG, "freedv ${m.label} (${f.name}): sync $synced of $frames, SNR est %.1f dB, speech %d samples at %+.1f dB of the input, %d ms".format(
-                snr, nout, if (nout > 0) 10 * Math.log10((eout / nout) / (ein / speech.size)) else -99.0, System.currentTimeMillis() - t0))
-            uk.hamdigital.engine.FreeDvNative.close(tx); uk.hamdigital.engine.FreeDvNative.close(rx)
+            Log.i(TAG, "freedv ${m.label} (${f.name}): sync $synced of $frames, SNR est %.1f dB, speech %d samples at %+.1f dB of the input, text [%s], tx %d ms, all %d ms for %.1f s".format(
+                snr, nout, if (nout > 0) 10 * Math.log10((eout / nout) / (ein / speech.size)) else -99.0, text.trim().replace('\r', '|'), tEnc, System.currentTimeMillis() - t0, mod.size / 8000.0))
+            e.close(tx); e.close(rx)
         }
+    }
+
+    /** A RADE recording (8 kHz WAV, e.g. rade_c's FDV_offair.wav resampled) decoded as the FreeDV page does: callsigns,
+     *  frames in sync, speech made, and how long it took against the recording's length (real time?). */
+    private fun rade(f: File) {
+        val s = pcm(f); val e = uk.hamdigital.core.FreeDv.FdMode.RADE.engine; val h = e.open()
+        val t0 = System.currentTimeMillis(); var pos = 0; var frames = 0; var synced = 0; var nout = 0L; var text = ""
+        while (true) { val nin = e.sizes(h)[0]; if (pos + nin > s.size) break
+            nout += e.rx(h, s.copyOfRange(pos, pos + nin)).size; pos += nin; frames++
+            if (e.stats(h)[0] > 0.5f) synced++; text += e.text(h) }
+        val ms = System.currentTimeMillis() - t0
+        Log.i(TAG, "rade ${f.name}: %.1f s, sync %d of %d frames, %.1f s of speech, callsigns [%s], %d ms (%.0f%% of real time)".format(
+            s.size / 8000.0, synced, frames, nout / 16000.0, text.trim().replace('\r', '|'), ms, 100.0 * ms / (s.size / 8.0)))
+        e.close(h)
     }
 
     fun run(ctx: Context) = Thread {
@@ -105,6 +124,7 @@ object DevTest {
         }
         if (dir.resolve("sstv").exists()) sstv()       // SSTV: each mode encoded (SSTV Encoder 2) and decoded (Robot36) - the same picture back?
         dir.resolve("freedv").listFiles { f -> f.name.endsWith(".raw") }?.forEach { freedv(it) } // FreeDV: speech through each mode and back
+        dir.resolve("rade").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { rade(it) } // RADE: a recording off air
         Log.i(TAG, "dev test done")
     }.start()
 }

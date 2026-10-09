@@ -22,7 +22,10 @@ page. The decoders are reused open-source code rather than written from scratch.
 | WSPR | `lib/wsprd` from WSJT-X | GPL v3 | C; needs FFTW (single precision), built from source with the NDK |
 | JS8Call | `JS8.cpp` + `varicode.cpp` from [JS8Call](https://github.com/js8call/js8call) | GPL v3 | C++20 decoder (no longer Fortran). Needs Eigen (vendored), Boost headers (CRC, multi_index) and FFTW. Qt is removed from the parts used |
 | RTTY, PSK31 | `rtty.cxx`, `psk.cxx`, filters from [fldigi](https://github.com/w1hkj/fldigi) | GPL v3 | The modem DSP is separated from fldigi's FLTK UI and settings with small stand-ins |
-| CW | HamPropCore `cw_decoder.cpp` (from Tab5CWDecoder) | own | Shared with HF Propagation and the Tab5 |
+| CW | HamPropCore `cw_decoder.cpp` (from Tab5CWDecoder), copied into `cpp/cw/` | own (GPL v3 here) | Shared with HF Propagation and the Tab5 (`cw/ORIGIN.txt`) |
+| SSTV | [Robot36](https://github.com/xdsopl/robot36) (receive), [SSTV Encoder 2](https://github.com/olgamiller/SSTVEncoder2) (send) | 0BSD, Apache 2.0 | Java, copied unchanged |
+| FreeDV 700D / 700E / 1600 | [codec2](https://github.com/drowe67/codec2) | LGPL 2.1 | `cpp/codec2`, codebooks generated on a PC |
+| FreeDV RADE V1 | [rade_c](https://github.com/freedv/rade_c) + [Opus](https://github.com/xiph/opus) (LPCNet, FARGAN), `rade_text` from [wfweb](https://github.com/adecarolis/wfweb) | BSD 2-Clause, BSD 3-Clause | `cpp/rade` (its own library, libhamrade.so; weights compiled in) |
 | IC-705 USB serial (CI-V) | [usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android) | MIT | CDC-ACM driver for the IC-705's USB serial ports |
 | IC-705 WiFi | FT8CN's `icom` package (Icom network protocol) | MIT | Stage 8 |
 
@@ -54,6 +57,10 @@ package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` 
 11. **FreeDV (0.11.0).** Built; to be checked on the air. Asked for by the user. codec2 (David Rowe and others, LGPL 2.1;
     `cpp/codec2`): 700D, 700E and 1600, with receive to the phone's speaker and transmit from its microphone through a
     new streamed transmit path (FT8CN's WiFi sender gained a 20 ms packet queue).
+12. **FreeDV RADE V1 (0.12.0).** Built; checked on a PC (round trip, and a real off-air recording with its callsigns);
+    to be checked on the phone and on the air. Asked for by the user. rade_c (BSD-2) with the parts of Opus it uses
+    (BSD-3) and wfweb's wire-compatible `rade_text` for the callsign; V2 is left out (pre-release). On the FreeDV page
+    as a fourth mode; the end of an over is drained to the radio before PTT drops (`rade/ANDROID_CHANGES.txt`).
 
 ## Testing
 

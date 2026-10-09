@@ -2,6 +2,32 @@
 
 Newest first.
 
+## 2026-10-09: 0.7.0, stage 7a (FT8 and FT4 transmit)
+
+- `ft8_slot.c` `ft8_encode_audio`: ft8_lib's message encoder and the GFSK synthesiser from its `demo/gen_ft8.c` (MIT),
+  sharing the decoder's callsign hash table. JNI: `Ft8Native.encode`.
+  - PC round trip (`tools/test/test_ft8tx.c`): CQ, grid, report, R-report, RR73, 73 and CQ DX, in FT8 and FT4, each
+    encoded and decoded back exactly (DT 0.0, the frequency asked for).
+  - `<PJ4/K1ABC>`-style hashed compound calls cannot be encoded by ft8_lib.
+- `audio/Transmitter.kt` keys PTT over CI-V (1C 00), then plays the audio to the IC-705's USB sound card (an
+  AudioTrack with its preferred device set to USB), then unkeys. It refuses without a callsign, CI-V or the USB
+  output, so it never transmits through the phone speaker. It has a 130 s watchdog and Halt, keys 60 ms before the
+  audio, and unkeys twice.
+- `core/FtQso.kt`: WSJT-X-style contacts with the six standard messages.
+  - Auto-sequencing from messages to you: grid → report, report → R+report, R-report → RR73 (logged), RR73/RRR → 73
+    (logged), 73 → done.
+  - Calling CQ: the first to answer becomes the DX.
+  - Picking a decode sets the DX, its grid and our report (their SNR), and transmits in the opposite slot parity.
+  - Transmissions start 0.5 s into the slot. The audio is prepared 0.4 s early, after the 14.7 s decode.
+  - After 6 unanswered repeats transmitting turns off. 73 is sent once.
+- `core/Logbook.kt`: an ADIF log (`files/log.adi`) with ADIF mode/submode names (FT4 = MFSK/FT4), band from the dial,
+  and station call/grid. Settings > Logbook shares it through a FileProvider.
+- `ui/TxUi.kt`: the licence notice (once; Settings can show it again), the TRANSMITTING banner with Halt, and the
+  FT8/FT4 panel (TX on/off, Call CQ, Halt, 1st/2nd slot, Tx1–Tx6 chips with the next one lit, status). On the FT8
+  page a tap on a decode answers that station and a tap on the waterfall sets the TX offset (red lines).
+- Settings: transmit level (default 30%) and the licence notice again.
+- Not yet tried on the air. It needs the phone connected to the IC-705 (the phone was disconnected from adb).
+
 ## 2026-10-09: first run on the phone (S23), decoders checked on ARM
 
 - 0.6.0 installed on the S23. The startup screen, menu, and the FT8, JS8 and PSK31 pages work. The microphone feeds

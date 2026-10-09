@@ -81,7 +81,16 @@ private val GUIDE = listOf(
         B + "The waterfall above the list shows the audio; FT8 signals are short stepped traces 50 Hz wide.\n" +
         B + "Expect about three quarters of what WSJT-X decodes from the same audio - ft8_lib does not yet make WSJT-X's extra passes " +
         "for the weakest signals under stronger ones.\n" +
-        B + "Transmitting (answering a CQ, calling CQ, the QSO sequence) comes in stage 7.",
+        B + "Transmitting: tap a CQ (or a station calling you) to answer it, or Call CQ. The contact then runs itself, as in WSJT-X: " +
+        "the six standard messages (Tx1 your call and locator, Tx2 a report, Tx3 R + report, Tx4 RR73, Tx5 73, Tx6 CQ) are chosen " +
+        "from what the other station sends, and the completed contact goes into the logbook (Settings > Logbook). The next message " +
+        "is lit; tap another to send it instead.\n" +
+        B + "TX: on / off enables transmitting in your slots; 1st / 2nd slot chooses them (answering a station picks the other half " +
+        "from theirs). Tap the waterfall to move the TX offset (red lines). Halt stops at once. A message unanswered 6 times turns " +
+        "transmitting off.\n" +
+        B + "The first time, the app asks you to confirm you hold a licence. It transmits only with the IC-705's CI-V connected (to " +
+        "key it) and its USB sound card present - never through the phone's speaker. Set the radio's DATA MOD input to USB, and the " +
+        "transmit level in Settings so the ALC barely moves.",
 
     "WSPR" to
         "Decodes WSPR beacons with wsprd, the decoder inside WSJT-X. WSPR stations transmit for 110.6 seconds starting one second " +
@@ -121,6 +130,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.7.0 (October 2026): FT8 and FT4 transmit: answer a CQ or call CQ with WSJT-X-style automatic sequencing, PTT over " +
+        "CI-V and audio to the IC-705's USB sound card, the licence notice, the ADIF logbook (Settings > Logbook) and the transmit level.\n" +
         B + "0.6.0 (October 2026): JS8Call receive (JS8 Normal) with JS8Call's decoder: Band activity, Calls and To me. Every " +
         "mode now decodes.\n" +
         B + "0.5.0 (October 2026): RTTY and PSK31 decoding with fldigi's receivers: tap the waterfall to tune, AFC, squelch, RTTY " +

@@ -127,6 +127,12 @@ private val GUIDE = listOf(
         "decoded, each at its best report. Heard me: the stations that reported your beacon to WSPRnet in the last 24 hours, " +
         "fetched from WSPRnet's database (through wspr.live; needs the internet). Dots are coloured by the report (dB), on a map " +
         "centred on you; it opens zoomed to fit them all - pinch to zoom, drag to move, Fit to see them all again, tap a dot for its details.\n" +
+        B + "Timeline (under the map, as wspr.rocks's hours slider): a bar for each hour of the last 24 (Heard me), or for each hour " +
+        "or 2-minute slot the page has heard (Heard here: slots when it covers under 3 hours), as tall as the reports in it. Tap or " +
+        "drag along the bars to show just that time's stations - the line above the map says which; Play steps through them one " +
+        "by one; All shows everything again. The map stays where it is while the time changes.\n" +
+        B + "WSPR's usual message carries a 4-character locator (a square about 110 x 75 km here) and each station is placed at " +
+        "its square's centre, so stations in the same square share one dot, labelled \"G4ABC, G7XYZ\" or \"G4ABC +3\"; tap it for them all.\n" +
         B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
         B + "Beacon: transmits \"YOURCALL GRID POWER\" (your callsign, 4-character locator and the power chosen) in the chosen share " +
         "of the two-minute slots - 20 % is usual: about one slot in five, picked at random so beacons on the frequency rarely " +
@@ -199,6 +205,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.2 (October 2026): the WSPR map has a timeline (reports per hour or slot; tap, drag or Play to step through " +
+        "the stations heard in each). Stations sharing a locator square share one dot, labelled with all their calls (they showed " +
+        "as two calls either side of one dot).\n" +
         B + "0.10.1 (October 2026): the maps are centred on you (HF Propagation's centred view), so land keeps its shape close in " +
         "and the line to each station is its great-circle path. The WSPR map shows just the stations, without the lines.\n" +
         B + "0.10.0 (October 2026): countries (cty.dat) on the FT8 / FT4, WSPR, JS8Call and Logbook pages and in the log form " +

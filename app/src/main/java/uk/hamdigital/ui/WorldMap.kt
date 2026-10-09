@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -68,9 +69,11 @@ fun snrColor(snr: Int): Color = Pal.Heat[if (snr >= 0) 5 else if (snr >= -10) 4 
  */
 @Composable
 fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?, onClose: () -> Unit, note: String = "",
-              top: @Composable () -> Unit = {}, legend: @Composable () -> Unit = {}, paths: Boolean = true) { // paths: the lines from you to each station
+              top: @Composable () -> Unit = {}, legend: @Composable () -> Unit = {}, paths: Boolean = true, // paths: the lines from you to each station
+              fitTo: List<MapPoint> = points) {      // what Fit frames (WSPR's timeline shows part of it at a time: the view stays put)
     var fit by remember { mutableIntStateOf(0) }      // Fit pressed (count)
     var picked by remember { mutableStateOf<MapPoint?>(null) } // the dot tapped
+    val dots = remember(points) { merge(points) }     // one dot per place (stations sharing a locator square share its centre)
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = Pal.Bg) {
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
@@ -84,11 +87,11 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
                     Text(note.ifEmpty { "${points.size} station${if (points.size == 1) "" else "s"}. Pinch to zoom, drag to move, tap a dot." }, color = Pal.Muted, fontSize = 12.sp)
                 }
                 Box(Modifier.fillMaxWidth().weight(1f).padding(top = 4.dp)) {
-                    WorldMap(points, home, fit, Modifier.fillMaxSize(), paths) { picked = it }
+                    WorldMap(dots, home, fit, Modifier.fillMaxSize(), paths, fitTo) { picked = it }
                     picked?.let { p ->                // the tapped station's details
                         Surface(color = Color(0xEE111820), shape = RoundedCornerShape(10.dp), modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(10.dp)) {
                             Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
+                                Column(Modifier.weight(1f).heightIn(max = 260.dp).verticalScroll(androidx.compose.foundation.rememberScrollState())) { // (scrolls when many stations share the spot)
                                     Text(p.label, color = p.color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Text(p.detail, color = Pal.Text, fontSize = 13.sp, lineHeight = 17.sp)
                                     if (!p.exact) Text("Locator not known: shown at its country's middle", color = Pal.Muted, fontSize = 11.sp)
@@ -104,24 +107,35 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
     }
 }
 
+/** Stations at the same spot made one dot: a locator is a square and each station is placed at its centre, so all the
+ *  stations reporting the same 4-character square (WSPR's usual message) land on one point - they had a call each side
+ *  of a shared dot (reported). The dot takes the first one's colour (the lists put the strongest first); its label is
+ *  "A, B" or "A +3"; tapped, it lists them all. */
+private fun merge(ps: List<MapPoint>): List<MapPoint> =
+    ps.groupBy { Math.round(it.lat * 1e4) to Math.round(it.lon * 1e4) }.map { (_, g) ->
+        if (g.size == 1) g[0] else MapPoint(g[0].lat, g[0].lon, if (g.size == 2) "${g[0].label}, ${g[1].label}" else "${g[0].label} +${g.size - 1}",
+            "${g.size} stations here (each is placed at the centre of its locator square):\n" + g.joinToString("\n") { "${it.label}: ${it.detail}" }, g[0].color, g.all { it.exact })
+    }
+
 /** The outlines projected for one centre, in unit coordinates (rim = 1): land rings, borders, the graticule. */
 private class Projected(val land: Path, val borders: Path, val grat: Path)
 
 /** The map itself: [points] and [home] (with a line from it to each when [paths]); zooms to fit them when it opens and whenever [fitKey] changes; [onPick] gets a tapped dot. */
 @Composable
-fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, modifier: Modifier, paths: Boolean, onPick: (MapPoint?) -> Unit) {
+fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, modifier: Modifier, paths: Boolean, fitTo: List<MapPoint>, onPick: (MapPoint?) -> Unit) {
     val ctx = LocalContext.current
     val world = remember { WorldData.load(ctx) }      // the outlines (cached)
-    val centre = home ?: points.takeIf { it.isNotEmpty() }?.let { ps -> ps.map { it.lat }.average() to ps.map { it.lon }.average() } ?: (0.0 to 0.0) // you (else the stations' middle)
+    val centre = home ?: fitTo.takeIf { it.isNotEmpty() }?.let { ps -> ps.map { it.lat }.average() to ps.map { it.lon }.average() } ?: (0.0 to 0.0) // you (else the stations' middle)
     val proj = remember(centre) { CentredMap(centre.first, centre.second) }
     val shapes = remember(proj, world) { project(world, proj) } // projected once for this centre
     val pts = remember(proj, points) { points.map { p -> FloatArray(2).also { proj.unit(p.lat, p.lon, it) } } } // the stations, unit coordinates
+    val fitPts = remember(proj, fitTo) { fitTo.map { p -> FloatArray(2).also { proj.unit(p.lat, p.lon, it) } } } // what Fit frames
     var w by remember { mutableFloatStateOf(0f) }; var h by remember { mutableFloatStateOf(0f) } // the view's size
     var zoom by remember { mutableFloatStateOf(1f) }  // 1 = the whole world (the rim) fits the shorter side
     var ox by remember { mutableFloatStateOf(0f) }; var oy by remember { mutableFloatStateOf(0f) } // the view's centre, in unit coordinates
-    LaunchedEffect(w, h, fitKey, pts) {               // fit: open, Fit, new stations (e.g. the other WSPR list)
+    LaunchedEffect(w, h, fitKey, fitPts) {            // fit: open, Fit, new stations (e.g. the other WSPR list)
         if (w <= 0f || h <= 0f) return@LaunchedEffect
-        val xs = pts.map { it[0] } + listOfNotNull(home?.let { 0f }); val ys = pts.map { it[1] } + listOfNotNull(home?.let { 0f }) // (you are at 0, 0)
+        val xs = fitPts.map { it[0] } + listOfNotNull(home?.let { 0f }); val ys = fitPts.map { it[1] } + listOfNotNull(home?.let { 0f }) // (you are at 0, 0)
         if (xs.isEmpty()) { zoom = 1f; ox = 0f; oy = 0f; return@LaunchedEffect }
         val bw = max(xs.max() - xs.min(), 0.012f); val bh = max(ys.max() - ys.min(), 0.012f) // (at least ~250 km across: one station alone is not a dot filling the screen)
         val r0 = min(w, h) / 2                        // the rim's radius at zoom 1

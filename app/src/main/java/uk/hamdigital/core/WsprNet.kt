@@ -75,24 +75,24 @@ object WsprNet {
         }
     }
 
-    /** A station that reported hearing your beacon (from WSPRnet's database). */
-    data class HeardBy(val call: String, val grid: String, val bestSnr: Int, val reports: Int, val lastUtc: String, val freqHz: Long, val km: Int)
+    /** One report of your beacon by another station (from WSPRnet's database): when (UTC ms), who, where, how strong. */
+    data class HeardBy(val ms: Long, val call: String, val grid: String, val snr: Int, val freqHz: Long, val km: Int)
 
-    /** Who heard [call] in the last [hours] hours (WSPRnet's spots, through wspr.live's public database), best report
-     *  first. Blocking (call it off the main thread); throws if the database cannot be reached. */
+    /** Every report of [call] in the last [hours] hours (WSPRnet's spots, through wspr.live's public database), oldest
+     *  first - for the WSPR map and its timeline. Blocking (call it off the main thread); throws if the database cannot be reached. */
     fun heardMe(call: String, hours: Int = 24): List<HeardBy> {
         val c = call.uppercase().filter { it.isLetterOrDigit() || it == '/' } // (only a callsign goes into the query)
         if (c.isEmpty()) return emptyList()
-        val sql = "SELECT rx_sign, rx_loc, max(snr), count(), toString(max(time)), max(frequency), max(distance) FROM wspr.rx " +
-            "WHERE tx_sign = '$c' AND time > now() - INTERVAL $hours HOUR GROUP BY rx_sign, rx_loc ORDER BY max(snr) DESC LIMIT 1000 FORMAT TSV"
+        val sql = "SELECT toUnixTimestamp(time), rx_sign, rx_loc, snr, frequency, distance FROM wspr.rx " +
+            "WHERE tx_sign = '$c' AND time > now() - INTERVAL $hours HOUR ORDER BY time LIMIT 20000 FORMAT TSV"
         val u = URL("https://db1.wspr.live/?query=" + URLEncoder.encode(sql, "UTF-8"))
         val conn = u.openConnection() as HttpURLConnection
         try {
             conn.connectTimeout = 15_000; conn.readTimeout = 30_000
             if (conn.responseCode != 200) throw Exception("HTTP ${conn.responseCode}")
             return conn.inputStream.bufferedReader().readLines().mapNotNull { ln ->
-                val f = ln.split('\t'); if (f.size < 7) return@mapNotNull null
-                HeardBy(f[0], f[1], f[2].toIntOrNull() ?: 0, f[3].toIntOrNull() ?: 0, f[4].drop(11).take(5), f[5].toLongOrNull() ?: 0, f[6].toIntOrNull() ?: 0)
+                val f = ln.split('\t'); if (f.size < 6) return@mapNotNull null
+                HeardBy((f[0].toLongOrNull() ?: return@mapNotNull null) * 1000, f[1], f[2], f[3].toIntOrNull() ?: 0, f[4].toLongOrNull() ?: 0, f[5].toIntOrNull() ?: 0)
             }
         } finally { conn.disconnect() }
     }

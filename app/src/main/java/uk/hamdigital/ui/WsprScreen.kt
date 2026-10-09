@@ -6,6 +6,11 @@
 package uk.hamdigital.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.drawText
+import kotlin.math.max
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -100,8 +105,27 @@ fun WsprScreen(vm: MainViewModel) {
     if (mapOpen) WsprMap(list, s.callsign, s.locator) { mapOpen = false } // the stations on a map (decoding carries on behind it)
 }
 
-/** The WSPR map: "Heard here" - the stations this page decoded (best report each) - or "Heard me" - the stations that
- *  reported your beacon to WSPRnet in the last 24 hours (fetched from wspr.live). Dots coloured by the report (dB). */
+/** One report for the WSPR map: when (UTC ms), the station, its locator, the report (dB), what else to say, distance. */
+private class Rpt(val ms: Long, val call: String, val grid: String, val snr: Int, val extra: String, val km: Int?)
+
+private fun hhmm(ms: Long) = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneOffset.UTC).let { "%02d:%02d".format(it.hour, it.minute) } // "14:02"
+
+/** One dot per station: its best report among [rs] (at its locator, else its country's middle), with what was heard;
+ *  strongest first (stations sharing a locator square share a dot, which takes the first one's colour). */
+private fun dots(rs: List<Rpt>): List<MapPoint> = rs.groupBy { it.call }.mapNotNull { (call, xs) ->
+    val r = xs.maxBy { it.snr }; val ll = Locator.toLatLon(r.grid.take(6)); val ent = if (ll == null) Cty.lookup(call) else null
+    val at = ll ?: ent?.let { it.lat to it.lon } ?: return@mapNotNull null
+    r.snr to MapPoint(at.first, at.second, call, listOfNotNull("${r.snr} dB at ${hhmm(r.ms)} UTC", r.extra.ifEmpty { null }, r.grid.ifEmpty { null },
+        r.km?.let { "$it km" }, Cty.country(call).ifEmpty { null }, if (xs.size > 1) "${xs.size} reports" else null).joinToString("  •  "), snrColor(r.snr), exact = ll != null)
+}.sortedByDescending { it.first }.map { it.second }
+
+/**
+ * The WSPR map: "Heard here" - the stations this page decoded - or "Heard me" - the stations that reported your beacon
+ * to WSPRnet in the last 24 hours (fetched from wspr.live). Dots coloured by the report (dB), no path lines. Under it a
+ * timeline, as wspr.rocks's hours slider: the reports in each hour (or each 2-minute slot, when they cover under 3
+ * hours) as bars; tap or drag along it to show just that hour's stations, Play to step through, All for everything. The
+ * view stays put while the time changes (Fit frames all the stations of the list).
+ */
 @Composable
 private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClose: () -> Unit) {
     var tab by remember { mutableIntStateOf(0) }      // 0 heard here, 1 heard me
@@ -111,30 +135,86 @@ private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClo
         if (tab == 1 && heard == null) { err = ""
             try { heard = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { WsprNet.heardMe(myCall) } } catch (e: Exception) { err = "Could not reach WSPRnet's database (wspr.live): ${e.message}" } }
     }
-    val home = Locator.toLatLon(myGrid)
-    val points = if (tab == 0) spots.filter { it.call != "..." }.groupBy { it.call }.mapNotNull { (call, ss) -> // best report of each
-        val sp = ss.maxBy { it.snr }; val ll = Locator.toLatLon(sp.grid); val ent = if (ll == null) Cty.lookup(call) else null
-        val at = ll ?: ent?.let { it.lat to it.lon } ?: return@mapNotNull null
-        MapPoint(at.first, at.second, call, listOfNotNull("${sp.snr} dB at ${sp.utc} UTC", sp.watts.ifEmpty { null }, sp.grid.ifEmpty { null },
-            sp.km?.let { "$it km" }, Cty.country(call).ifEmpty { null }, if (ss.size > 1) "heard ${ss.size} times" else null).joinToString("  •  "), snrColor(sp.snr), exact = ll != null)
-    } else (heard ?: emptyList()).mapNotNull { hb ->
-        val ll = Locator.toLatLon(hb.grid.take(6)) ?: return@mapNotNull null
-        MapPoint(ll.first, ll.second, hb.call, listOfNotNull("best ${hb.bestSnr} dB", "${hb.reports} report${if (hb.reports == 1) "" else "s"}, last ${hb.lastUtc} UTC",
-            uk.hamdigital.core.Logbook.band(hb.freqHz).ifEmpty { null }, hb.grid, "${hb.km} km", Cty.country(hb.call).ifEmpty { null }).joinToString("  •  "), snrColor(hb.bestSnr))
+    val all = remember(tab, spots, heard) {           // the list's reports
+        if (tab == 0) spots.filter { it.call != "..." }.map { Rpt(it.slotMs, it.call, it.grid, it.snr, it.watts, it.km) }
+        else (heard ?: emptyList()).map { Rpt(it.ms, it.call, it.grid, it.snr, uk.hamdigital.core.Logbook.band(it.freqHz), it.km) }
     }
-    MapDialog("WSPR map", points, home, onClose,
+    // The timeline's span and steps: Heard me - the last 24 hours, by the hour; Heard here - what the page has heard, by
+    // the 2-minute slot if that is under 3 hours, else by the hour.
+    val hour = 3_600_000L; val slot = 120_000L
+    val (start, step, bins) = remember(tab, all) {
+        if (tab == 1) { val end = (System.currentTimeMillis() / hour + 1) * hour; Triple(end - 24 * hour, hour, 24) }
+        else if (all.isEmpty()) Triple(0L, slot, 0)
+        else { val first = all.minOf { it.ms }; val last = all.maxOf { it.ms } + slot
+            if (last - first <= 3 * hour) Triple(first / slot * slot, slot, ((last - first / slot * slot + slot - 1) / slot).toInt())
+            else { val s0 = first / hour * hour; Triple(s0, hour, ((last - s0 + hour - 1) / hour).toInt()) } }
+    }
+    var sel by remember(tab) { mutableStateOf<Int?>(null) } // the time chosen (null: all)
+    var playing by remember(tab) { mutableStateOf(false) } // stepping through
+    LaunchedEffect(playing) {                         // Play: one step every 0.8 s, from the start (or the time chosen), to the end
+        if (!playing) return@LaunchedEffect
+        var i = sel?.let { if (it >= bins - 1) 0 else it } ?: 0
+        while (playing && i < bins) { sel = i; kotlinx.coroutines.delay(800); i++ }
+        playing = false
+    }
+    val shown = sel?.let { b -> all.filter { it.ms >= start + b * step && it.ms < start + (b + 1) * step } } ?: all // the reports for the time chosen
+    val points = remember(shown) { dots(shown) }; val every = remember(all) { dots(all) }
+    val period = sel?.let { b -> "${hhmm(start + b * step)}-${hhmm(start + (b + 1) * step)} UTC: " } ?: ""
+    MapDialog("WSPR map", points, Locator.toLatLon(myGrid), onClose,
         note = when {
-            tab == 0 -> if (spots.isEmpty()) "Nothing heard yet on this page." else "${points.size} stations heard here (their best report). Tap a dot."
+            tab == 0 -> if (spots.isEmpty()) "Nothing heard yet on this page." else "$period${points.size} stations heard here (${shown.size} reports). Tap a dot."
             err.isNotEmpty() -> err
             heard == null -> "Asking WSPRnet who heard $myCall in the last 24 hours..."
-            else -> "${points.size} stations reported hearing $myCall in the last 24 hours (WSPRnet, through wspr.live). Tap a dot."
+            else -> "$period${points.size} stations reported hearing $myCall (${shown.size} reports) - WSPRnet, last 24 hours. Tap a dot."
         },
         top = { Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 2.dp)) {
             SmallChip("Heard here", tab == 0) { tab = 0 }; SmallChip(if (myCall.isBlank()) "Heard me (set callsign)" else "Heard me", tab == 1) { if (myCall.isNotBlank()) tab = 1 } } },
-        legend = { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { // the report colours
-            listOf(0 to "0 dB +", -10 to "-10", -15 to "-15", -20 to "-20", -25 to "below").forEach { (v, t) -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } } },
-        paths = false)                                    // (no lines from you: just where the stations are)
+        legend = { Column {
+            if (bins > 0) Timeline(all.map { it.ms }, start, step, bins, sel, playing, { sel = it; playing = false }, { playing = !playing })
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { // the report colours
+                listOf(0 to "0 dB +", -10 to "-10", -15 to "-15", -20 to "-20", -25 to "below").forEach { (v, t) -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } }
+        } },
+        paths = false, fitTo = every)                     // (no lines from you; the view frames every station of the list)
+}
+
+/**
+ * The timeline: a bar per [step] from [start] ([bins] of them) - the reports in it, of [times] - with the time chosen
+ * ([sel], null = all) lit; tap or drag along the bars to choose ([onSel]); Play steps through ([onPlay]); All clears.
+ */
+@Composable
+private fun Timeline(times: List<Long>, start: Long, step: Long, bins: Int, sel: Int?, playing: Boolean, onSel: (Int?) -> Unit, onPlay: () -> Unit) {
+    val counts = remember(times, start, step, bins) { IntArray(bins).also { c -> times.forEach { t -> val i = ((t - start) / step).toInt(); if (i in 0 until bins) c[i]++ } } }
+    val top = max(1, counts.maxOrNull() ?: 1)         // the tallest bar
+    val tm = androidx.compose.ui.text.rememberTextMeasurer()
+    Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SmallChip(if (playing) "Stop" else "Play", playing) { onPlay() } // step through the hours (slots)
+            SmallChip("All", sel == null) { onSel(null) }
+            Text(if (step >= 3_600_000L) "Reports per hour (UTC) - tap or drag to show one hour" else "Reports per 2-minute slot (UTC) - tap or drag to show one",
+                color = Pal.Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        val pick: (Float, Float) -> Unit = { x, w -> onSel(((x / w) * bins).toInt().coerceIn(0, bins - 1)) } // x -> the bar under it
+        androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(62.dp).padding(top = 4.dp)
+            .pointerInput(bins) { detectTapGestures { p -> pick(p.x, size.width.toFloat()) } }
+            .pointerInput(bins) { detectHorizontalDragGestures { ch, _ -> pick(ch.position.x, size.width.toFloat()) } }) {
+            val labH = 14.sp.toPx(); val barArea = size.height - labH // bars above, times below
+            val bw = size.width / bins                    // a bar's width
+            for (i in 0 until bins) {
+                val hgt = if (counts[i] == 0) 0f else max(2f, barArea * counts[i] / top) // (a report or two still shows)
+                val col = when { sel == null -> Pal.Accent; sel == i -> Pal.Cyan; else -> Pal.Tert } // the chosen one lit
+                drawRect(col, androidx.compose.ui.geometry.Offset(i * bw + 1f, barArea - hgt), androidx.compose.ui.geometry.Size(max(1f, bw - 2f), hgt))
+            }
+            drawLine(Pal.Dim, androidx.compose.ui.geometry.Offset(0f, barArea), androidx.compose.ui.geometry.Offset(size.width, barArea), 1f) // the axis
+            val every = if (step >= 3_600_000L) 6 else max(1, bins / 6) // a time under every few bars
+            val style = androidx.compose.ui.text.TextStyle(color = Pal.Muted, fontSize = 10.sp)
+            for (i in 0 until bins step every) {
+                val t = tm.measure(hhmm(start + i * step), style)
+                val x = (i * bw).coerceAtMost(size.width - t.size.width)
+                drawText(t, topLeft = androidx.compose.ui.geometry.Offset(x, barArea + 1f))
+            }
+        }
+    }
 }
 
 @Composable

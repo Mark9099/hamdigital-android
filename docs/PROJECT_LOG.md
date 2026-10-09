@@ -2,6 +2,24 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.2 (WSPR map timeline; one dot per shared locator square)
+
+- **Asked for by the user:** a timeline on the WSPR map like wspr.rocks's. Its help describes a map "hours" slider
+  that shows the spots of one hour of the day, with [auto] to step through and 2-minute slots on request.
+  - Under the map: bars of reports per hour (Heard me: the last 24 h, ending at the next hour) or per 2-minute slot
+    (Heard here, when it covers under 3 h; else per hour).
+  - Tap or drag along the bars to show one bin's stations. Play steps 0.8 s per bin; All clears the choice.
+  - The note line says "14:00-15:00 UTC: N stations (M reports)".
+  - `MapDialog` and `WorldMap` take `fitTo` (every station of the list), so the view doesn't jump as the time changes.
+  - "Heard me" (`WsprNet.heardMe`) now fetches every report (`toUnixTimestamp(time)`, rx_sign, rx_loc, snr,
+    frequency, distance; limit 20000) instead of one row per station, so the timeline can count them.
+- **Asked by the user:** "when zooming in on heard here, why do the locations seem to have two call signs?" WSPR's
+  type-1 message carries a 4-character locator, and each station is placed at its square's centre. So every station
+  in a square shared one point, and the label placer put one call on each side of the shared dot (others were
+  hidden). Fix: `merge()` in `MapDialog` makes stations at the same point one dot, labelled "A, B" or "A +N", with
+  its details listing each (the card scrolls). The WSPR list puts the strongest first, so a shared dot takes its
+  colour. The Logbook map benefits too.
+
 ## 2026-10-09: 0.10.1 (maps centred on you; 0.10.0 checked on the phone)
 
 - **Asked for by the user:** use HF Propagation's centred map, which shows the land shapes better close in.

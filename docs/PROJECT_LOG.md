@@ -2,6 +2,51 @@
 
 Newest first.
 
+## 2026-10-09: 0.9.0 (Logbook)
+
+- **Asked for by the user:** "a fully functional logbook for QSO contacts".
+- **`core/Logbook.kt` (rewritten).** The log stays an ADIF file (`log.adi`), but the whole log is now held in memory
+  (a StateFlow, newest first) and rewritten after each change. Each save writes a temporary file and renames it over
+  the old one. Features:
+  - add, update, delete and delete-all;
+  - import, skipping a contact with the same call, band and mode within 2 minutes;
+  - `withCall`, for "worked before".
+  
+  `Qso` gained a band (kept only when there is no frequency), name, QTH, power, comment and `extra`.
+- **ADIF parser.**
+  - Header handling, `<NAME:LEN[:TYPE]>` fields, case-insensitive names, `<EOR>`.
+  - TIME_ON as HHMM or HHMMSS; a contact past midnight with no end date.
+  - Submodes: FT4/JS8 under MFSK, PSK31 under PSK, and SSB with its USB/LSB sideband kept.
+  - OPERATOR used when STATION_CALLSIGN is missing.
+  - Fields the app has no box for are kept in `extra` and written back unchanged.
+- **Logbook page (`ui/LogbookScreen.kt`), opened from the menu.**
+  - A search box, band and mode chips, and a summary line (contacts, stations, squares, bands).
+  - Rows with time, call, band, mode, reports, locator, km, name, QTH and comment.
+  - Add; tap a row to edit.
+  - The ⋮ menu: share (FileProvider), save to a file (SAF CreateDocument), import (SAF OpenDocument), delete all (asks first).
+- **`QsoEditor`.**
+  - A full-screen form, opened as a dialog so a mode page keeps decoding behind it.
+  - Validation, with what's missing shown under the title.
+  - A "worked before" line; delete asks first.
+  - New contacts are filled in with the time, the radio's frequency, the mode and the usual report.
+- **Log buttons on the mode pages:**
+  - a Log chip in the send box on CW, RTTY and PSK31 (in the top bar when sideways);
+  - Log in the top bar on JS8 and FT8/FT4, where FT8 fills in the contact in progress (`FtQso.draft()`, which
+    auto-logging also uses).
+- **FT8/FT4 list:** "B4" marks a sender already in the log on this band and mode.
+- **Bug found while testing (pre-existing).** A page opened while the WiFi link was reconnecting kept "No audio" and
+  the error for good: `AudioIn.start` returned the link status as an error, although the capture was running.
+  `AudioIn.start` now returns no error for WiFi, and `RxStatus` shows the link's state live (amber) while it is down.
+- **Tested on the S23.**
+  - DevTest ADIF round trip (`files/test/adif`): a WSJT-X-style record, a CW record with no frequency and LoTW
+    fields, an SSB contest record past midnight with N1MM fields, an MFSK/FT4 record with OPERATOR, and a record with
+    no call (skipped). All 4 read correctly, and write → read is identical.
+  - On the air: B4 showed on a live decode of F6FHZ (in the log on 40 m FT8).
+  - On the page: edit (saved to the file), import through the file picker (4 added), import again (1 added, 3
+    skipped), search, delete (confirmed, gone from the file), and the CW page's Log form filled in (CW, 599/599).
+  - The user's real log (M7CYY plus M0IEP, F5PEG and F6FHZ, worked by the user at 12:01–12:22 UTC) was backed up
+    first (`files/log_backup_before_0.9.adi` on the phone). The test entries are to be removed by restoring it.
+
 ## 2026-10-09: 0.8.6 (first complete FT8 contact; own transmissions no longer decoded)
 
 - **On the air, 40 m FT8 over WiFi:**

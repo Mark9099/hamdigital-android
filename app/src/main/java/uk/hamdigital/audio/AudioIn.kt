@@ -19,6 +19,7 @@ object AudioIn {
     @Volatile var running = false; private set        // capturing
     @Volatile var level = 0f; private set             // input peak, 0..1 of full scale (fast up, slow down)
     @Volatile var sourceName = ""; private set        // where the audio is from, for the page's status line
+    @Volatile var wifi = false; private set           // the audio comes over the WiFi link (it may be down for a while: RxStatus says so)
     @Volatile var rate = 0; private set               // sample rate now (Hz)
     private var thread: Thread? = null                // the capture thread
     @Volatile var owner: Any? = null; private set     // the page that started it (only it stops it)
@@ -42,9 +43,10 @@ object AudioIn {
         stopNow()                                     // one capture at a time (the previous page's)
         if (choice == AudioChoice.WIFI) {             // the radio's audio over WiFi (IcomNet): no recording here
             netSink = sink; netBlock = ShortArray(block); netFill = 0; netPos = 0.0; netStep = 12000.0 / sampleRate // resample 12 kHz to the page's rate
-            sourceName = "IC-705 (WiFi)"; rate = sampleRate; owner = who; running = true
-            return if (uk.hamdigital.rig.IcomNet.loggedIn) null else "WiFi: ${uk.hamdigital.rig.IcomNet.status.value.ifEmpty { "not connected - Settings > Connection" }}"
+            sourceName = "IC-705 (WiFi)"; rate = sampleRate; owner = who; running = true; wifi = true
+            return null                               // (ready for the audio whenever the link is up: a link that is down, or reconnecting, is shown live by RxStatus - 0.9.0: it used to be a fixed error, so a page opened during a reconnect stayed "No audio")
         }
+        wifi = false                                  // (a recording on the phone)
         if (!allowed(ctx)) return "Audio not allowed - Android Settings > Apps > HF Digital Modes > Permissions"
         val usb = if (choice == AudioChoice.MIC) null else usbInput(ctx) // the radio's sound card?
         if (choice == AudioChoice.USB && usb == null) return "IC-705 not found - plug in its USB lead (or Settings > Receive audio)"

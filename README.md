@@ -2,7 +2,8 @@
 
 HF Digital Modes is an all-in-one Android app for amateur-radio HF digital modes: FT8, FT4, WSPR, JS8Call, RTTY, PSK31
 and CW. It is made for the Icom IC-705, connected to the phone or tablet by a single USB lead. Each mode has its own
-page, reached from a menu after the startup screen. The look matches the HF Propagation app.
+page, reached from a menu after the startup screen. The look matches the HF Propagation app. A logbook keeps every
+contact in ADIF, and can import, edit, search, share and save it.
 
 The decoders are reused open-source code: ft8_lib, WSJT-X's wsprd, the JS8Call decoder, fldigi's modems, and the CW
 decoder shared with HF Propagation. See [docs/PLAN.md](docs/PLAN.md) for what comes from where and the stage plan, and

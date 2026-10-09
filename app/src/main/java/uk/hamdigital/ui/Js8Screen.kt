@@ -58,7 +58,11 @@ fun Js8Screen(vm: MainViewModel) {
     val txStatus by Js8Tx.status.collectAsStateWithLifecycle()
     remember(s, offset) { Js8Tx.attach(ctx); Js8Tx.myCall = s.callsign; Js8Tx.myGrid = s.locator; Js8Tx.level = s.txLevel / 100f; Js8Tx.txHz = offset } // you, the level, the offset
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
-    ModeFrame("JS8Call", { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {
+    var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
+    ModeFrame("JS8Call", { vm.back() }, actions = {
+        TextButton({ logging = newQso("JS8", s).copy(call = to) }) { Text("Log", color = Pal.Text2) } // a new contact (with the station you are sending to)
+        TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) }
+    }) {
         RxStatus(rx)                                      // audio, level
         if (!sideways) RigBar(Mode.JS8)                   // the radio, the bands
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
@@ -117,6 +121,7 @@ fun Js8Screen(vm: MainViewModel) {
             }
         }
     }
+    logging?.let { QsoEditor(it, true) { logging = null } } // the log form, over the page (decoding carries on)
 }
 
 @Composable

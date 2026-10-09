@@ -44,6 +44,10 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
 7. **Transmit (0.7.0-0.7.3).** Done. PTT over CI-V and transmit audio to the IC-705's USB sound card. FT8 and FT4 QSO sequencing, the WSPR
    beacon, RTTY and PSK31 typing, JS8 messages, and CW keyed over CI-V.
 8. **WiFi link (0.8.0).** Done. The IC-705's network protocol (from FT8CN's `icom` package) for audio and CI-V without a lead.
+9. **Logbook (0.9.0).** Done. Asked for by the user after the first on-air contacts. Every contact is kept in ADIF. The
+   Logbook page lists, searches, filters by band and mode, edits and deletes contacts, and shares, saves and imports
+   ADIF files (skipping duplicates, keeping unknown fields). Each mode page has a Log button, and FT8/FT4 marks stations
+   worked before (B4).
 
 ## Testing
 

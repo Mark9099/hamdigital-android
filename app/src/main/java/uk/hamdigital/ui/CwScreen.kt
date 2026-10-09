@@ -71,6 +71,8 @@ fun CwScreen(vm: MainViewModel) {
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     var txWpm by rememberSaveable { mutableIntStateOf(20) } // keyer speed
     var txMsg by remember { mutableStateOf("") }       // why sending did not start
+    var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
+    val log = { logging = newQso("CW", s) }            // Log: a new contact, filled in from the radio
     // Send [t] with the IC-705's own keyer (CI-V): the radio keys itself in CW with break-in on.
     fun sendCw(t: String) = gate.ask {
         txMsg = when {
@@ -83,6 +85,7 @@ fun CwScreen(vm: MainViewModel) {
     ModeFrame("CW", { vm.back() }, actions = {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) } // the transcript
         TextButton({ ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share the decoded text")) }) { Text("Share", color = Pal.Text2) }
+        if (sideways) TextButton(log) { Text("Log", color = Pal.Text2) } // (on its side the send box, with its Log chip, is not shown)
     }) {
         RxStatus(rx)                                  // audio, level
         if (!sideways) RigBar(Mode.CW)                // the radio, the bands (on its side there is no room)
@@ -151,11 +154,12 @@ fun CwScreen(vm: MainViewModel) {
             if (wide) Row(Modifier.padding(vertical = 6.dp)) { waterfall(Modifier.weight(1f)); Spacer(Modifier.width(12.dp)); numbers(Modifier.weight(1f)) }
             else { waterfall(Modifier.padding(vertical = 6.dp)); numbers(Modifier) }
             textBox(Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp))
-            SendBox(s.callsign, "CW", ::sendCw) {           // typing and sending (the IC-705's keyer)
+            SendBox(s.callsign, "CW", ::sendCw, onLog = log) { // typing and sending (the IC-705's keyer); Log
                 CW_TX_WPM.forEach { w -> SmallChip("$w WPM", w == txWpm) { txWpm = w; Ic705.setCwSpeed(w) } }
                 SmallChip("Stop", false) { Ic705.stopCw() }
             }
             if (txMsg.isNotEmpty()) Text(txMsg, color = Pal.Red, fontSize = 12.sp) // why it did not send
         }
     }
+    logging?.let { QsoEditor(it, true) { logging = null } } // the log form, over the page (decoding carries on)
 }

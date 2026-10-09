@@ -1,4 +1,4 @@
-// The application: creates the long-lived parts once (settings) for every screen to share.
+// The application: creates the long-lived parts once (settings, the logbook) for every screen to share.
 package uk.hamdigital
 
 import android.app.Application
@@ -10,5 +10,6 @@ class HamDigitalApp : Application() {
     override fun onCreate() {
         super.onCreate()                              // Android's part
         settings = SettingsStore(this)                // DataStore
+        uk.hamdigital.core.Logbook.init(this)         // the log (log.adi), read once
     }
 }

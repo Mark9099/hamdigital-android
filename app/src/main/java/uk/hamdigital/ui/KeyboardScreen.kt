@@ -55,6 +55,8 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     LaunchedEffect(k) { while (true) { val t = KbNative.text(k); if (t.isNotEmpty()) { KbText.add(k, t); text = KbText.text[k].toString() }; st = KbNative.state(k); delay(100) } } // ten times a second
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     var txMsg by remember { mutableStateOf("") }       // why a transmission did not start
+    var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
+    val log = { logging = newQso(m.title, s) }         // Log: a new contact, filled in from the radio
     // Send [t] on the receive frequency: the whole message as audio to the IC-705, the text copied into the window.
     fun send(t: String) = gate.ask {
         val a = KbNative.encode(k, if (k == KbNative.RTTY) "\n$t\n" else " $t ", st[0], shift.toDouble(), s.txLevel / 100.0) // (RTTY: new lines around it)
@@ -65,6 +67,7 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) }
         TextButton({ ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share the decoded text")) }) { Text("Share", color = Pal.Text2) }
         TextButton({ KbText.text[k].clear(); text = "" }) { Text("Clear", color = Pal.Text2) }
+        if (sideways) TextButton(log) { Text("Log", color = Pal.Text2) } // (on its side the send box, with its Log chip, is not shown)
     }) {
         RxStatus(rx)                                      // audio, level
         if (txMsg.isNotEmpty()) Text(txMsg, color = Pal.Red, fontSize = 12.sp) // why it did not transmit
@@ -107,7 +110,8 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
             controls()
             textBox(Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp))
             TxBanner { Transmitter.halt() }
-            SendBox(s.callsign, m.title, ::send)              // typing and sending
+            SendBox(s.callsign, m.title, ::send, onLog = log) // typing and sending; Log
         }
     }
+    logging?.let { QsoEditor(it, true) { logging = null } } // the log form, over the page (decoding carries on)
 }

@@ -1,5 +1,5 @@
 // The app's state for the screens: settings, the startup screen, and which screen is showing (the menu, a mode's
-// page, Settings or the Guide). Survives the phone being turned.
+// page, Settings, the Guide or the Logbook). Survives the phone being turned.
 package uk.hamdigital
 
 import android.app.Application
@@ -21,6 +21,7 @@ sealed interface Screen {
     data class ModePage(val mode: Mode) : Screen      // one mode
     data object SettingsPage : Screen                 // Settings
     data object Guide : Screen                        // the User Guide
+    data object Log : Screen                          // the Logbook
 }
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {

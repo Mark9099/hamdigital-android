@@ -98,10 +98,13 @@ class FtQso(private val ft4: Boolean) {
         }
     }
 
+    /** This contact as a log entry (for the log when complete, or the page's Log button to finish by hand). */
+    fun draft(): Qso { val s = state.value; val now = System.currentTimeMillis()
+        return Qso(s.dx, s.dxGrid, mode, if (s.dx.isEmpty()) "" else rep(s.sent), s.rcvd, if (s.startMs > 0 && s.dx.isNotEmpty()) s.startMs else now, now, Ic705.state.value.freqHz, myCall, myGrid) }
+
     private fun log() {                               // put the contact in the log (once)
         val s = state.value; if (s.logged || s.dx.isEmpty() || !::app.isInitialized) return
-        Logbook.add(app, Qso(s.dx, s.dxGrid, mode, rep(s.sent), s.rcvd, if (s.startMs > 0) s.startMs else System.currentTimeMillis(), System.currentTimeMillis(),
-            Ic705.state.value.freqHz, myCall, myGrid))
+        Logbook.add(app, draft())
         set { it.copy(logged = true) }
     }
 

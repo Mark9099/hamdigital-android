@@ -1,4 +1,4 @@
-// The screens under the startup screen: the mode menu (a tile per mode, Settings and the Guide), and the page chosen
+// The screens under the startup screen: the mode menu (a tile per mode, the Logbook, Settings and the Guide), and the page chosen
 // from it. Back on any page returns to the menu.
 package uk.hamdigital.ui
 
@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Usb
@@ -39,6 +40,7 @@ fun AppScreens(vm: MainViewModel) {
             is Screen.ModePage -> ModePage(vm, s.mode)          // one mode
             Screen.SettingsPage -> SettingsScreen(vm)           // Settings
             Screen.Guide -> GuideScreen { vm.back() }           // the User Guide
+            Screen.Log -> LogbookScreen(vm)                     // the Logbook
         }
     }
 }
@@ -84,8 +86,13 @@ private fun MenuScreen(vm: MainViewModel) {
             }
         }
         items(Mode.entries) { m -> ModeTile(m) { vm.show(Screen.ModePage(m)) } } // a tile per mode
-        item(span = { GridItemSpan(maxLineSpan) }) {           // Settings and the Guide
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
+        item(span = { GridItemSpan(maxLineSpan) }) {           // the Logbook, Settings and the Guide
+            val log by uk.hamdigital.core.Logbook.qsos.collectAsStateWithLifecycle() // (for the count)
+            FilledTonalButton({ vm.show(Screen.Log) }, Modifier.fillMaxWidth().padding(top = 6.dp).heightIn(min = 52.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ListAlt, null); Text("  Logbook  •  ${log.size} contact${if (log.size == 1) "" else "s"}") }
+        }
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FilledTonalButton({ vm.show(Screen.SettingsPage) }, Modifier.weight(1f).heightIn(min = 52.dp)) { Icon(Icons.Filled.Settings, null); Text("  Settings") }
                 FilledTonalButton({ vm.show(Screen.Guide) }, Modifier.weight(1f).heightIn(min = 52.dp)) { Icon(Icons.AutoMirrored.Filled.MenuBook, null); Text("  Guide") }
             }

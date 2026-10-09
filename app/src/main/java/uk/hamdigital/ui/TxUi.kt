@@ -78,7 +78,7 @@ fun FtTxPanel(qso: FtQso, gate: TxGate) {
 
 /** Typing and sending for the keyboard modes: a text box, Send, and quick messages (CQ, 73) with your callsign. */
 @Composable
-fun SendBox(myCall: String, mode: String, onSend: (String) -> Unit, extra: @Composable RowScope.() -> Unit = {}) {
+fun SendBox(myCall: String, mode: String, onSend: (String) -> Unit, onLog: (() -> Unit)? = null, extra: @Composable RowScope.() -> Unit = {}) {
     var text by remember { mutableStateOf("") }       // being typed
     val call = myCall.ifBlank { "MYCALL" }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
@@ -89,6 +89,7 @@ fun SendBox(myCall: String, mode: String, onSend: (String) -> Unit, extra: @Comp
         SmallChip("CQ", false) { onSend("CQ CQ CQ DE $call $call $call PSE K") }      // calling CQ
         SmallChip("73", false) { onSend("TNX FER QSO 73 DE $call SK") }               // ending a contact
         SmallChip("Callsign", false) { text = (text + " $call").trim() }              // your call into the box
+        if (onLog != null) SmallChip("Log", false, onClick = onLog)                  // log the contact (the form)
         extra()
     }
 }

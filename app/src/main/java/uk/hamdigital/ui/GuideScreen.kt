@@ -61,7 +61,8 @@ private val GUIDE = listOf(
     "The menu" to
         "A tile for each mode: its name, what it is for, and whether its decoder is in this version (\"Decoder ready\") or still to come " +
         "(\"Waterfall now\" - the page shows the radio's audio as a waterfall so the connection can be checked, and lists the mode's " +
-        "frequencies). Above the tiles: your station, and the radio's connection with its frequency and mode. Settings and this Guide are under the tiles.",
+        "frequencies). Above the tiles: your station, and the radio's connection with its frequency and mode. Under the tiles: the " +
+        "Logbook (with how many contacts it holds), Settings and this Guide.",
 
     "Waterfall" to
         "Each mode's page shows the receive audio as a waterfall: frequency across (0-3000 Hz of audio), time downwards, newest at the top. " +
@@ -94,7 +95,7 @@ private val GUIDE = listOf(
         "for the weakest signals under stronger ones.\n" +
         B + "Transmitting: double-tap a CQ (or a station calling you) to answer it - a single tap does nothing, so a stray touch never starts a call - or tap Call CQ. The contact then runs itself, as in WSJT-X: " +
         "the six standard messages (Tx1 your call and locator, Tx2 a report, Tx3 R + report, Tx4 RR73, Tx5 73, Tx6 CQ) are chosen " +
-        "from what the other station sends, and the completed contact goes into the logbook (Settings > Logbook). The next message " +
+        "from what the other station sends, and the completed contact goes into the Logbook. The next message " +
         "is lit; tap another to send it instead.\n" +
         B + "TX: on / off enables transmitting in your slots; 1st / 2nd slot chooses them (answering a station picks the other half " +
         "from theirs). Tap the waterfall to move the TX offset (red lines). Halt stops at once. A message unanswered 6 times turns " +
@@ -102,7 +103,10 @@ private val GUIDE = listOf(
         B + "The first time, the app asks you to confirm you hold a licence. It transmits only with the IC-705's CI-V connected (to " +
         "key it) and its USB sound card (or the WiFi link) present - never through the phone's speaker. Set the radio's DATA MOD " +
         "input (MENU > SET > Connectors > MOD Input) to USB when using the lead, or WLAN over WiFi, and the transmit level in " +
-        "Settings so the ALC barely moves. To check you are getting out, look up your callsign on pskreporter.info.",
+        "Settings so the ALC barely moves. To check you are getting out, look up your callsign on pskreporter.info.\n" +
+        B + "B4 (amber, before the distance) marks a station already in your log on this band and mode - \"worked before\", as WSJT-X " +
+        "calls it. Log (top right) opens the log form filled in with the contact in progress, to finish one by hand (after Halt, say). " +
+        "Your own transmit slots are not decoded (the slot bar says so).",
 
     "WSPR" to
         "Decodes WSPR beacons with wsprd, the decoder inside WSJT-X. WSPR stations transmit for 110.6 seconds starting one second " +
@@ -151,8 +155,30 @@ private val GUIDE = listOf(
         "takes several slots; the line under the buttons shows progress. Halt stops and drops the rest. Text can be letters, " +
         "figures, spaces and . - + ? ! \" /.",
 
+    "Logbook" to
+        "Every contact you make, kept in an ADIF file - the format every logging program, and the LoTW, QRZ, Club Log and eQSL upload " +
+        "pages, read. Open it from the menu.\n\n" +
+        B + "Completed FT8 and FT4 contacts are logged automatically. On the CW, RTTY and PSK31 pages tap the Log chip (beside CQ, 73, " +
+        "Callsign); on JS8Call and FT8 / FT4, Log at the top. The form opens over the page, which keeps decoding behind it, filled in " +
+        "with the time, the radio's frequency, the mode and the usual report (599 for CW, RTTY and PSK31).\n" +
+        B + "The form: call, locator, date and times (UTC - HH:MM or HH:MM:SS), frequency in MHz (the band follows from it; with no " +
+        "frequency choose the band), mode (tap one or type another, e.g. SSB, JT65), reports, name, QTH, your power, a comment, and " +
+        "your call and locator for that contact (for /P or another station). Save is greyed until it makes sense - the line under the " +
+        "title says what is missing. Typing a call shows if you have worked it before, when and on what.\n" +
+        B + "The list: newest first, with the time, call, band and mode, then the reports, locator, distance, name, QTH and comment. " +
+        "Search finds a call, locator, name, QTH or comment; the chips show one band or one mode. The line above the list counts the " +
+        "contacts, different stations, locator squares and bands. Tap a contact to change or delete it.\n" +
+        B + "The menu (⋮): Share sends the log file to another app (email, Drive, a logging app). Save to a file puts a copy where you " +
+        "choose. Import reads another program's ADIF (.adi) file - contacts already in the log (the same call, band and mode within " +
+        "2 minutes) are skipped. Delete all empties the log, after asking.\n" +
+        B + "Fields the app has no box for (QSL and LoTW status, contest exchanges ...) are kept from an imported file and written " +
+        "back unchanged, so nothing is lost on the way through.",
+
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.9.0 (October 2026): the Logbook - every contact listed, searched, filtered by band and mode, changed, deleted, " +
+        "shared, saved and imported (ADIF); a Log button on every mode's page; B4 marks stations already worked on FT8 / FT4. A " +
+        "page opened while the WiFi link was reconnecting no longer stays at \"No audio\": the status line follows the link.\n" +
         B + "0.8.6 (October 2026): a slot you transmitted in is no longer decoded (the radio passes its own transmit audio back, " +
         "so your own message used to appear in the list at +40 dB). FT8, FT4, JS8 and WSPR.\n" +
         B + "0.8.5 (October 2026): closing and reopening the app reconnects to the IC-705 over WiFi straight away (the app now " +

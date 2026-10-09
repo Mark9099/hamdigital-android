@@ -53,7 +53,15 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
     remember(s) { qso.attach(ctx); qso.myCall = s.callsign; qso.myGrid = s.locator; qso.level = s.txLevel / 100f } // you, the level
     val q by qso.state.collectAsStateWithLifecycle()    // (the TX offset marker)
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
-    ModeFrame(m.title, { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {
+    var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
+    val logAll by uk.hamdigital.core.Logbook.qsos.collectAsStateWithLifecycle() // the log (for "worked before")
+    val rig by uk.hamdigital.rig.Ic705.state.collectAsStateWithLifecycle()   // (the band now)
+    val bandNow = uk.hamdigital.core.Logbook.band(rig.freqHz)
+    val b4 = remember(logAll, bandNow, m) { logAll.filter { it.bandName == bandNow && it.mode == m.title }.map { it.call }.toSet() } // worked on this band and mode
+    ModeFrame(m.title, { vm.back() }, actions = {
+        TextButton({ logging = qso.draft() }) { Text("Log", color = Pal.Text2) } // the contact in progress (or a new one), to finish by hand
+        TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) }
+    }) {
         RxStatus(rx)                                      // audio, level
         RigBar(m)                                         // the radio, the bands
         val into = (now % dec.periodMs) / dec.periodMs.toFloat() // how far through the slot
@@ -79,7 +87,7 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
                 val state = rememberLazyListState()
                 LaunchedEffect(list.firstOrNull()?.slotMs) { state.scrollToItem(0) } // a new slot: back to the top
                 LazyColumn(Modifier.fillMaxSize(), state = state) {
-                    items(shown) { d -> DecodeRow(d, shown.firstOrNull { it.slotMs == d.slotMs } === d) { gate.ask { qso.pick(d) } } } // a line each (double-tap: call that station) (a gap above each slot)
+                    items(shown) { d -> DecodeRow(d, shown.firstOrNull { it.slotMs == d.slotMs } === d, d.from in b4) { gate.ask { qso.pick(d) } } } // a line each (double-tap: call that station) (a gap above each slot)
                     if (shown.isEmpty()) item { Text(if (list.isEmpty()) "Messages heard appear here at the end of each ${if (m == Mode.FT4) "7.5" else "15"} s slot. " +
                         "Tune the IC-705 to the ${m.title} frequency (a band chip above) in USB-D." else "Nothing to show with this filter.",
                         color = Pal.Dim, fontSize = 13.sp, modifier = Modifier.padding(8.dp)) }
@@ -87,6 +95,7 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
             }
         }
     }
+    logging?.let { QsoEditor(it, true) { logging = null } } // the log form, over the page (decoding carries on)
 }
 
 private val COLS = listOf(56.dp, 34.dp, 38.dp, 42.dp)  // UTC, dB, DT, Hz
@@ -99,7 +108,7 @@ private fun DecodeHeader() = Row(Modifier.fillMaxWidth().padding(top = 4.dp)) { 
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun DecodeRow(d: FtDecode, firstOfSlot: Boolean, onPick: () -> Unit) {
+private fun DecodeRow(d: FtDecode, firstOfSlot: Boolean, worked: Boolean, onPick: () -> Unit) { // worked: the sender is in the log on this band and mode
     val bg = when { d.toMe -> Color(0x40FFB432); d.cq -> Color(0x3000FF88); else -> Color.Transparent } // amber: to you; green: CQ
     if (firstOfSlot) Spacer(Modifier.fillMaxWidth().padding(top = 3.dp).height(1.dp).background(Pal.Tert)) // between slots
     Row(Modifier.fillMaxWidth().background(bg).combinedClickable(onClick = {}, onDoubleClick = onPick).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) { // double-tap: answer / call this station (as WSJT-X's double-click: a stray tap never starts a call)
@@ -109,6 +118,7 @@ private fun DecodeRow(d: FtDecode, firstOfSlot: Boolean, onPick: () -> Unit) {
         Text("%.1f".format(d.dt), Modifier.width(COLS[2]), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text("${d.freq}", Modifier.width(COLS[3]), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text(d.text, Modifier.weight(1f), color = Pal.Text, fontSize = 14.sp, fontFamily = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (worked) Text("B4 ", color = Pal.Amber, fontSize = 11.sp, fontFamily = mono) // worked before (WSJT-X's mark)
         Text(d.km?.let { "$it" } ?: "", color = Pal.Muted, fontSize = 12.sp, fontFamily = mono)
     }
 }

@@ -41,6 +41,13 @@ object DevTest {
                 lines.forEach { Log.i(TAG, "  " + it.replace('\t', ' ')) }
             }
         }
+        dir.resolve("adif").listFiles { f -> f.name.endsWith(".adi", true) }?.sorted()?.forEach { f -> // ADIF: read, write, read again - the same?
+            val a = uk.hamdigital.core.Logbook.parse(f.readText())
+            val b = uk.hamdigital.core.Logbook.parse(uk.hamdigital.core.Logbook.export(a))
+            Log.i(TAG, "adif ${f.name}: ${a.size} contacts, round trip ${if (a.sortedBy { it.startMs } == b) "identical" else "DIFFERENT"}")
+            a.forEach { q -> Log.i(TAG, "  ${q.call} ${q.bandName} ${q.mode} ${q.startMs} ${q.endMs} ${q.freqHz} s=${q.rstSent} r=${q.rstRcvd} ${q.grid} [${q.name}|${q.qth}|${q.power}|${q.comment}] me=${q.myCall}/${q.myGrid} extra=${q.extra}") }
+            if (a.sortedBy { it.startMs } != b) a.sortedBy { it.startMs }.zip(b).filter { (x, y) -> x != y }.forEach { (x, y) -> Log.i(TAG, "  was $x\n  now $y") }
+        }
         Log.i(TAG, "dev test done")
     }.start()
 }

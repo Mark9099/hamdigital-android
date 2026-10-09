@@ -110,16 +110,10 @@ fun SettingsScreen(vm: MainViewModel) {
             if (s.txOk) OutlinedButton({ vm.updateSettings { it.copy(txOk = false) } }) { Text("Show the licence notice again") } // before the next transmission
 
             Heading("Logbook")
-            val n = remember { uk.hamdigital.core.Logbook.count(ctx) } // contacts logged
-            Text("$n contacts logged (ADIF file). Completed FT8 and FT4 contacts are added automatically.", color = Pal.Text2, fontSize = 14.sp)
-            OutlinedButton({                                // share the log with another app
-                val f = uk.hamdigital.core.Logbook.file(ctx)
-                if (f.exists()) {
-                    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "uk.hamdigital.files", f)
-                    ctx.startActivity(android.content.Intent.createChooser(android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-                        .putExtra(android.content.Intent.EXTRA_STREAM, uri).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share the logbook"))
-                }
-            }, enabled = n > 0) { Text("Share the logbook (ADIF)") }
+            val log by uk.hamdigital.core.Logbook.qsos.collectAsStateWithLifecycle() // contacts logged
+            Text("${log.size} contacts logged (ADIF file). Completed FT8 and FT4 contacts are added automatically; the other modes have a " +
+                "Log button. The Logbook (from the menu) searches, changes, deletes, shares, saves and imports contacts.", color = Pal.Text2, fontSize = 14.sp, lineHeight = 18.sp)
+            OutlinedButton({ vm.show(uk.hamdigital.Screen.Log) }) { Text("Open the Logbook") }
 
             Heading("Startup screen")
             Row(verticalAlignment = Alignment.CenterVertically) {

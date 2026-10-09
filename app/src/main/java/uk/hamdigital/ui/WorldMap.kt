@@ -2,7 +2,7 @@
 // your station (azimuthal equidistant: land keeps its shape close in, a straight line from you is the great-circle path
 // and distance from you is true distance; the rim is the far side of the world) - land, coast and borders as HF
 // Propagation draws them (Natural Earth outlines, the Tab5's colours) - a dot for each station with the path to it from
-// you (the white diamond), and its call beside it where there is room. It opens zoomed to fit every station (and you);
+// you (the white diamond; the WSPR map leaves the paths out), and its call beside it where there is room. It opens zoomed to fit every station (and you);
 // pinch to zoom, drag to move, Fit to see them all again; tap a dot for its details. A hollow dot is at its country's
 // middle (cty.dat), its locator not being known. The outlines are projected once for your position (in rim = 1 units)
 // and drawn moved and scaled, so zooming and dragging stay smooth.
@@ -68,7 +68,7 @@ fun snrColor(snr: Int): Color = Pal.Heat[if (snr >= 0) 5 else if (snr >= -10) 4 
  */
 @Composable
 fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?, onClose: () -> Unit, note: String = "",
-              top: @Composable () -> Unit = {}, legend: @Composable () -> Unit = {}) {
+              top: @Composable () -> Unit = {}, legend: @Composable () -> Unit = {}, paths: Boolean = true) { // paths: the lines from you to each station
     var fit by remember { mutableIntStateOf(0) }      // Fit pressed (count)
     var picked by remember { mutableStateOf<MapPoint?>(null) } // the dot tapped
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false)) {
@@ -84,7 +84,7 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
                     Text(note.ifEmpty { "${points.size} station${if (points.size == 1) "" else "s"}. Pinch to zoom, drag to move, tap a dot." }, color = Pal.Muted, fontSize = 12.sp)
                 }
                 Box(Modifier.fillMaxWidth().weight(1f).padding(top = 4.dp)) {
-                    WorldMap(points, home, fit, Modifier.fillMaxSize()) { picked = it }
+                    WorldMap(points, home, fit, Modifier.fillMaxSize(), paths) { picked = it }
                     picked?.let { p ->                // the tapped station's details
                         Surface(color = Color(0xEE111820), shape = RoundedCornerShape(10.dp), modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(10.dp)) {
                             Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -107,9 +107,9 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
 /** The outlines projected for one centre, in unit coordinates (rim = 1): land rings, borders, the graticule. */
 private class Projected(val land: Path, val borders: Path, val grat: Path)
 
-/** The map itself: [points] and [home]; zooms to fit them when it opens and whenever [fitKey] changes; [onPick] gets a tapped dot. */
+/** The map itself: [points] and [home] (with a line from it to each when [paths]); zooms to fit them when it opens and whenever [fitKey] changes; [onPick] gets a tapped dot. */
 @Composable
-fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, modifier: Modifier, onPick: (MapPoint?) -> Unit) {
+fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, modifier: Modifier, paths: Boolean, onPick: (MapPoint?) -> Unit) {
     val ctx = LocalContext.current
     val world = remember { WorldData.load(ctx) }      // the outlines (cached)
     val centre = home ?: points.takeIf { it.isNotEmpty() }?.let { ps -> ps.map { it.lat }.average() to ps.map { it.lon }.average() } ?: (0.0 to 0.0) // you (else the stations' middle)
@@ -154,7 +154,7 @@ fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, m
             drawPath(shapes.land, LAND); drawPath(shapes.land, COAST, style = Stroke(1.2f / r)); drawPath(shapes.borders, BORDER, style = Stroke(0.8f / r))
         }
         drawCircle(Pal.Dim, r, Offset(sx(0f), sy(0f)), style = Stroke(1.5f)) // the rim (the far side of the world)
-        if (home != null) for (i in pts.indices) drawLine(points[i].color.copy(alpha = 0.4f), Offset(sx(0f), sy(0f)), Offset(sx(pts[i][0]), sy(pts[i][1])), 1.5f.dp.toPx()) // paths: straight from the centre
+        if (home != null && paths) for (i in pts.indices) drawLine(points[i].color.copy(alpha = 0.4f), Offset(sx(0f), sy(0f)), Offset(sx(pts[i][0]), sy(pts[i][1])), 1.5f.dp.toPx()) // paths: straight from the centre
         val d = 4.5f.dp.toPx(); val placed = ArrayList<Rect>() // dot size; space taken by dots and labels
         for (q in pts) { val x = sx(q[0]); val y = sy(q[1]); placed += Rect(x - d, y - d, x + d, y + d) }
         for (i in pts.indices) {                      // the dots

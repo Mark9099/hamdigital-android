@@ -25,6 +25,8 @@ Newest first.
 - **Checked on the S23 after the change:** the centred contacts map, and WSPR "Heard me" with 50 stations from
   wspr.live (EI4ACB, M9PSY, DC4HP-1, F5178SWL ...), fitted, with the SNR legend.
 - The Logbook search box mentions country.
+- **Asked for by the user:** no path lines on the WSPR map. `MapDialog` and `WorldMap` take `paths` (default on, for
+  the Logbook); the WSPR map passes `false`. Checked on the S23.
 
 ## 2026-10-09: 0.10.0 (countries, maps, tuning on opening a mode)
 

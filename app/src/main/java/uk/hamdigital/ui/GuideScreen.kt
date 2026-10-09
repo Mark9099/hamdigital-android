@@ -125,8 +125,8 @@ private val GUIDE = listOf(
         "call, locator and power with its country under them, and km from your locator.\n" +
         B + "Map (top right): where the stations are, over the page (decoding carries on). Heard here: the stations this page has " +
         "decoded, each at its best report. Heard me: the stations that reported your beacon to WSPRnet in the last 24 hours, " +
-        "fetched from WSPRnet's database (through wspr.live; needs the internet). Dots are coloured by the report (dB), with a line " +
-        "from you; it opens zoomed to fit them all - pinch to zoom, drag to move, Fit to see them all again, tap a dot for its details.\n" +
+        "fetched from WSPRnet's database (through wspr.live; needs the internet). Dots are coloured by the report (dB), on a map " +
+        "centred on you; it opens zoomed to fit them all - pinch to zoom, drag to move, Fit to see them all again, tap a dot for its details.\n" +
         B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
         B + "Beacon: transmits \"YOURCALL GRID POWER\" (your callsign, 4-character locator and the power chosen) in the chosen share " +
         "of the two-minute slots - 20 % is usual: about one slot in five, picked at random so beacons on the frequency rarely " +
@@ -200,7 +200,7 @@ private val GUIDE = listOf(
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
         B + "0.10.1 (October 2026): the maps are centred on you (HF Propagation's centred view), so land keeps its shape close in " +
-        "and the line to each station is its great-circle path.\n" +
+        "and the line to each station is its great-circle path. The WSPR map shows just the stations, without the lines.\n" +
         B + "0.10.0 (October 2026): countries (cty.dat) on the FT8 / FT4, WSPR, JS8Call and Logbook pages and in the log form " +
         "(logged as ADIF COUNTRY); a map of the Logbook's contacts and of WSPR stations (heard here, and who heard you), zoomed to " +
         "fit; opening a mode tunes the radio to that mode's frequency.\n" +

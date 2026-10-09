@@ -133,7 +133,8 @@ private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClo
             SmallChip("Heard here", tab == 0) { tab = 0 }; SmallChip(if (myCall.isBlank()) "Heard me (set callsign)" else "Heard me", tab == 1) { if (myCall.isNotBlank()) tab = 1 } } },
         legend = { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) { // the report colours
             listOf(0 to "0 dB +", -10 to "-10", -15 to "-15", -20 to "-20", -25 to "below").forEach { (v, t) -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } } })
+                Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } } },
+        paths = false)                                    // (no lines from you: just where the stations are)
 }
 
 @Composable

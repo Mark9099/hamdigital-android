@@ -23,6 +23,13 @@ Newest first.
     page, with the last result shown beside the switch.
 - **The beacon's reported power** is now kept in Settings (`wsprDbm`); it used to go back to 5 W at each start.
 - The `<...>` of a call wsprd couldn't resolve shows as `<...>` (was `...`).
+- **Checked on the air (user's go-ahead: 2 W, upload on, beacon test).**
+  - Upload: "WSPRnet 1323: 10 spots uploaded", and wspr.live shows 10 spots from rx M7JVY for 13:22.
+  - Beacon: "M7JVY IO91 33" in the 13:24 slot was heard by 18 stations on 7.040100 ± 10 Hz (wspr.live), from
+    G4KCM (15 km, -2 dB) to DC4HP-1 (760 km, -25 dB), including DF8OE, F5178SWL, PE1RQJ, M9PSY (-10 dB), G0DHD,
+    PA3FNY and ON5HB.
+  - The beacon slot was not decoded (0.8.6). The beacon was switched off again after the test, which halted a
+    second transmission (13:26) part way through.
 
 ## 2026-10-09: 0.9.0 (Logbook)
 

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// kb_tx.cxx  --  RTTY and PSK31 transmit audio for a whole message, following fldigi's transmitters (src/cw_rtty/rtty.cxx
+// kb_tx.cxx  --  RTTY and PSK31 / 63 / 125 transmit audio for a whole message, following fldigi's transmitters (src/cw_rtty/rtty.cxx
 // send_char / baudot_enc, src/psk/psk.cxx tx_symbol / tx_char / tx_flush): PSK31 = an idle preamble of phase
 // reversals (which switches receivers' DCD on), each character's PSK varicode followed by "00", a postamble of steady
 // carrier (DCD off), with fldigi's raised-cosine amplitude shaping between symbols; RTTY = Baudot with LTRS / FIGS
@@ -12,11 +12,12 @@
 
 static const double SR = 8000;                       // fldigi's sample rate for these modes
 
-std::vector<int16_t> psk31_tx_audio(const std::string &text, double f0, double amplitude)
+std::vector<int16_t> psk31_tx_audio(const std::string &text, double f0, double amplitude, int speed)
 {
-    const int sl = 256;                              // samples a symbol (31.25 baud)
+    const int sl = speed == 125 ? 64 : speed == 63 ? 128 : 256; // samples a symbol (fldigi: 31.25, 62.5, 125 baud)
+    const int amble = 256 / sl * 32;                 // preamble / postamble symbols (fldigi: dcdbits - 32, 64, 128)
     std::vector<int> syms;                           // 1 = no phase change, 0 = a reversal
-    for (int i = 0; i < 32; i++) syms.push_back(0);  // preamble (fldigi: dcdbits of reversals)
+    for (int i = 0; i < amble; i++) syms.push_back(0); // preamble (fldigi: dcdbits of reversals)
     for (unsigned char c : text) {                   // each character: its varicode, then 00
         if (c == '\n') c = '\r';                     // (PSK31 new line: CR then LF)
         const char *v = psk_varicode_encode(c);
@@ -24,7 +25,7 @@ std::vector<int16_t> psk31_tx_audio(const std::string &text, double f0, double a
         syms.push_back(0); syms.push_back(0);
         if (c == '\r') { const char *lf = psk_varicode_encode('\n'); for (const char *p = lf; *p; p++) syms.push_back(*p == '1'); syms.push_back(0); syms.push_back(0); }
     }
-    for (int i = 0; i < 32; i++) syms.push_back(1);  // postamble: steady carrier (fldigi tx_flush)
+    for (int i = 0; i < amble; i++) syms.push_back(1); // postamble: steady carrier (fldigi tx_flush)
     std::vector<int16_t> out; out.reserve(syms.size() * sl + sl);
     double ph = 0, prev = 0, cur = 0;                // amplitudes: start from silence
     double const dph = 2 * M_PI * f0 / SR;

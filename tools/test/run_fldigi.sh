@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build and run the PC test of the RTTY and PSK31 receivers (test_fldigi.cxx) on generated signals.
+# Build and run the PC test of the RTTY and PSK31 / 63 / 125 receivers (test_fldigi.cxx) on generated signals.
 # Needs a C++ compiler: ZIG = path to zig.exe (zig c++), or CXX.
 set -e                                               # stop on an error
 HERE=$(cd "$(dirname "$0")" && pwd)                  # tools/test

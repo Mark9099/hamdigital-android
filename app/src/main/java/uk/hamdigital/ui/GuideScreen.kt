@@ -164,7 +164,10 @@ private val GUIDE = listOf(
         B + "AFC (on as standard) follows a signal that drifts and corrects small tuning errors.\n" +
         B + "Squelch: the text is shown only while the signal quality (the green bar) is above it, so noise does not print rubbish. " +
         "Slide it to the left to see weak signals; PSK31 starts at 25, RTTY at 0 (off).\n" +
-        B + "s/n is the signal to noise. PSK31 shows DCD while it is locked on to a signal.\n" +
+        B + "s/n is the signal to noise. PSK shows DCD while it is locked on to a signal.\n" +
+        B + "PSK speed (on the PSK31 page): PSK31 is the usual one; PSK63 and PSK125 send two and four times faster in a wider " +
+        "trace (about 63 and 125 Hz), for when the band is good - each doubling needs about 3 dB more signal. Both stations must " +
+        "use the same speed; the page's title shows it, and a contact is logged with it.\n" +
         B + "RTTY: the amateur standard is 45.45 baud with 170 Hz shift. If the text is nonsense, try Reverse (the station's mark and " +
         "space are the other way round). Other shifts are 85, 425 and 850 Hz.\n" +
         B + "The text is kept while the app runs; Copy, Share and Clear are at the top right.\n" +
@@ -254,6 +257,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.13.0 (October 2026): PSK63 and PSK125 - a Speed choice on the PSK31 page (fldigi's settings for each), " +
+        "receive and send, logged as PSK63 / PSK125.\n" +
         B + "0.12.1 (October 2026): SSTV receive has a proper picture frame (4:3, with the list of pictures right under " +
         "it); between pictures the scan lines fill the frame and are labelled, so band noise is not taken for a picture.\n" +
         B + "0.12.0 (October 2026): FreeDV RADE - FreeDV's newest voice mode (rade_c with Opus's FARGAN vocoder), on the " +

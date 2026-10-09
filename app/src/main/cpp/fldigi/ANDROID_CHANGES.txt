@@ -30,3 +30,11 @@ Receive-only editions (new files, fldigi's code with its algorithms unchanged):
 
 Tested on the PC with generated signals (tools/test/test_fldigi.cxx): RTTY 45.45/170 copies fully to 0 dB SNR (2500 Hz)
 and PSK31 to -5 dB, PSK31 nearly fully at -10 dB; both AFCs pull a few Hz of mistuning in.
+
+0.13.0: PSK63 and PSK125. psk31_rx takes the speed (Psk31Rx(31 / 63 / 125)) with fldigi's own settings from
+psk::psk() for MODE_PSK63 / MODE_PSK125: symbollen 128 / 64, dcdbits 64 / 128, and for PSK125 fldigi's SINC filter
+pair (wsincfilt 1/symbollen and 1/16, FIRLEN taps) instead of PSK_CORE. Everything else is unchanged and the same at
+every speed, as in fldigi: decimation to 16 samples a symbol, timing recovery, the S/N-IMD Goertzel bins. kb_tx's
+psk31_tx_audio takes the speed too (symbol length; preamble and postamble of dcdbits symbols).
+PC test (tools/test/test_fldigi.cxx, the app's transmitter into its receiver 3 Hz off): PSK31 copies fully to -7 dB SNR
+(2500 Hz), PSK63 to -4 dB (one character wrong at -7), PSK125 to -4 dB.

@@ -1,6 +1,7 @@
-// RTTY and PSK31 page (fldigi's receivers): the radio and its bands, a waterfall - tap a signal to tune to it (for RTTY
-// tap between its two tones) - with the receive frequency marked, the signal (s/n, quality), AFC and squelch (and for
-// RTTY the shift and Reverse), and the decoded text, which is kept while the app runs (Copy / Share / Clear).
+// RTTY and PSK page (fldigi's receivers): the radio and its bands, a waterfall - tap a signal to tune to it (for RTTY
+// tap between its two tones) - with the receive frequency marked, the signal (s/n, quality), AFC and squelch (for RTTY
+// the shift and Reverse; for PSK the speed - PSK31, 63 or 125), and the decoded text, which is kept while the app runs
+// (Copy / Share / Clear).
 package uk.hamdigital.ui
 
 import android.content.Intent
@@ -34,9 +35,11 @@ import uk.hamdigital.engine.KbNative
 object KbText {
     val text = arrayOf(StringBuilder(), StringBuilder()) // RTTY, PSK31
     fun add(mode: Int, s: String) { val b = text[mode]; b.append(s); if (b.length > 20000) b.delete(0, b.length - 15000) } // (the newest 15-20 thousand characters)
+    var pskSpeed = 31                                 // the PSK speed chosen (kept while the app runs)
 }
 
 private val SHIFTS = listOf(170, 85, 425, 850)        // RTTY shifts offered (170 Hz: the amateur standard)
+private val SPEEDS = listOf(31, 63, 125)              // PSK speeds offered (fldigi's BPSK31 / 63 / 125)
 
 @Composable
 fun KeyboardScreen(vm: MainViewModel, m: Mode) {
@@ -53,19 +56,21 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     var sql by rememberSaveable(m) { mutableFloatStateOf(if (m == Mode.RTTY) 0f else 25f) } // squelch (fldigi-style 0..100)
     var rev by rememberSaveable { mutableStateOf(false) } // RTTY reversed
     var shift by rememberSaveable { mutableIntStateOf(170) } // RTTY shift
-    LaunchedEffect(k) { KbNative.control(k, 1, if (afc) 1.0 else 0.0); KbNative.control(k, 2, sql.toDouble()); if (k == KbNative.RTTY) KbNative.control(k, 3, if (rev) 1.0 else 0.0) } // settings into the receiver
+    var speed by remember { mutableIntStateOf(KbText.pskSpeed) } // PSK speed
+    val title = if (k == KbNative.PSK31) "PSK$speed" else m.title // the page's title, and the mode logged
+    LaunchedEffect(k) { KbNative.control(k, 1, if (afc) 1.0 else 0.0); KbNative.control(k, 2, sql.toDouble()); if (k == KbNative.RTTY) KbNative.control(k, 3, if (rev) 1.0 else 0.0) else KbNative.control(k, 7, speed.toDouble()) } // settings into the receiver
     LaunchedEffect(k) { while (true) { val t = KbNative.text(k); if (t.isNotEmpty()) { KbText.add(k, t); text = KbText.text[k].toString() }; st = KbNative.state(k); delay(100) } } // ten times a second
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     var txMsg by remember { mutableStateOf("") }       // why a transmission did not start
     var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
-    val log = { logging = newQso(m.title, s) }         // Log: a new contact, filled in from the radio
+    val log = { logging = newQso(title, s) }           // Log: a new contact, filled in from the radio (PSK: at its speed)
     // Send [t] on the receive frequency: the whole message as audio to the IC-705, the text copied into the window.
     fun send(t: String) = gate.ask {
-        val a = KbNative.encode(k, if (k == KbNative.RTTY) "\n$t\n" else " $t ", st[0], shift.toDouble(), s.txLevel / 100.0) // (RTTY: new lines around it)
+        val a = KbNative.encode(k, if (k == KbNative.RTTY) "\n$t\n" else " $t ", st[0], shift.toDouble(), if (k == KbNative.RTTY) 45.45 else speed.toDouble(), s.txLevel / 100.0) // (RTTY: new lines around it)
         if (Transmitter.send(ctx, s.callsign, a, 8000, 0, m.name)) { KbText.add(k, "\n[TX] $t\n"); text = KbText.text[k].toString(); txMsg = "" } else txMsg = Transmitter.lastError.value
     }
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
-    ModeFrame(m.title, { vm.back() }, actions = {
+    ModeFrame(title, { vm.back() }, actions = {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) }
         TextButton({ ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share the decoded text")) }) { Text("Share", color = Pal.Text2) }
         TextButton({ KbText.text[k].clear(); text = "" }) { Text("Clear", color = Pal.Text2) }
@@ -95,11 +100,15 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
                 SHIFTS.forEach { h -> SmallChip("$h Hz", h == shift) { shift = h; KbNative.control(k, 5, h.toDouble()) } }
                 Text("45.45 baud", color = Pal.Dim, fontSize = 12.sp)
             }
+            if (k == KbNative.PSK31) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) { // PSK speed
+                Text("Speed", color = Pal.Muted, fontSize = 13.sp)
+                SPEEDS.forEach { v -> SmallChip("PSK$v", v == speed) { speed = v; KbText.pskSpeed = v; KbNative.control(k, 7, v.toDouble()) } }
+            }
         }
         val textBox: @Composable (Modifier) -> Unit = { mod ->
             Surface(color = Color(0xFF111820), shape = RoundedCornerShape(10.dp), modifier = mod) {
                 val sc = rememberScrollState(); LaunchedEffect(text.length) { sc.animateScrollTo(sc.maxValue) } // keep the newest in view
-                SelectionContainer { Text(text.ifEmpty { "The decoded text appears here. Tap a ${m.title} signal in the waterfall to tune to it" +
+                SelectionContainer { Text(text.ifEmpty { "The decoded text appears here. Tap a $title signal in the waterfall to tune to it" +
                     (if (k == KbNative.RTTY) " (between its two tones; Reverse if the text is nonsense)." else ".") },
                     Modifier.verticalScroll(sc).padding(10.dp), color = if (text.isEmpty()) Pal.Dim else Pal.Text, fontSize = 17.sp, lineHeight = 23.sp, fontFamily = FontFamily.Monospace) }
             }
@@ -112,7 +121,7 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
             controls()
             textBox(Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp))
             TxBanner { Transmitter.halt() }
-            SendBox(s.callsign, m.title, ::send, onLog = log) // typing and sending; Log
+            SendBox(s.callsign, title, ::send, onLog = log) // typing and sending; Log
         }
     }
     logging?.let { QsoEditor(it, true) { logging = null } } // the log form, over the page (decoding carries on)

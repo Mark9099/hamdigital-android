@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-/** PSK31: preamble, the text in PSK varicode, postamble; carrier at f0 Hz; peak amplitude 0..1. */
-std::vector<int16_t> psk31_tx_audio(const std::string &text, double f0, double amplitude);
+/** PSK31 / 63 / 125 (speed): preamble, the text in PSK varicode, postamble; carrier at f0 Hz; peak amplitude 0..1. */
+std::vector<int16_t> psk31_tx_audio(const std::string &text, double f0, double amplitude, int speed = 31);
 
 /** RTTY: the text in Baudot (letters / figures), centre f0 Hz (mark f0 + shift/2), at baud; peak amplitude 0..1. */
 std::vector<int16_t> rtty_tx_audio(const std::string &text, double f0, double shift, double baud, double amplitude);

@@ -61,6 +61,8 @@ package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` 
     to be checked on the phone and on the air. Asked for by the user. rade_c (BSD-2) with the parts of Opus it uses
     (BSD-3) and wfweb's wire-compatible `rade_text` for the callsign; V2 is left out (pre-release). On the FreeDV page
     as a fourth mode; the end of an over is drained to the radio before PTT drops (`rade/ANDROID_CHANGES.txt`).
+13. **PSK63 / PSK125 (0.13.0).** Asked for by the user (the new-modes list: PSK63/125, Olivia, WEFAX, APRS and packet,
+    FreeDATA). A speed choice on the PSK31 page, fldigi's settings for each speed. Checked on a PC and on the phone.
 
 ## Testing
 

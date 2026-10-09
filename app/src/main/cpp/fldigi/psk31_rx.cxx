@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
-// psk31_rx.cxx  --  PSK31 receiver: fldigi's psk modem (src/psk/psk.cxx, fldigi 4.1.23), BPSK31 receive only. The
-// demodulator is fldigi's unchanged: the NCO mix, the PSKcore pair of FIR filters (decimating by 16), fldigi's symbol
+// psk31_rx.cxx  --  PSK31 / 63 / 125 receiver: fldigi's psk modem (src/psk/psk.cxx, fldigi 4.1.23), BPSK receive only. The
+// demodulator is fldigi's unchanged: the NCO mix, the FIR filter pair (PSKcore, or sinc for PSK125; decimating to 16 samples a symbol), fldigi's symbol
 // timing recovery (bitclk / syncbuf), the differential phase decision, its quality / DCD logic (the 0xAAAAAAAA idle
 // preamble switches DCD on, a run of zeros off, else the squelch), PSK varicode decoding, the phase AFC, and the S/N
 // and IMD measurement (Goertzel filters at the base, fundamental, 3rd and 4th harmonics). Removed: the user interface,
@@ -13,7 +13,7 @@
 //		John Douyere, VK2ETA
 // Copyright (C) 2014-2021
 //		John Phelps, KL4YFD
-// (BPSK31 receive-only edition 2026, HF Digital Modes)
+// (BPSK31/63/125 receive-only edition 2026, HF Digital Modes)
 //
 // Adapted from code contained in gmfsk source code distribution. gmfsk Copyright (C) 2001, 2002, 2003
 // Tomi Manninen (oh2bns@sral.fi)
@@ -33,15 +33,27 @@
 #define TWOPI (2.0 * M_PI)
 #endif
 
-Psk31Rx::Psk31Rx()                                   // fldigi psk::psk(MODE_PSK31), receive parts
+Psk31Rx::Psk31Rx(int speed)                          // fldigi psk::psk(MODE_PSK31 / 63 / 125), receive parts
 {
-    sc_bw = samplerate / symbollen;                  // 31.25 Hz
-    double fir1c[FIRLEN + 1], fir2c[FIRLEN + 1];     // PSK_CORE filters (fldigi's choice for PSK31)
-    raisedcosfilt(fir1c, FIRLEN);
-    for (int i = 0; i <= FIRLEN; i++) fir2c[i] = pskcore_filter[i];
+    switch (speed) {                                 // fldigi's settings for each speed
+    case 125: symbollen = 64;  dcdbits = 128; break; // PSK125 (fir_type SINC)
+    case 63:  symbollen = 128; dcdbits = 64;  break; // PSK63 (PSK_CORE)
+    default:  symbollen = 256; dcdbits = 32;  break; // PSK31 (PSK_CORE)
+    }
+    sc_bw = samplerate / symbollen;                  // the symbol rate: 31.25, 62.5, 125 Hz
+    double fir1c[FIRLEN + 1], fir2c[FIRLEN + 1];
     fir1 = new C_FIR_filter(); fir2 = new C_FIR_filter();
-    fir1->init(FIRLEN + 1, symbollen / 16, fir1c, fir1c); // decimate by 16 (500 Hz)
-    fir2->init(FIRLEN + 1, 1, fir2c, fir2c);
+    if (speed == 125) {                              // SINC: matched sin(x)/x filters with a Blackman window (fldigi)
+        wsincfilt(fir1c, 1.0 / symbollen, FIRLEN);
+        wsincfilt(fir2c, 1.0 / 16.0, FIRLEN);
+        fir1->init(FIRLEN, symbollen / 16, fir1c, fir1c); // decimate to 16 samples a symbol
+        fir2->init(FIRLEN, 1, fir2c, fir2c);
+    } else {                                         // PSK_CORE
+        raisedcosfilt(fir1c, FIRLEN);
+        for (int i = 0; i <= FIRLEN; i++) fir2c[i] = pskcore_filter[i];
+        fir1->init(FIRLEN + 1, symbollen / 16, fir1c, fir1c); // decimate to 16 samples a symbol
+        fir2->init(FIRLEN + 1, 1, fir2c, fir2c);
+    }
     e0_filt = new Cmovavg(dcdbits / 2); e1_filt = new Cmovavg(dcdbits / 2);
     e2_filt = new Cmovavg(dcdbits / 2); e3_filt = new Cmovavg(dcdbits / 2);
     re_Gbin[0] = new goertzel(160, 0, 500.0);        // base
@@ -194,7 +206,7 @@ void Psk31Rx::rx_process(const double *buf, int len) // fldigi psk::rx_process()
         z = cmplx(*buf * cos(phaseacc), *buf * sin(phaseacc)); // mix with the internal NCO
         phaseacc += delta;
         if (phaseacc > TWOPI) phaseacc -= TWOPI;
-        if (fir1->run(z, z)) {                       // filter and downsample by 16 (fir1 returns true every 16th sample)
+        if (fir1->run(z, z)) {                       // filter and downsample to 16 samples a symbol (fir1 returns true when one is ready)
             fir2->run(z, z2);                        // final filter
             calcSN_IMD(z);
             // Symbol timing recovery: bitclk "draws" one symbol's magnitude waveform in syncbuf; the difference between

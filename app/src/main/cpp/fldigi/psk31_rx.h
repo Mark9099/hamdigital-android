@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// psk31_rx.h  --  PSK31 receiver: fldigi's psk modem (src/psk/psk.cxx), BPSK31 receive only, without fldigi's user
+// psk31_rx.h  --  PSK31 / 63 / 125 receiver: fldigi's psk modem (src/psk/psk.cxx), BPSK receive only, without fldigi's user
 // interface, settings, the other PSK variants and transmit code, for HF Digital Modes (Android). See
 // ANDROID_CHANGES.txt.
 //
@@ -9,7 +9,7 @@
 //		John Douyere, VK2ETA
 // Copyright (C) 2014-2021
 //		John Phelps, KL4YFD
-// (BPSK31 receive-only edition 2026, HF Digital Modes)
+// (BPSK31/63/125 receive-only edition 2026, HF Digital Modes)
 //
 // Adapted from code contained in gmfsk source code distribution. gmfsk Copyright (C) 2001, 2002, 2003
 // Tomi Manninen (oh2bns@sral.fi)
@@ -27,7 +27,7 @@
 
 class Psk31Rx {
 public:
-    Psk31Rx();                                       // BPSK31 at 1000 Hz, 8 kHz audio
+    explicit Psk31Rx(int speed = 31);                // BPSK31, 63 or 125 at 1000 Hz, 8 kHz audio
     ~Psk31Rx();
     void set_freq(double f) { frequency = f; acquire = 3; } // carrier, audio Hz (a new signal: let the AFC pull in)
     double get_freq() const { return frequency; }
@@ -51,8 +51,8 @@ private:
     void calcSN_IMD(cmplx z);
 
     double samplerate = 8000;                        // fldigi's PSK sample rate
-    int symbollen = 256;                             // samples a symbol (31.25 baud)
-    int dcdbits = 32;                                // (fldigi, PSK31)
+    int symbollen = 256;                             // samples a symbol (256: 31.25 baud, 128: 62.5, 64: 125)
+    int dcdbits = 32;                                // (fldigi: 32, 64, 128)
     double sc_bw;                                    // symbol rate (Hz)
     double frequency = 1000;
     bool afc_on = true;

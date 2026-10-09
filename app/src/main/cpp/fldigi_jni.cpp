@@ -1,4 +1,4 @@
-// JNI bridge to fldigi's RTTY and PSK31 receivers (fldigi/rtty_rx.cxx, fldigi/psk31_rx.cxx). One receiver of each for
+// JNI bridge to fldigi's RTTY and PSK31 / 63 / 125 receivers (fldigi/rtty_rx.cxx, fldigi/psk31_rx.cxx). One receiver of each for
 // the app; the audio thread feeds the open one, the screen reads its text and state (a lock between them).
 #include <jni.h>                                     // JNI
 #include <mutex>                                     // the lock
@@ -8,10 +8,11 @@
 
 static RttyRx *g_rtty;                               // made on first use
 static Psk31Rx *g_psk;
+static int g_speed = 31; static bool g_afc = true; static double g_sql = 25; // PSK: the speed, and the settings kept across a change of speed
 static std::mutex g_mx;                              // audio thread vs screen
 
 static RttyRx &rtty() { if (!g_rtty) g_rtty = new RttyRx(); return *g_rtty; } // (under g_mx)
-static Psk31Rx &psk() { if (!g_psk) g_psk = new Psk31Rx(); return *g_psk; }
+static Psk31Rx &psk() { if (!g_psk) { g_psk = new Psk31Rx(g_speed); g_psk->set_afc(g_afc); g_psk->set_squelch(g_sql); } return *g_psk; }
 
 // mode: 0 RTTY, 1 PSK31. 8 kHz mono audio.
 extern "C" JNIEXPORT void JNICALL Java_uk_hamdigital_engine_KbNative_process(JNIEnv *env, jclass, jint mode, jshortArray a, jint n)
@@ -43,7 +44,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_uk_hamdigital_engine_KbNative_text(JNI
     return env->NewStringUTF(clean.c_str());
 }
 
-// what: 0 frequency, 1 AFC on/off, 2 squelch 0..100, 3 reverse (RTTY), 4 reset, 5 RTTY shift (Hz), 6 RTTY baud
+// what: 0 frequency, 1 AFC on/off, 2 squelch 0..100, 3 reverse (RTTY), 4 reset, 5 RTTY shift (Hz), 7 PSK speed (31, 63, 125)
 extern "C" JNIEXPORT void JNICALL Java_uk_hamdigital_engine_KbNative_control(JNIEnv *, jclass, jint mode, jint what, jdouble value)
 {
     std::lock_guard<std::mutex> l(g_mx);
@@ -61,18 +62,19 @@ extern "C" JNIEXPORT void JNICALL Java_uk_hamdigital_engine_KbNative_control(JNI
         Psk31Rx &p = psk();
         switch (what) {
         case 0: p.set_freq(value); break;
-        case 1: p.set_afc(value != 0); break;
-        case 2: p.set_squelch(value); break;
+        case 1: p.set_afc(value != 0); g_afc = value != 0; break;
+        case 2: p.set_squelch(value); g_sql = value; break;
         case 4: p.reset(); break;
+        case 7: if ((int)value != g_speed) { double f = p.get_freq(); delete g_psk; g_psk = nullptr; g_speed = (int)value; psk().set_freq(f); } break; // a new receiver at that speed, same frequency
         }
     }
 }
 
-// Transmit audio for a whole message (8 kHz): mode 0 RTTY (centre f0, shift Hz, 45.45 baud), 1 PSK31 (carrier f0).
+// Transmit audio for a whole message (8 kHz): mode 0 RTTY (centre f0, shift Hz, rate = baud), 1 PSK (carrier f0, rate = speed 31 / 63 / 125).
 #include "fldigi/kb_tx.h"
-extern "C" JNIEXPORT jshortArray JNICALL Java_uk_hamdigital_engine_KbNative_encode(JNIEnv *env, jclass, jint mode, jstring jtext, jdouble f0, jdouble shift, jdouble amplitude)
+extern "C" JNIEXPORT jshortArray JNICALL Java_uk_hamdigital_engine_KbNative_encode(JNIEnv *env, jclass, jint mode, jstring jtext, jdouble f0, jdouble shift, jdouble rate, jdouble amplitude)
 {
     const char *c = env->GetStringUTFChars(jtext, nullptr); std::string text(c); env->ReleaseStringUTFChars(jtext, c); // the text
-    std::vector<int16_t> a = mode == 0 ? rtty_tx_audio(text, f0, shift, 45.45, amplitude) : psk31_tx_audio(text, f0, amplitude);
+    std::vector<int16_t> a = mode == 0 ? rtty_tx_audio(text, f0, shift, rate, amplitude) : psk31_tx_audio(text, f0, amplitude, (int)rate);
     jshortArray out = env->NewShortArray((jsize)a.size()); env->SetShortArrayRegion(out, 0, (jsize)a.size(), a.data()); return out;
 }

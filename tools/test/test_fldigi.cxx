@@ -94,6 +94,15 @@ int tx_roundtrip()
     { auto a = rtty_tx_audio(t, 1500, 170, 45.45, 0.3); std::vector<double> s; for (auto v : a) s.push_back(v / 32768.0 + 0.02 * g(rng));
       RttyRx rx; rx.set_freq(1501); rx.set_squelch(0); std::string got; for (size_t i = 0; i < s.size(); i += 512) { rx.rx_process(&s[i], (int)std::min<size_t>(512, s.size() - i)); got += rx.take_text(); }
       printf("RTTY  TX -> RX: [%s]\n", got.c_str()); }
+    for (int speed : {31, 63, 125})                   // each PSK speed: the app's transmitter into its receiver, tuned 3 Hz off, with noise
+        for (double snr : {10.0, 0.0, -4.0, -7.0}) {  // (SNR in 2500 Hz)
+            auto a = psk31_tx_audio(t, 1200, 0.3, speed); double p = 0; for (auto v : a) p += (v / 32768.0) * (v / 32768.0); p /= a.size();
+            double sd = sqrt(p / pow(10.0, snr / 10.0) * (SR / 2) / 2500.0); // noise across 0-4 kHz for that SNR in 2500 Hz
+            std::vector<double> s; for (auto v : a) s.push_back(v / 32768.0 + sd * g(rng));
+            Psk31Rx rx(speed); rx.set_freq(1203); std::string got;
+            for (size_t i = 0; i < s.size(); i += 512) { rx.rx_process(&s[i], (int)std::min<size_t>(512, s.size() - i)); got += rx.take_text(); }
+            printf("PSK%-3d %+5.1f dB TX -> RX: [%s]  (%.1f s, freq %.1f, s/n %.1f dB)\n", speed, snr, got.c_str(), a.size() / SR, rx.get_freq(), rx.get_snr_db());
+        }
     return 0;
 }
 static int run_tx = tx_roundtrip();                  // (runs before main)

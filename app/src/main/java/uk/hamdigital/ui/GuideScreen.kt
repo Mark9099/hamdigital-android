@@ -153,6 +153,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.5 (October 2026): closing and reopening the app reconnects to the IC-705 over WiFi straight away (the app now " +
+        "finishes logging out of the radio before it stops).\n" +
         B + "0.8.4 (October 2026): the WiFi link connects first time: control commands wait until the radio has opened its " +
         "control stream (sending too early used to break the connection).\n" +
         B + "0.8.3 (October 2026): first FT8 transmissions over WiFi, heard across Europe. Calling a station from the FT8 / FT4 list " +

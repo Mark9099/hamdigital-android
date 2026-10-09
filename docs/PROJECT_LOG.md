@@ -2,6 +2,23 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.5 (WiFi: reopening the app reconnects at once)
+
+- Reported by the user: after reopening the app it often didn't reconnect, or got WiFi but no radio control. The
+  radio was keeping the old session, because the app's logout never reached it. There were three causes:
+  1. **The service stopped too early.** Closing the app stopped the foreground service at the same moment as the
+     logout, so Samsung blocked the app's network and the logout packets failed with EPERM. Fix: `IcomNet.disconnect(then)`
+     stops the service only after the logout has been sent. `RadioService.onTaskRemoved` does the same when the app is
+     swiped away.
+  2. **FT8CN's UDP client closed its socket before its queued packets went out,** and reused one shared send task, so
+     packets close together could be lost. Fix: one task per packet on a single-thread executor, and the queue drains
+     before the socket closes.
+  3. **FT8CN's close order was wrong.** The CI-V close was sent after its socket had shut, and the control stream
+     closed first. Fix: CI-V close, then audio close, then token delete, then control disconnect, as wfview does.
+  Details are in `icom/ANDROID_CHANGES.txt`.
+- On the radio: three rounds of close then reopen 3 s later each reconnected with CI-V flowing in 2–3 s, with no
+  EPERM and no send-queue timeouts.
+
 ## 2026-10-09: 0.8.4 (WiFi login root cause)
 
 - After a clean logout the radio accepted the next login within 65 ms. Half a second later the app's first CI-V

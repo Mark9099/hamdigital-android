@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()                            // draw under the system bars (the screens pad)
         setContent { HamDigitalTheme {                // the app, with the startup screen over it while it starts
             val screen by vm.screen.collectAsState()  // the screen under it
-            BackHandler(enabled = screen != Screen.Menu) { vm.back() } // Back on a page: to the menu
+            BackHandler { if (screen != Screen.Menu) vm.back() else finish() } // Back on a page: to the menu; on the menu: close the app - finished, so onDestroy logs out of the radio (Android 12+ only sends the app to the background on Back, leaving the link up)
             Box {
                 AppScreens(vm)                        // menu / mode page / Settings / Guide
                 val splash by vm.splash.collectAsState() // startup screen shown?

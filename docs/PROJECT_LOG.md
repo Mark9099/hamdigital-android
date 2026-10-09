@@ -45,7 +45,22 @@ Newest first.
 - DevTest: the FreeDV round trip now goes through `Engine` (RADE included, speech doubled to 16 kHz, callsign checked);
   `files/test/rade/*.wav` decodes a recording and reports the share of real time used.
 - APK: the debug build is 100 MB (it was 58 MB); the .so files are stored uncompressed.
-- **Not yet done:** on the phone (no device connected while this was built), on air.
+- **On the phone (S23):**
+  - Moved to the release key: backup of `files/` and `shared_prefs` (`log.adi`, 5 contacts), uninstall, install, `tar`
+    restore with run-as, and the microphone permission granted again with `pm grant`. The log is byte-identical to the
+    backup. In Git Bash, adb device paths need `MSYS_NO_PATHCONV=1`, or /data/local/tmp becomes C:/Program Files/Git/...
+  - DevTest, RADE: `FDV_offair.wav` (8 kHz) gives all four callsigns, 2628 of 2717 frames in sync, and 326 s decoded in
+    21.7 s (7% of real time). The round trip at 5 dB brings speech back with callsign M7JVY. 700D, 700E, 1600 and SSTV
+    are unchanged.
+- **Found on the phone: Back from the menu never logged out of the radio.** Since Android 12, Back on an app's root
+  activity only moves the task to the back without finishing it. `onDestroy(isFinishing)` never ran, so the WiFi link,
+  the CI-V polling and the foreground service all carried on after "closing" the app. Seen with logcat: CI-V traffic
+  after the app left the screen, and the activity still in its task.
+  - Fix: Back on the menu now calls `finish()` (the BackHandler is always enabled), so `onDestroy` logs out, then stops
+    the service.
+  - Swiping the app from Recents already logged out (`RadioService.onTaskRemoved`). `cmd activity stack remove <task>`
+    does the same from adb, and was used before the uninstall.
+- **Not yet done:** on air.
 
 ## 2026-10-09: first release (0.11.1 APK on GitHub)
 

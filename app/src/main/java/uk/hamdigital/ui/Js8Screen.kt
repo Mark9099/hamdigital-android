@@ -64,7 +64,7 @@ fun Js8Screen(vm: MainViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("Slot %.1f s".format((now % 15_000) / 1000f), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(78.dp))
             LinearProgressIndicator({ (now % 15_000) / 15_000f }, Modifier.weight(1f).height(5.dp), color = Pal.Cyan, trackColor = Pal.Tert)
-            Text(when { busy -> "  Decoding..."; last < 0 -> "  First decode at the slot's end"; else -> "  $last frames" }, color = if (busy) Pal.Amber else Pal.Text2, fontSize = 12.sp)
+            Text(when { busy -> "  Decoding..."; last == -2 -> "  Your transmit slot (not decoded)"; last < 0 -> "  First decode at the slot's end"; else -> "  $last frames" }, color = if (busy) Pal.Amber else Pal.Text2, fontSize = 12.sp)
         }
         TxBanner { Js8Tx.halt() }
         Js8TxPanel(to, { to = it.uppercase().filter { c -> c.isLetterOrDigit() || c == '/' || c == '@' } }, gate, txStatus)

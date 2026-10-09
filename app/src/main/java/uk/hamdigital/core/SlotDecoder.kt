@@ -35,7 +35,7 @@ class SlotDecoder(val ft4: Boolean) {
     private val _decodes = MutableStateFlow<List<FtDecode>>(emptyList()) // what was heard, newest first
     val decodes: StateFlow<List<FtDecode>> = _decodes
     val busy = MutableStateFlow(false)                // decoding now
-    val lastCount = MutableStateFlow(-1)              // decodes in the last slot (-1: none decoded yet)
+    val lastCount = MutableStateFlow(-1)              // decodes in the last slot (-1: none decoded yet, -2: we transmitted in it)
 
     @Volatile var myCall = ""                         // for "to me"
     @Volatile var myGrid = ""                         // for distances
@@ -45,6 +45,7 @@ class SlotDecoder(val ft4: Boolean) {
 
     /** A slot's audio, from its start (the background thread): decode it with ft8_lib. */
     private fun decode(slot: Long, out: ShortArray) {
+        if (uk.hamdigital.audio.Transmitter.sentDuring(slot, slot + periodMs)) { lastCount.value = -2; return } // our own transmission: not decoded
         busy.value = true
         val lines = try { Ft8Native.decode(out, out.size, ft4) } catch (e: Throwable) { emptyArray() } // ft8_lib
         val got = lines.mapNotNull { parse(slot, it) }.sortedBy { it.freq } // by frequency within the slot

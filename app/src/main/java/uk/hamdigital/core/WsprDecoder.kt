@@ -47,7 +47,7 @@ class WsprDecoder private constructor(ctx: Context) {
     private val _spots = MutableStateFlow<List<WsprSpot>>(emptyList()) // heard, newest first
     val spots: StateFlow<List<WsprSpot>> = _spots
     val busy = MutableStateFlow(false)                // decoding now
-    val lastCount = MutableStateFlow(-1)              // spots in the last slot (-1: none decoded yet)
+    val lastCount = MutableStateFlow(-1)              // spots in the last slot (-1: none decoded yet, -2: we transmitted in it)
     val message = MutableStateFlow("")                // what went wrong, if anything
 
     @Volatile var myGrid = ""                         // for distances
@@ -66,6 +66,7 @@ class WsprDecoder private constructor(ctx: Context) {
     /** The slot's 114 s from the ring (silence for any part before the audio started) to a WAV file, then wsprd. */
     private fun take(slot: Long) {
         if (startedMs > slot + 30_000) { message.value = "Waiting for the next 2-minute slot (WSPR decodes need most of one)"; return } // too little heard
+        if (uk.hamdigital.audio.Transmitter.sentDuring(slot, slot + recordMs)) { message.value = ""; lastCount.value = -2; return } // our beacon: not decoded
         val n = (recordMs * rate / 1000).toInt()      // 114 s of samples
         val first = written - ((endMs - slot) * rate / 1000) // the slot start's sample number
         val pcm = ShortArray(n)

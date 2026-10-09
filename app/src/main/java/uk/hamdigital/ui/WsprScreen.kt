@@ -62,7 +62,7 @@ fun WsprScreen(vm: MainViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("%d:%02d".format(into.toInt() / 60, into.toInt() % 60), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(44.dp))
             LinearProgressIndicator({ (into / 114f).coerceAtMost(1f) }, Modifier.weight(1f).height(5.dp), color = if (into < 114f) Pal.Cyan else Pal.Amber, trackColor = Pal.Tert)
-            Text(when { busy -> "  Decoding..."; msg.isNotEmpty() -> "  $msg"; last < 0 -> "  Decodes at 1:54"; else -> "  $last spots" },
+            Text(when { busy -> "  Decoding..."; msg.isNotEmpty() -> "  $msg"; last == -2 -> "  Your beacon slot (not decoded)"; last < 0 -> "  Decodes at 1:54"; else -> "  $last spots" },
                 color = if (busy || msg.isNotEmpty()) Pal.Amber else Pal.Text2, fontSize = 12.sp, maxLines = 1, modifier = Modifier.weight(1f, false))
         }
         Row(Modifier.fillMaxWidth().weight(1f)) {

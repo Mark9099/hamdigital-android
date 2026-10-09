@@ -61,7 +61,7 @@ object Transmitter {
                     .setBufferSizeInBytes(maxOf(AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT), rate / 5 * 2)) // 0.2 s
                     .build()
                 track.setPreferredDevice(dev)         // the radio, never the speaker
-                Ic705.ptt(true); _on.value = true     // key the transmitter
+                Ic705.ptt(true); keyed(true)          // key the transmitter
                 Thread.sleep(maxOf(0L, minOf(60L, startAtMs - System.currentTimeMillis()))) // (the rest of the keying lead)
                 track.play()
                 val t0 = System.currentTimeMillis()
@@ -79,7 +79,7 @@ object Transmitter {
             } finally {
                 Ic705.ptt(false); Ic705.ptt(false)    // unkey (twice: CI-V has no acknowledgement here)
                 try { track?.stop() } catch (e: Exception) { }; track?.release()
-                _on.value = false; thread = null
+                keyed(false); thread = null
                 onDone(ok)
             }
         }, "tx").apply { priority = Thread.MAX_PRIORITY; start() }
@@ -97,17 +97,32 @@ object Transmitter {
             try {
                 val wait = startAtMs - System.currentTimeMillis() - 60; if (wait > 0) Thread.sleep(wait) // key 60 ms before
                 if (stop) return@Thread
-                Ic705.ptt(true); _on.value = true     // PTT over the network
+                Ic705.ptt(true); keyed(true)          // PTT over the network
                 Thread.sleep(60)
                 uk.hamdigital.rig.IcomNet.sendAudio(f) // streamed by the protocol code in 20 ms packets
                 val end = System.currentTimeMillis() + n * 1000L / 12000 + 200 // its length, plus the protocol's lead-in
                 while (!stop && System.currentTimeMillis() < end) Thread.sleep(20) // (at most 110.6 s + 0.2: within the watchdog)
                 ok = !stop
             } catch (e: Exception) { lastError.value = "Transmit failed: ${e.message}" }
-            finally { Ic705.ptt(false); _on.value = false; thread = null; onDone(ok) }
+            finally { Ic705.ptt(false); keyed(false); thread = null; onDone(ok) }
         }, "tx-net").apply { priority = Thread.MAX_PRIORITY; start() }
         return true
     }
+
+    private val sent = ArrayDeque<LongArray>()        // the last few transmissions: [keyed, unkeyed] UTC ms (unkeyed MAX while on)
+
+    private fun keyed(on: Boolean) {                  // PTT on / off: noted for sentDuring
+        synchronized(sent) {
+            if (on) { sent.addLast(longArrayOf(System.currentTimeMillis(), Long.MAX_VALUE)); while (sent.size > 8) sent.removeFirst() }
+            else sent.lastOrNull()?.let { if (it[1] == Long.MAX_VALUE) it[1] = System.currentTimeMillis() }
+        }
+        _on.value = on
+    }
+
+    /** Whether the app transmitted at any time from [fromMs] to [toMs] (UTC ms). The radio passes its own transmit audio
+     *  back while keyed, so a slot we sent in decodes as our own message at +40 dB (found on the air, 0.8.6): the
+     *  decoders skip such slots, as WSJT-X does - the radio hears nobody else while it transmits. */
+    fun sentDuring(fromMs: Long, toMs: Long): Boolean = synchronized(sent) { sent.any { it[0] < toMs && it[1] > fromMs } }
 
     /** Stop transmitting now (and drop a transmission waiting to start). */
     fun halt() { stop = true; if (thread == null) Ic705.ptt(false) }

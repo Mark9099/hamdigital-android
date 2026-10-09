@@ -153,6 +153,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.6 (October 2026): a slot you transmitted in is no longer decoded (the radio passes its own transmit audio back, " +
+        "so your own message used to appear in the list at +40 dB). FT8, FT4, JS8 and WSPR.\n" +
         B + "0.8.5 (October 2026): closing and reopening the app reconnects to the IC-705 over WiFi straight away (the app now " +
         "finishes logging out of the radio before it stops).\n" +
         B + "0.8.4 (October 2026): the WiFi link connects first time: control commands wait until the radio has opened its " +

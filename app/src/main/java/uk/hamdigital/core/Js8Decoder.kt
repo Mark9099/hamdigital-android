@@ -31,7 +31,7 @@ class Js8Decoder private constructor() {
     val calls = MutableStateFlow<List<Js8Call>>(emptyList())  // by when last heard
     val toMe = MutableStateFlow<List<Js8Frame>>(emptyList())  // directed to your call, newest first
     val busy = MutableStateFlow(false)                // decoding now
-    val lastCount = MutableStateFlow(-1)              // frames in the last slot (-1: none decoded yet)
+    val lastCount = MutableStateFlow(-1)              // frames in the last slot (-1: none decoded yet, -2: we transmitted in it)
     @Volatile var nfqso = 1500                        // the receive offset (Hz): tried first
     @Volatile var myCall = ""                         // for "to me"
     @Volatile var myGrid = ""                         // for distances
@@ -40,6 +40,7 @@ class Js8Decoder private constructor() {
     fun feed(b: ShortArray, n: Int) = audio.feed(b, n) // audio in (the capture thread)
 
     private fun decode(slot: Long, out: ShortArray) { // (the background thread)
+        if (uk.hamdigital.audio.Transmitter.sentDuring(slot, slot + 15_000L)) { lastCount.value = -2; return } // our own transmission: not decoded
         busy.value = true
         val lines = try { Js8Native.decode(out, out.size, nfqso) } catch (e: Throwable) { emptyArray() }
         val got = lines.mapNotNull { parse(slot, it) }.sortedBy { it.freq }

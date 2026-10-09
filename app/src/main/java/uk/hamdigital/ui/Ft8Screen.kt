@@ -60,7 +60,7 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("Slot %.1f s".format((now % dec.periodMs) / 1000f), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(78.dp))
             LinearProgressIndicator({ into }, Modifier.weight(1f).height(5.dp), color = Pal.Cyan, trackColor = Pal.Tert)
-            Text(when { busy -> "  Decoding..."; last < 0 -> "  First decode at the slot's end"; else -> "  $last decoded" },
+            Text(when { busy -> "  Decoding..."; last == -2 -> "  Your transmit slot (not decoded)"; last < 0 -> "  First decode at the slot's end"; else -> "  $last decoded" },
                 color = if (busy) Pal.Amber else Pal.Text2, fontSize = 12.sp)
         }
         FtTxPanel(qso, gate)                              // transmit

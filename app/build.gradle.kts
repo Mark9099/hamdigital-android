@@ -22,8 +22,8 @@ android {
         applicationId = "uk.hamdigital"              // installed app id
         minSdk = 26                                  // Android 8.0 and newer
         targetSdk = 35                               // Android 15 behaviour
-        versionCode = 16                             // store version number
-        versionName = "0.8.5"                        // shown on the startup screen and in Settings
+        versionCode = 17                             // store version number
+        versionName = "0.8.6"                        // shown on the startup screen and in Settings
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") } // phones, tablets, the emulator
     }
 

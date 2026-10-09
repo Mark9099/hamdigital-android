@@ -2,6 +2,24 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.6 (first complete FT8 contact; own transmissions no longer decoded)
+
+- **On the air, 40 m FT8 over WiFi:**
+  - The first complete contact: M7CYY (IO70), sent +01, received -03. The sequence ran by itself: Tx1 four times,
+    their report, R+01, their RR73, then 73. It was logged to `log.adi` with the correct ADIF fields.
+  - Answering PD4RJ earlier got no reply after 6 tries, and the transmit watchdog turned TX off as designed.
+  - PSK Reporter showed 30+ stations hearing us in those minutes, from -25 to +8 dB, including TF4M in Iceland.
+- **Found on the air:** our own transmission showed in the decode list at +40 dB, because the IC-705 passes its
+  transmit audio back while keyed. Fix: `Transmitter` records when each transmission is keyed and unkeyed
+  (`sentDuring`). FT8/FT4 (`SlotDecoder`), JS8 and WSPR skip any slot a transmission overlapped, as WSJT-X does (the
+  radio hears nobody else while it transmits). The slot line then says "Your transmit slot (not decoded)".
+- **Testing note:** a tap planned from a 13 s-old screenshot hit a row that new decodes had pushed into place
+  (DD1UN). It was halted before its slot, so nothing was sent. For adb-driven tests, find the row in a fresh
+  `uiautomator dump` and tap it 2–7 s into a slot.
+- **Checked on the air:** 0.8.6 logged in to the radio 0.25 s after opening. Calling DJ2MS (who worked DB5HS instead):
+  each of our 6 transmit slots showed "Your transmit slot (not decoded)", and no +40 dB line appeared. The slots
+  between still decoded normally (4–10 messages each).
+
 ## 2026-10-09: 0.8.5 (WiFi: reopening the app reconnects at once)
 
 - Reported by the user: after reopening the app it often didn't reconnect, or got WiFi but no radio control. The

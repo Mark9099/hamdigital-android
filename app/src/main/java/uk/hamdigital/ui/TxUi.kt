@@ -72,7 +72,7 @@ fun FtTxPanel(qso: FtQso, gate: TxGate) {
         }
     }
     Text(listOfNotNull(q.dx.takeIf { it.isNotEmpty() }?.let { "DX $it ${q.dxGrid}" }, q.rcvd.takeIf { it.isNotEmpty() }?.let { "rcvd $it" }, q.status.ifEmpty { null },
-        if (q.logged) "logged" else null).joinToString("  •  ").ifEmpty { "Tap a CQ (or a station calling you) to answer it, or Call CQ. Tap the waterfall to set the TX offset." },
+        if (q.logged) "logged" else null).joinToString("  •  ").ifEmpty { if (qso.myCall.isBlank()) "Set your callsign and locator in Settings to transmit." else "Tap a CQ (or a station calling you) to answer it, or Call CQ. Tap the waterfall to set the TX offset." },
         color = if (q.enabled) Pal.Amber else Pal.Muted, fontSize = 12.sp, fontFamily = FontFamily.Default, maxLines = 2)
 }
 

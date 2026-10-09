@@ -148,6 +148,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.1 (October 2026): the WiFi password is hidden; clearer notes on the FT8 and WSPR pages until your callsign and " +
+        "locator are set.\n" +
         B + "0.8.0 (October 2026): the IC-705 over WiFi (Icom's network protocol, from the FT8CN app): audio and control without " +
         "a lead, for every mode. Settings > Connection: WiFi.\n" +
         B + "0.7.3 (October 2026): JS8Call sending (heartbeat, CQ, SNR? / GRID? / ACK / 73, and messages). Every mode now " +

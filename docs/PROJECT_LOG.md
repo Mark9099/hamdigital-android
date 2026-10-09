@@ -2,6 +2,18 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.1 (checked on the S23)
+
+- 0.8.0 on the S23: the FT8 transmit panel, the WSPR beacon row, the JS8 send panel and the Settings WiFi section all
+  display and work without crashes (no radio attached).
+- Fixes from that look:
+  - The WiFi password is hidden. CompactField has a `password` option.
+  - Until a callsign and locator are set, the FT8/FT4 panel and the WSPR beacon line ask for them. The beacon line
+    used to show `"  37"`.
+  - The WSPR status reads "Decodes at 1:54", where it used to be cut off.
+- Repository published: https://github.com/Mark9099/hamdigital-android (public, GPL v3). The commits were rewritten to
+  the GitHub no-reply address before the first push.
+
 ## 2026-10-09: 0.8.0, stage 8 (the IC-705 over WiFi)
 
 - FT8CN's Icom network-protocol classes (MIT) are copied into `uk.hamdigital.icom` by `tools/port_icom.py`, with the

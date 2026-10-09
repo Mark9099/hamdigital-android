@@ -66,12 +66,14 @@ fun SmallChip(text: String, selected: Boolean, modifier: Modifier = Modifier, on
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompactField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier, readOnly: Boolean = false, isError: Boolean = false,
-                 keyboardOptions: KeyboardOptions = KeyboardOptions.Default, trailing: (@Composable () -> Unit)? = null, enabled: Boolean = true) { // enabled = false: greyed, not editable
+                 keyboardOptions: KeyboardOptions = KeyboardOptions.Default, trailing: (@Composable () -> Unit)? = null, enabled: Boolean = true, // enabled = false: greyed, not editable
+                 password: Boolean = false) { // password: the characters are hidden
     val interaction = remember { MutableInteractionSource() } // focus state, shared with the decoration
     val colors = OutlinedTextFieldDefaults.colors()   // the theme's outlined colours
     BasicTextField(value, onValueChange, modifier.heightIn(min = 44.dp), enabled = enabled, readOnly = readOnly, singleLine = true, textStyle = TextStyle(color = if (enabled) Pal.Text else Pal.Dim, fontSize = 15.sp),
-        cursorBrush = SolidColor(Pal.Cyan), keyboardOptions = keyboardOptions, interactionSource = interaction) { inner ->
-        OutlinedTextFieldDefaults.DecorationBox(value = value, innerTextField = inner, enabled = enabled, singleLine = true, visualTransformation = VisualTransformation.None,
+        cursorBrush = SolidColor(Pal.Cyan), keyboardOptions = keyboardOptions, interactionSource = interaction,
+        visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else VisualTransformation.None) { inner ->
+        OutlinedTextFieldDefaults.DecorationBox(value = value, innerTextField = inner, enabled = enabled, singleLine = true, visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else VisualTransformation.None,
             interactionSource = interaction, isError = isError, label = { Text(label) }, trailingIcon = trailing, colors = colors,
             contentPadding = OutlinedTextFieldDefaults.contentPadding(start = 12.dp, top = 8.dp, end = 8.dp, bottom = 8.dp), // the compact part
             container = { OutlinedTextFieldDefaults.Container(enabled = enabled, isError = isError, interactionSource = interaction, colors = colors) })

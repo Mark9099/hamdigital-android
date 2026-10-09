@@ -62,7 +62,7 @@ fun WsprScreen(vm: MainViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("%d:%02d".format(into.toInt() / 60, into.toInt() % 60), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(44.dp))
             LinearProgressIndicator({ (into / 114f).coerceAtMost(1f) }, Modifier.weight(1f).height(5.dp), color = if (into < 114f) Pal.Cyan else Pal.Amber, trackColor = Pal.Tert)
-            Text(when { busy -> "  Decoding..."; msg.isNotEmpty() -> "  $msg"; last < 0 -> "  Decodes at 1:54 of each even minute"; else -> "  $last spots" },
+            Text(when { busy -> "  Decoding..."; msg.isNotEmpty() -> "  $msg"; last < 0 -> "  Decodes at 1:54"; else -> "  $last spots" },
                 color = if (busy || msg.isNotEmpty()) Pal.Amber else Pal.Text2, fontSize = 12.sp, maxLines = 1, modifier = Modifier.weight(1f, false))
         }
         Row(Modifier.fillMaxWidth().weight(1f)) {
@@ -112,6 +112,6 @@ private fun WsprTxPanel(gate: TxGate) {
         PERCENTS.forEach { p -> SmallChip("$p %", p == b.percent) { WsprBeacon.setPercent(p) } }
         POWERS.forEach { (d, t) -> SmallChip(t, d == b.dbm) { WsprBeacon.setDbm(d) } }
     }
-    Text(b.status.ifEmpty { "Beacon: \"${WsprBeacon.message(b)}\" at ${b.txHz} Hz (tap the waterfall to move it). Set the power to what the IC-705 sends." },
+    Text(b.status.ifEmpty { if (WsprBeacon.myCall.isBlank() || WsprBeacon.myGrid.length < 4) "Set your callsign and locator in Settings to use the beacon." else "Beacon: \"${WsprBeacon.message(b)}\" at ${b.txHz} Hz (tap the waterfall to move it). Set the power to what the IC-705 sends." },
         color = if (b.enabled) Pal.Amber else Pal.Muted, fontSize = 12.sp, maxLines = 2)
 }

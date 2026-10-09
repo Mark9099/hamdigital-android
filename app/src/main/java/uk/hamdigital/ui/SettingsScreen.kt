@@ -69,7 +69,7 @@ fun SettingsScreen(vm: MainViewModel) {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CompactField(user, { user = it }, "Network user", Modifier.weight(1f))
-                CompactField(pass, { pass = it }, "Password", Modifier.weight(1f))
+                CompactField(pass, { pass = it }, "Password", Modifier.weight(1f), password = true, keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password)) // (hidden)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button({ vm.updateSettings { it.copy(wifiIp = ip, wifiPort = wport.toIntOrNull() ?: 50001, wifiUser = user, wifiPass = pass, audio = AudioChoice.WIFI) }

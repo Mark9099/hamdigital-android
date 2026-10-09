@@ -63,6 +63,8 @@ Newest first.
 - **x86_64 dropped** (the user's decision): only the emulator, which this PC cannot run, and a few old Intel tablets used
   it. The ABIs are now arm64-v8a and armeabi-v7a. The release APK went from about 92 MB to 64.6 MB. It is one line in
   `app/build.gradle.kts` (`abiFilters`) to add back.
+- **Released:** https://github.com/Mark9099/hamdigital-android/releases/tag/v0.12.0 (APK 64.6 MB, SHA-256
+  d72a7cf91c220166b986afa6c0db757112d2cccdad8300cf4f11132be232a6dd).
 - **On air (2026-10-09, 19:32-19:46 UTC, IC-705 over WiFi, USB-D):** 5 minutes on 7.177 and 5 on 14.236 heard no
   RADE station. The waterfall showed band noise across the passband, so audio was arriving: the bands were just
   quiet then.

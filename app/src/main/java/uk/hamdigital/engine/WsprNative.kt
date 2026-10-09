@@ -7,4 +7,7 @@ object WsprNative {
     /** Decode a 2-minute slot's WAV (12 kHz, yymmdd_hhmm.wav); wsprd keeps its files in dataDir. Returns wsprd's spots
      *  ("date time sync snr dt freq message drift cycles jitter" a line), or null if it failed. */
     @JvmStatic external fun decode(wavPath: String, dataDir: String, dialMHz: Double): String?
+
+    /** WSPR transmit audio for "CALL GRID DBM" centred on [f0] Hz (12 kHz, 110.6 s); null if it cannot be encoded. */
+    @JvmStatic external fun encode(message: String, f0: Float, amplitude: Float): ShortArray?
 }

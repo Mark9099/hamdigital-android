@@ -13,3 +13,16 @@ JNIEXPORT jstring JNICALL Java_uk_hamdigital_engine_WsprNative_decode(JNIEnv *en
     jstring r = n < 0 ? NULL : (*env)->NewStringUTF(env, out); // null: wsprd failed
     free(out); return r;
 }
+
+// WSPR transmit audio for "CALL GRID DBM" centred on f0 Hz (12 kHz, 110.6 s); null if it cannot be encoded.
+JNIEXPORT jshortArray JNICALL Java_uk_hamdigital_engine_WsprNative_encode(JNIEnv *env, jclass cls, jstring jmsg, jfloat f0, jfloat amplitude)
+{
+    const char *msg = (*env)->GetStringUTFChars(env, jmsg, NULL);
+    int max = 162 * 8192;
+    int16_t *buf = (int16_t *)malloc(sizeof(int16_t) * max);
+    int n = wspr_encode_audio(msg, f0, buf, max, amplitude);
+    (*env)->ReleaseStringUTFChars(env, jmsg, msg);
+    jshortArray out = NULL;
+    if (n > 0) { out = (*env)->NewShortArray(env, n); (*env)->SetShortArrayRegion(env, out, 0, n, buf); }
+    free(buf); return out;
+}

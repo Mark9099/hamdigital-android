@@ -40,3 +40,37 @@ int wspr_decode_file(const char *wav, const char *data_dir, double dial_mhz, cha
     pthread_mutex_unlock(&g_mx);
     return rc == 0 ? n : -1;                         // characters, or -1 if wsprd failed
 }
+
+// ---- transmit: WSJT-X's get_wspr_channel_symbols (wsprsim_utils.c) -> 4-FSK audio ----
+#include <math.h>                                    // sin
+#include <stdlib.h>                                  // calloc
+#include "wsprd/wsprsim_utils.h"                     // get_wspr_channel_symbols
+
+int wspr_encode_audio(const char *message, float f0, int16_t *out, int max_samples, float amplitude)
+{
+    char msg[32]; snprintf(msg, sizeof msg, "%s", message); // (the encoder edits its input)
+    char *hashtab = (char *)calloc(32768 * 13, 1);   // its tables, as wsprsim.c makes them
+    char *loctab = (char *)calloc(32768 * 5, 1);
+    unsigned char symbols[162];
+    pthread_mutex_lock(&g_mx);
+    int ok = get_wspr_channel_symbols(msg, hashtab, loctab, symbols); // 1 = encoded
+    pthread_mutex_unlock(&g_mx);
+    free(hashtab); free(loctab);
+    if (!ok) return -1;                              // not a message WSPR can send
+    const int sps = 8192;                            // samples a symbol at 12 kHz (1.4648 baud)
+    const double df = 12000.0 / 8192.0;              // tone spacing (Hz)
+    int n = 162 * sps;                               // 110.6 s
+    if (n > max_samples) return -1;
+    double phase = 0;                                // continuous phase
+    for (int s = 0; s < 162; s++) {
+        double dphi = 2 * M_PI * (f0 + (symbols[s] - 1.5) * df) / 12000.0; // tones centred on f0
+        for (int i = 0; i < sps; i++) {
+            int k = s * sps + i;
+            double env = 1.0;                        // 10 ms ramps at the ends (no key clicks)
+            if (k < 120) env = 0.5 - 0.5 * cos(M_PI * k / 120.0); else if (k >= n - 120) env = 0.5 - 0.5 * cos(M_PI * (n - 1 - k) / 120.0);
+            out[k] = (int16_t)(sin(phase) * env * amplitude * 32767.0);
+            phase += dphi; if (phase > 2 * M_PI) phase -= 2 * M_PI;
+        }
+    }
+    return n;
+}

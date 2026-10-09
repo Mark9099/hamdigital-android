@@ -2,6 +2,19 @@
 
 Newest first.
 
+## 2026-10-09: 0.7.1, stage 7b (WSPR beacon)
+
+- `wspr_run.c` `wspr_encode_audio`: WSJT-X's `get_wspr_channel_symbols` (wsprsim_utils.c, already built) produces 162
+  symbols. They are sent as continuous-phase 4-FSK, 12000/8192 = 1.465 Hz apart and centred on the offset, 8192
+  samples each (110.6 s), with 10 ms end ramps. JNI: `WsprNative.encode`.
+- PC round trip (`tools/test/test_wsprtx.c`): "M7JVY IO91 23" and "G4ABC JO01 37" written as noisy slot WAVs and
+  decoded by the app's wsprd exactly, with drift 0, on frequency and DT 0.0.
+- `core/WsprBeacon.kt`: decides 2 s before each even minute with the chosen percentage (WSJT-X's Tx Pct), sends
+  "CALL GRID4 DBM" at the even minute + 1 s through Transmitter, and receives the other slots. It refuses without a
+  locator and reports why.
+- WSPR page: beacon on/off, 10/20/33/50 %, power reported (200 mW–10 W), status, a red line at the offset, and a tap
+  on the waterfall to move it (1410–1590 Hz).
+
 ## 2026-10-09: 0.7.0, stage 7a (FT8 and FT4 transmit)
 
 - `ft8_slot.c` `ft8_encode_audio`: ft8_lib's message encoder and the GFSK synthesiser from its `demo/gen_ft8.c` (MIT),

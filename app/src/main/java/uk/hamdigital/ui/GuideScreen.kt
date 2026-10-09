@@ -101,7 +101,11 @@ private val GUIDE = listOf(
         "dial plus the audio offset; with the radio not connected, the audio frequency in Hz), Dr (drift, Hz a minute), the station's " +
         "call, locator and power, and km from your locator.\n" +
         B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
-        B + "Transmitting your own WSPR beacon comes in stage 7.",
+        B + "Beacon: transmits \"YOURCALL GRID POWER\" (your callsign, 4-character locator and the power chosen) in the chosen share " +
+        "of the two-minute slots - 20 % is usual: about one slot in five, picked at random so beacons on the frequency rarely " +
+        "collide - starting one second after the even minute. The other slots are received as usual, so you can see who hears " +
+        "you on WSPRnet.org. Choose the power the IC-705 is set to; tap the waterfall to move the beacon's offset (red line, " +
+        "1410-1590 Hz). Beacon: off stops it, ending a transmission in progress.",
 
     "RTTY and PSK31" to
         "Keyboard modes, decoded by fldigi's receivers (the demodulators from the fldigi program).\n\n" +
@@ -130,6 +134,7 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.7.1 (October 2026): the WSPR beacon (transmit percentage, power reported, offset).\n" +
         B + "0.7.0 (October 2026): FT8 and FT4 transmit: answer a CQ or call CQ with WSJT-X-style automatic sequencing, PTT over " +
         "CI-V and audio to the IC-705's USB sound card, the licence notice, the ADIF logbook (Settings > Logbook) and the transmit level.\n" +
         B + "0.6.0 (October 2026): JS8Call receive (JS8 Normal) with JS8Call's decoder: Band activity, Calls and To me. Every " +

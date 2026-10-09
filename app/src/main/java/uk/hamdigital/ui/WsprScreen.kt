@@ -1,10 +1,12 @@
 // WSPR page: the radio and its bands, the 2-minute slot bar (WSPR transmissions start a second after each even UTC
 // minute; the slot is decoded at 1:54), a waterfall of the WSPR window (1400-1600 Hz of audio), and the spots heard -
 // newest slot first - with UTC, signal (dB), time offset, frequency, drift, call, locator, power and distance.
-// Decoding by wsprd from WSJT-X (GPL v3).
+// Decoding by wsprd from WSJT-X (GPL v3). The beacon (WsprBeacon): on / off, % of slots, power; tap the waterfall for its offset.
 package uk.hamdigital.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +27,7 @@ import kotlinx.coroutines.delay
 import uk.hamdigital.MainViewModel
 import uk.hamdigital.audio.Spectrum
 import uk.hamdigital.core.Mode
+import uk.hamdigital.core.WsprBeacon
 import uk.hamdigital.core.WsprDecoder
 import uk.hamdigital.core.WsprSpot
 import uk.hamdigital.rig.Ic705
@@ -46,10 +49,15 @@ fun WsprScreen(vm: MainViewModel) {
     val msg by dec.message.collectAsStateWithLifecycle()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) } // for the slot bar
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(250) } }
+    val gate = rememberTxGate(vm)                       // the licence notice before transmitting
+    val b by WsprBeacon.state.collectAsStateWithLifecycle() // the beacon (its offset marker)
+    LaunchedEffect(s) { WsprBeacon.attach(ctx); WsprBeacon.myCall = s.callsign; WsprBeacon.myGrid = s.locator; WsprBeacon.level = s.txLevel / 100f }
+    val marks = listOf(b.txHz.toFloat() to Pal.Red)     // where the beacon transmits
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     ModeFrame("WSPR", { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {
         RxStatus(rx)                                        // audio, level
         RigBar(Mode.WSPR)                                   // the radio, the bands
+        WsprTxPanel(gate)                                   // the beacon
         val into = (now % 120_000L) / 1000f                 // seconds into the 2 minutes
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) { // slot bar
             Text("%d:%02d".format(into.toInt() / 60, into.toInt() % 60), color = Pal.Text2, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(44.dp))
@@ -58,9 +66,9 @@ fun WsprScreen(vm: MainViewModel) {
                 color = if (busy || msg.isNotEmpty()) Pal.Amber else Pal.Text2, fontSize = 12.sp, maxLines = 1, modifier = Modifier.weight(1f, false))
         }
         Row(Modifier.fillMaxWidth().weight(1f)) {
-            if (sideways) Waterfall(spec, Modifier.weight(0.4f).fillMaxHeight().padding(end = 8.dp, top = 4.dp, bottom = 4.dp)) // beside the list
+            if (sideways) Waterfall(spec, Modifier.weight(0.4f).fillMaxHeight().padding(end = 8.dp, top = 4.dp, bottom = 4.dp), marks = marks) { WsprBeacon.setTxHz(it.toInt()) } // beside the list
             Column(Modifier.weight(1f)) {
-                if (!sideways) Waterfall(spec, Modifier.fillMaxWidth().height(110.dp).padding(vertical = 4.dp)) // above the list
+                if (!sideways) Waterfall(spec, Modifier.fillMaxWidth().height(110.dp).padding(vertical = 4.dp), marks = marks) { WsprBeacon.setTxHz(it.toInt()) } // above the list; tap: beacon offset
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {  // column titles
                     listOf("UTC" to 42.dp, "dB" to 34.dp, "DT" to 36.dp, "MHz" to 84.dp, "Dr" to 24.dp).forEach { (t, w) -> Text(t, Modifier.width(w), color = Pal.Muted, fontSize = 11.sp) }
                     Text("Call  Locator  Power", Modifier.weight(1f), color = Pal.Muted, fontSize = 11.sp); Text("km", color = Pal.Muted, fontSize = 11.sp)
@@ -89,4 +97,21 @@ private fun SpotRow(d: WsprSpot, firstOfSlot: Boolean) {
         Text("${d.call}  ${d.grid}  ${d.watts}", Modifier.weight(1f), color = Pal.Text, fontSize = 14.sp, fontFamily = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(d.km?.let { "$it" } ?: "", color = Pal.Muted, fontSize = 12.sp, fontFamily = mono)
     }
+}
+
+private val PERCENTS = listOf(10, 20, 33, 50)          // WSJT-X-style transmit percentages
+private val POWERS = listOf(23 to "200 mW", 30 to "1 W", 33 to "2 W", 37 to "5 W", 40 to "10 W") // dBm reported
+
+/** The WSPR beacon's controls: on / off, how often, the power reported, and what it is doing. */
+@Composable
+private fun WsprTxPanel(gate: TxGate) {
+    val b by WsprBeacon.state.collectAsStateWithLifecycle()
+    TxBanner { WsprBeacon.enable(false) }
+    Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        SmallChip(if (b.enabled) "Beacon: on" else "Beacon: off", b.enabled) { if (b.enabled) WsprBeacon.enable(false) else gate.ask { WsprBeacon.enable(true) } }
+        PERCENTS.forEach { p -> SmallChip("$p %", p == b.percent) { WsprBeacon.setPercent(p) } }
+        POWERS.forEach { (d, t) -> SmallChip(t, d == b.dbm) { WsprBeacon.setDbm(d) } }
+    }
+    Text(b.status.ifEmpty { "Beacon: \"${WsprBeacon.message(b)}\" at ${b.txHz} Hz (tap the waterfall to move it). Set the power to what the IC-705 sends." },
+        color = if (b.enabled) Pal.Amber else Pal.Muted, fontSize = 12.sp, maxLines = 2)
 }

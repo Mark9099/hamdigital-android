@@ -51,7 +51,7 @@ fun WsprScreen(vm: MainViewModel) {
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(250) } }
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     val b by WsprBeacon.state.collectAsStateWithLifecycle() // the beacon (its offset marker)
-    LaunchedEffect(s) { WsprBeacon.attach(ctx); WsprBeacon.myCall = s.callsign; WsprBeacon.myGrid = s.locator; WsprBeacon.level = s.txLevel / 100f }
+    remember(s) { WsprBeacon.attach(ctx); WsprBeacon.myCall = s.callsign; WsprBeacon.myGrid = s.locator; WsprBeacon.level = s.txLevel / 100f }
     val marks = listOf(b.txHz.toFloat() to Pal.Red)     // where the beacon transmits
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     ModeFrame("WSPR", { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {

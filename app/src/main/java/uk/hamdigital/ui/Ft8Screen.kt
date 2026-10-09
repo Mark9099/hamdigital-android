@@ -50,7 +50,7 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     val ctx = LocalContext.current
     val qso = if (m == Mode.FT4) FtQso.FT4 else FtQso.FT8 // contacts (transmit)
-    LaunchedEffect(s) { qso.attach(ctx); qso.myCall = s.callsign; qso.myGrid = s.locator; qso.level = s.txLevel / 100f } // you, the level
+    remember(s) { qso.attach(ctx); qso.myCall = s.callsign; qso.myGrid = s.locator; qso.level = s.txLevel / 100f } // you, the level
     val q by qso.state.collectAsStateWithLifecycle()    // (the TX offset marker)
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     ModeFrame(m.title, { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {

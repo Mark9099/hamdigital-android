@@ -50,9 +50,13 @@ private val GUIDE = listOf(
         B + "WiFi (no lead): the app can reach the IC-705 over WiFi instead, with Icom's network protocol (as the RS-BA1 " +
         "software does) - receive and transmit audio and CI-V, so every mode works the same. On the radio: MENU > SET > WLAN Set " +
         "(WLAN on, joined to the same network as the phone - or join the phone to the radio's own access point); its IP address is " +
-        "under WLAN Set > Connection Status; MENU > SET > Network > Network User1 sets a user name and password. Enter them in " +
+        "under WLAN Set > Connection Status; MENU > SET > WLAN Set > Remote Settings > Network User1 sets a user name and password. Enter them in " +
         "Settings > Connection: WiFi and tap Connect over WiFi; the app then connects by WiFi whenever it starts, until you tap " +
-        "\"Use the USB lead\". The page's status line shows \"Audio: IC-705 (WiFi)\".",
+        "\"Use the USB lead\". The page's status line shows \"Audio: IC-705 (WiFi)\".\n" +
+        B + "The link keeps running when you switch to another app or the screen goes off - a \"HF Digital Modes\" notification " +
+        "shows it is; closing the app (Back from the menu) logs out of the radio. If the phone's WiFi drops, or the radio stops " +
+        "answering, the app reconnects by itself. The radio takes a minute or two to let go of a session that ended without " +
+        "logging out (the app stopped by Android, say): Settings shows \"trying again\" until it does.",
 
     "The menu" to
         "A tile for each mode: its name, what it is for, and whether its decoder is in this version (\"Decoder ready\") or still to come " +
@@ -148,6 +152,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.2 (October 2026): first tests with the IC-705 over WiFi: control, tuning and FT8 receive work. The link now keeps " +
+        "running when another app is open (a notification shows it is), reconnects by itself if WiFi drops or the radio is slow " +
+        "to let go of an old session, and logs out when the app closes.\n" +
         B + "0.8.1 (October 2026): the WiFi password is hidden; clearer notes on the FT8 and WSPR pages until your callsign and " +
         "locator are set.\n" +
         B + "0.8.0 (October 2026): the IC-705 over WiFi (Icom's network protocol, from the FT8CN app): audio and control without " +

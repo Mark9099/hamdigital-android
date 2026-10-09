@@ -73,14 +73,14 @@ fun SettingsScreen(vm: MainViewModel) {
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button({ vm.updateSettings { it.copy(wifiIp = ip, wifiPort = wport.toIntOrNull() ?: 50001, wifiUser = user, wifiPass = pass, audio = AudioChoice.WIFI) }
-                         uk.hamdigital.rig.IcomNet.connect(ip, wport.toIntOrNull() ?: 50001, user, pass) }) { Text("Connect over WiFi") }
-                OutlinedButton({ uk.hamdigital.rig.IcomNet.close(); vm.updateSettings { it.copy(audio = AudioChoice.AUTO) } }) { Text("Use the USB lead") }
+                         uk.hamdigital.rig.IcomNet.connect(ctx, ip, wport.toIntOrNull() ?: 50001, user, pass) }) { Text("Connect over WiFi") }
+                OutlinedButton({ uk.hamdigital.rig.IcomNet.disconnect(); vm.updateSettings { it.copy(audio = AudioChoice.AUTO) } }) { Text("Use the USB lead") }
             }
             Text(net.ifEmpty { "Not connected over WiFi" }, color = if (uk.hamdigital.rig.IcomNet.loggedIn) Pal.Green else Pal.Muted, fontSize = 14.sp)
             Text("Instead of the USB lead, the app can reach the IC-705 over WiFi with Icom's network protocol (as the RS-BA1 " +
                 "software does): receive and transmit audio and CI-V control. On the radio: MENU > SET > WLAN Set - turn WLAN on and " +
                 "connect it to the same network as this phone (or connect the phone to the radio's own access point); the IP address " +
-                "is under WLAN Set > Connection Status. MENU > SET > Network > Network User1: a user name and password, entered " +
+                "is under WLAN Set > Connection Status. MENU > SET > WLAN Set > Remote Settings > Network User1: a user name and password, entered " +
                 "here. The port is 50001 unless changed. Connecting sets Receive audio to WiFi; \"Use the USB lead\" goes back.",
                 color = Pal.Muted, fontSize = 13.sp, lineHeight = 17.sp)
 

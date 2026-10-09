@@ -2,6 +2,33 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.2, first test with the IC-705 (WiFi)
+
+- **It works over WiFi:**
+  - Login to the IC-705 (192.168.0.39, found by its Icom MAC 00-90-C7).
+  - CI-V both ways: frequency and mode readout, and the 40 m chip tuned the radio to 7.074.000 USB-D.
+  - Receive audio feeds the waterfall, and FT8 decodes off air on 40 m: 15 in one slot, 49 in the first minute,
+    DT 0.1–0.4 s, sensible reports and distances.
+- **Fault 1:** sends failed with EPERM and the link died whenever the phone was not showing the app. Samsung's
+  background-app control (FreecessController, logged at an app switch) cuts a background app off the network.
+  - Fix: `RadioService`, a foreground service with types connectedDevice|microphone and an ongoing notification. It
+    starts on resume and stops when the app closes, keeping the link and receive audio running in the background.
+  - Manifest: FOREGROUND_SERVICE(+_CONNECTED_DEVICE, _MICROPHONE), CHANGE_NETWORK_STATE, POST_NOTIFICATIONS.
+- **Fault 2:** after an unclean end (process killed, link lost) the radio holds the old session for about 1–2
+  minutes and ignores new logins. FT8CN asks "are you ready" only once, so the app was stuck for good.
+  - Fix: IcomNet now keeps a target and runs a watchdog every 2 s. With no login after 10 s or no CI-V for 8 s, it
+    logs out and retries at 5, 10, 20 and 30 s. On the air it got in at try 5, about 2 minutes after the kill.
+  - It also logs out when the app closes (onDestroy while finishing).
+- **Fault 3:** Android may route the app's packets over mobile data. Fix: the app's traffic is pinned to the phone's
+  WiFi (`bindProcessToNetwork`), and a WiFi NetworkCallback waits on loss and reconnects on return.
+- Display fixes:
+  - Your callsign and locator now reach the FT8, WSPR and JS8 transmit panels during composition. Before, the page
+    showed "Set your callsign" and a bare "Tx6 CQ" until something else changed.
+  - The menu says "IC-705 connected over WiFi: audio + control".
+- Menu path corrected (user): MENU > SET > WLAN Set > Remote Settings > Network User1. The Guide, Settings and code
+  comments had a wrong "SET > Network" path.
+- Still to test: transmit over WiFi, the other modes on air, and the USB lead.
+
 ## 2026-10-09: 0.8.1 (checked on the S23)
 
 - 0.8.0 on the S23: the FT8 transmit panel, the WSPR beacon row, the JS8 send panel and the Settings WiFi section all

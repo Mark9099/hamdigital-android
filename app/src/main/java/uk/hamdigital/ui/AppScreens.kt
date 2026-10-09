@@ -74,6 +74,7 @@ private fun MenuScreen(vm: MainViewModel) {
                     Icon(Icons.Filled.Usb, null, tint = if (radio != null || civ) Pal.Green else Pal.Dim, modifier = Modifier.size(18.dp))
                     Text(when {
                         radio != null && civ -> "  IC-705 connected: audio + control  •  ${rig.freqText} ${rig.modeText}"
+                        civ && Ic705.net -> "  IC-705 connected over WiFi: audio + control  •  ${rig.freqText} ${rig.modeText}"
                         civ -> "  IC-705 control connected (no USB audio found)  •  ${rig.freqText} ${rig.modeText}"
                         radio != null -> "  $radio connected (USB audio)  •  ${rig.message.ifEmpty { "control not connected" }}"
                         else -> "  Radio not connected - plug the IC-705 in with a USB lead"

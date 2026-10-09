@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />           <!-- receive audio: the IC-705 over USB, or the microphone (asked on first use) -->
     <uses-permission android:name="android.permission.INTERNET" />               <!-- later stages: PSK Reporter / WSPRnet spots, clock check, WiFi link to the IC-705 -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- online? -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />            <!-- RadioService: keeps the radio link running in the background -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" /> <!-- (its type: the IC-705) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />  <!-- (and the receive audio) -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />          <!-- (the connected-device type needs one of these; also binds to WiFi) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />            <!-- its notification -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" /> <!-- the IC-705's USB lead (not needed for the microphone) -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" /> <!-- tablets without one can still use the radio's audio -->
 
@@ -31,6 +36,11 @@
             </intent-filter>
             <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" android:resource="@xml/usb_device_filter" />
         </activity>
+        <!-- Keeps the radio link and receive audio running in the background (RadioService.kt) -->
+        <service
+            android:name=".RadioService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|microphone" />
         <!-- Shares the logbook (ADIF) with other apps: e-mail, Drive, a logging program. -->
         <provider
             android:name="androidx.core.content.FileProvider"

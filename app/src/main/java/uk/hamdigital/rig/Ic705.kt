@@ -163,6 +163,7 @@ object Ic705 {
 
     /** IcomNet: logged in (or not) to the radio over WiFi. */
     fun netConnected(on: Boolean, why: String = "") {
+        android.util.Log.d("IcomNet", "netConnected($on, $why)")
         net = on; netPoll?.cancel(); netPoll = null
         if (on) {
             if (port != null) disconnect("Using WiFi")     // (one link at a time)

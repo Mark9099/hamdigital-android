@@ -56,7 +56,7 @@ fun Js8Screen(vm: MainViewModel) {
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     var to by rememberSaveable { mutableStateOf("") }   // the station to send to (tap one in Calls)
     val txStatus by Js8Tx.status.collectAsStateWithLifecycle()
-    LaunchedEffect(s, offset) { Js8Tx.attach(ctx); Js8Tx.myCall = s.callsign; Js8Tx.myGrid = s.locator; Js8Tx.level = s.txLevel / 100f; Js8Tx.txHz = offset } // you, the level, the offset
+    remember(s, offset) { Js8Tx.attach(ctx); Js8Tx.myCall = s.callsign; Js8Tx.myGrid = s.locator; Js8Tx.level = s.txLevel / 100f; Js8Tx.txHz = offset } // you, the level, the offset
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     ModeFrame("JS8Call", { vm.back() }, actions = { TextButton({ dec.clear() }) { Text("Clear", color = Pal.Text2) } }) {
         RxStatus(rx)                                      // audio, level

@@ -19,6 +19,10 @@ Newest first.
   - `WorldMap` re-fits for new stations only if the map hasn't been zoomed or dragged since the last fit (`moved`).
     Fit, and the other list (`MapDialog.view`), always re-fit.
   - The note says spots arrive "at 1:54 of each slot".
+- **Checked on the S23 (0.10.3):**
+  - With the map open and untouched, the first slot filled it with 14 stations (fitted).
+  - After a drag, the next slot took it to 26 stations / 30 reports with the view unchanged; the new stations were
+    GM4ISM, G4HSB, G8LZI, G6CKK, DK8EY, PD0PF and F4HHR. A second timeline bar (14:34) appeared.
 
 ## 2026-10-09: 0.10.2 (WSPR map timeline; one dot per shared locator square)
 

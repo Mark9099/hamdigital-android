@@ -31,8 +31,8 @@ public class IcomUdpClient {
     private OnUdpEvents onUdpEvents = null;
     private final ExecutorService doReceiveThreadPool = Executors.newCachedThreadPool();
     private DoReceiveRunnable doReceiveRunnable = new DoReceiveRunnable(this);
-    private final ExecutorService sendDataThreadPool = Executors.newCachedThreadPool();
-    private SendDataRunnable sendDataRunnable = new SendDataRunnable(this);
+    // HF Digital Modes: one sender thread, so packets go out in order and close() can wait for them (see sendData).
+    private final ExecutorService sendDataThreadPool = Executors.newSingleThreadExecutor();
 
     public IcomUdpClient() {//本地端口随机
         localPort = -1;
@@ -46,10 +46,13 @@ public class IcomUdpClient {
         if (!activated) return;
 
         InetAddress address = InetAddress.getByName(ip);
-        sendDataRunnable.address = address;
-        sendDataRunnable.data = data;
-        sendDataRunnable.port = port;
-        sendDataThreadPool.execute(sendDataRunnable);
+        // HF Digital Modes: each packet its own copy and its own task. FT8CN reused one shared SendDataRunnable and
+        // overwrote its data before the pool had sent it, so packets close together could be lost or sent twice.
+        SendDataRunnable r = new SendDataRunnable(this);
+        r.address = address;
+        r.data = Arrays.copyOf(data, data.length);
+        r.port = port;
+        sendDataThreadPool.execute(r);
 //        new Thread(new Runnable() {
 //            @Override
 //            public void run() {
@@ -104,7 +107,7 @@ public class IcomUdpClient {
     }
 
     public synchronized void setActivated(boolean activated) throws SocketException {
-        this.activated = activated;
+        if (activated) this.activated = true;         // HF Digital Modes: (off only after the send queue has drained, below)
         if (activated) {//通过activated判断是否结束接收线程，并清空sendSocket指针
             sendSocket = new DatagramSocket();
             //new DatagramSocket(null);//绑定的端口号随机
@@ -121,6 +124,11 @@ public class IcomUdpClient {
 
             receiveData();
         } else {
+            // HF Digital Modes: let what is queued (the disconnect and logout packets) go out before the socket closes -
+            // FT8CN closed it at once, so the radio never heard the app leave and kept the session for a minute or two.
+            try { sendDataThreadPool.submit(() -> { }).get(500, java.util.concurrent.TimeUnit.MILLISECONDS); }
+            catch (Exception e) { Log.e(TAG, "close: send queue not empty: " + e); }
+            this.activated = false;                   // now the receiver may stop (it closes the socket when it does)
             if (sendSocket != null) {
                 sendSocket.close();
                 try {

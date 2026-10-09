@@ -33,6 +33,12 @@ class RadioService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null // (started, not bound)
 
+    /** The app swiped away from the recent apps: log out of the radio (while this service still keeps the network), then stop. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        uk.hamdigital.rig.IcomNet.disconnect { stopSelf() }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, "Radio connection", NotificationManager.IMPORTANCE_LOW).apply {

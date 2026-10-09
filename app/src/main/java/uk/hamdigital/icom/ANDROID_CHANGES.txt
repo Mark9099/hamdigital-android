@@ -12,3 +12,16 @@ Changed (FT8CN's own app classes are not part of this app):
     and does not open the phone-speaker playback (openAudio): the radio's audio goes to the app's decoders.
   - An unused checkerframework import removed.
 The app's side is uk.hamdigital.rig.IcomNet (connect / CI-V / PTT / audio) with Ic705, AudioIn and Transmitter.
+
+Fixed after the copy (0.8.5; found on the air - the radio kept a stale session after the app closed, so reopening the
+app gave no login, or a login with no CI-V, for a minute or two):
+  - IcomUdpClient.sendData: each packet is copied into its own SendDataRunnable and sent by a single-thread executor,
+    in order. FT8CN reused one shared runnable on a cached pool and overwrote its data before it ran, so packets sent
+    close together could be lost or duplicated.
+  - IcomUdpClient.setActivated(false): waits (up to 0.5 s) for the send queue to empty before turning off and closing
+    the socket. FT8CN closed it at once, so the disconnect / logout packets just queued were never sent ("Socket is
+    closed").
+  - IcomCivUdp.close: sends the CI-V open/close "close" before closing its socket (FT8CN sent it after).
+  - ControlUdp.closeAll: closes the CI-V and audio streams first, then deletes the token and disconnects the control
+    stream (as wfview does); FT8CN closed the control socket first and sent the CI-V close after the CI-V socket was
+    shut.

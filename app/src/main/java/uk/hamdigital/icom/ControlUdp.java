@@ -231,14 +231,15 @@ public class ControlUdp extends IcomUdpBase {
     }
 
     public void closeAll() {
+        // HF Digital Modes: close the CI-V and audio streams first (each sends its close / disconnect before its socket
+        // closes), then give the token back and disconnect the control stream - the order wfview uses. FT8CN closed the
+        // control socket first and sent the CI-V close after its socket was shut, so the radio heard none of it.
+        civUdp.close();
+        audioUdp.stopTXAudio();
+        audioUdp.close();
         sendTrackedPacket(IComPacketTypes.TokenPacket.getTokenPacketData((short) 0
                 , localId, remoteId, IComPacketTypes.TOKEN_TYPE_DELETE, innerSeq, localToken, rigToken));
         innerSeq++;
         this.close();
-        civUdp.close();
-        audioUdp.stopTXAudio();
-        audioUdp.close();
-
-        civUdp.sendOpenClose(false);
     }
 }

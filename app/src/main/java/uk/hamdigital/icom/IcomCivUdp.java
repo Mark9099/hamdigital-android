@@ -100,8 +100,8 @@ public class IcomCivUdp extends IcomUdpBase{
 
     @Override
     public void close() {
+        sendOpenClose(false);                        // HF Digital Modes: tell the radio the CI-V stream is closing first (FT8CN sent it after closing the socket, so it was lost)
         super.close();
-        sendOpenClose(false);
         stopTimer(openCivDataTimer);
         stopTimer(idleTimer);
 

@@ -57,8 +57,9 @@ object IcomNet {
         if (watchdog == null) watchdog = Timer("icom-watchdog", true).apply { schedule(2000, 2000) { check() } }
     }
 
-    /** Stop: log out and do not reconnect. */
-    fun disconnect() { target = null; watchdog?.cancel(); watchdog = null; close("WiFi connection closed") }
+    /** Stop: log out and do not reconnect. [then] runs once the logout has been sent - stop the background service only
+     *  then, or Android cuts the app off the network before the radio hears it leave (0.8.5). */
+    fun disconnect(then: (() -> Unit)? = null) { target = null; watchdog?.cancel(); watchdog = null; close("WiFi connection closed", then) }
 
     private fun watchWifi(app: Context) {             // follow the phone's WiFi network
         if (callbackOn) return; callbackOn = true
@@ -106,10 +107,11 @@ object IcomNet {
         Thread({ try { r.start() } catch (e: Exception) { status.value = "Could not connect: ${e.message}" } }, "icom-net").start() // (opens sockets: not on the main thread)
     }
 
-    private fun close(why: String?) {                 // log out of the current connection, if any
+    private fun close(why: String?, then: (() -> Unit)? = null) { // log out of the current connection, if any
         val r = rig
         rig = null; loggedIn = false
-        if (r != null) Thread({ try { r.close() } catch (e: Exception) { } }, "icom-net-close").start() // (token delete, CI-V close)
+        if (r != null) Thread({ try { r.close() } catch (e: Exception) { }; then?.invoke() }, "icom-net-close").start() // (CI-V close, audio close, token delete, disconnect - sent before the sockets close)
+        else then?.invoke()
         if (why != null) status.value = why
         Ic705.netConnected(false, why ?: "")
     }

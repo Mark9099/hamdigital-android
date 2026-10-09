@@ -19,7 +19,7 @@ import uk.hamdigital.ui.HamDigitalTheme
 import uk.hamdigital.ui.SplashScreen
 
 /** The app's version, for the startup screen and Settings (kept here so it is not tied to the generated BuildConfig). */
-object BuildConfigInfo { const val VERSION = "0.8.4" }
+object BuildConfigInfo { const val VERSION = "0.8.5" }
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()     // state (survives rotation)
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        if (isFinishing) { uk.hamdigital.rig.IcomNet.disconnect(); RadioService.stop(this) } // the app is closing (not just turning): log out of the radio (or it keeps a stale session), stop the background service
+        if (isFinishing) { val app = applicationContext; uk.hamdigital.rig.IcomNet.disconnect { RadioService.stop(app) } } // the app is closing (not just turning): log out of the radio (or it keeps a stale session), then stop the background service - not before, or the logout is blocked
         super.onDestroy()                             // Android's part
     }
 

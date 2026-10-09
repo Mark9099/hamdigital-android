@@ -22,7 +22,7 @@ set_source_files_properties(wsprd/wsprd.c PROPERTIES COMPILE_DEFINITIONS "main=w
 set(FLDIGI_SOURCES fldigi/rtty_rx.cxx fldigi/psk31_rx.cxx fldigi/kb_tx.cxx fldigi/fftfilt.cxx fldigi/filters.cxx fldigi/pskcoeff.cxx fldigi/pskvaricode.cxx) # fldigi (GPL v3): receive-only RTTY / PSK31 + its filters
 set_source_files_properties(${FLDIGI_SOURCES} PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/fldigi) # its headers by plain name
 
-set(JS8_SOURCES js8/JS8.cpp js8/js8_run.cpp js8/js8_unpack.cpp) # JS8Call's decoder (GPL v3; C++20, Eigen) + its message unpacking
+set(JS8_SOURCES js8/JS8.cpp js8/js8_run.cpp js8/js8_unpack.cpp js8/js8_pack.cpp) # JS8Call's decoder (GPL v3; C++20, Eigen) + its message unpacking
 set_source_files_properties(${JS8_SOURCES} js8_jni.cpp PROPERTIES COMPILE_OPTIONS "-std=c++20;-w" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # <vendor/Eigen/Dense>, commons.h
 set_source_files_properties(js8/jsc_map.cpp PROPERTIES COMPILE_OPTIONS "-w;-O0" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # the JSC word table (262144 entries: nothing to optimise, much faster to build)
 

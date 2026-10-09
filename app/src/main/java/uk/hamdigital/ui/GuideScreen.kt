@@ -134,10 +134,17 @@ private val GUIDE = listOf(
         "offset - the red lines mark it and the 50 Hz a JS8 signal takes; the decoder tries there first.\n" +
         B + "Calls: the stations heard, with signal, locator (from their heartbeats) and distance.\n" +
         B + "To me: messages addressed to your callsign (Settings).\n" +
-        B + "Clear empties all three. Sending (heartbeats, replies, messages) comes in stage 7.",
+        B + "Clear empties all three.\n" +
+        B + "Sending: HB sends a heartbeat (your call and locator), CQ a CQ. Tap a station in Calls to put it in To (and listen on " +
+        "its offset); then SNR?, GRID?, ACK and 73 are sent to it, and Send sends the typed message to it. With To empty, Send " +
+        "goes to @ALLCALL (everyone). Messages go out on the receive offset (red lines), one 15 s frame a slot - a longer message " +
+        "takes several slots; the line under the buttons shows progress. Halt stops and drops the rest. Text can be letters, " +
+        "figures, spaces and . - + ? ! \" /.",
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.7.3 (October 2026): JS8Call sending (heartbeat, CQ, SNR? / GRID? / ACK / 73, and messages). Every mode now " +
+        "transmits as well as receives.\n" +
         B + "0.7.2 (October 2026): sending in RTTY and PSK31 (typed text, CQ, 73) and CW (through the IC-705's keyer).\n" +
         B + "0.7.1 (October 2026): the WSPR beacon (transmit percentage, power reported, offset).\n" +
         B + "0.7.0 (October 2026): FT8 and FT4 transmit: answer a CQ or call CQ with WSJT-X-style automatic sequencing, PTT over " +

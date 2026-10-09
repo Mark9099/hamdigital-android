@@ -41,7 +41,7 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
 4. **WSPR receive (wsprd; FFTW calls on KISS FFT) (0.4.0).** Done. Two-minute slots and a list of the spots heard.
 5. **RTTY and PSK31 receive (fldigi) (0.5.0).** Done. Tap the waterfall to tune, then show the decoded text.
 6. **JS8Call receive (JS8 decoder + varicode) (0.6.0).** Done. JS8 Normal mode, the stations heard, and their messages.
-7. **Transmit.** PTT over CI-V and transmit audio to the IC-705's USB sound card. FT8 and FT4 QSO sequencing, the WSPR
+7. **Transmit (0.7.0-0.7.3).** Done. PTT over CI-V and transmit audio to the IC-705's USB sound card. FT8 and FT4 QSO sequencing, the WSPR
    beacon, RTTY and PSK31 typing, JS8 messages, and CW keyed over CI-V.
 8. **WiFi link.** The IC-705's network protocol (from FT8CN's `icom` package) for audio and CI-V without a lead.
 

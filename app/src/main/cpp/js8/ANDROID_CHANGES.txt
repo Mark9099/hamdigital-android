@@ -26,3 +26,11 @@ Tested on the PC (tools/test/run_js8.sh) with JS8Call's media/tests recordings: 
 files, against the 31 the old Fortran decoder's file names give (A_1_4: 5 of 4, A_2_5: 5 of 5, A_2_9: 8 of 9, ...);
 messages unpack as JS8Call shows them ("KN4ZXG: @HB HEARTBEAT FM16", "K0OG: KN4CRD SNR +02"). The two Slow-mode (E)
 files give none, as expected (the app decodes Normal only).
+
+js8_pack.cpp / .h (0.7.3) - transmit: JS8Call's packers (varicode.cpp pack72bits, packAlphaNumeric50, packCallsign,
+  packGrid, packCompoundFrame, packDirectedMessage's packing, packHuffMessage) ported from Qt, building the frames
+  buildMessageFrames makes for a heartbeat, a CQ, a directed command and directed / @ALLCALL text (first / last
+  flags), without its regular-expression parsing of typed text (the app chooses the message kind). Data frames use the
+  Huffman coding only (JSC compression is JS8Call's alternative; receivers decode both). Audio as JS8Call's
+  Modulator: continuous-phase 8-FSK, 6.25 Hz, 1920 samples a symbol, original Costas arrays (Normal). Round trip
+  (tools/test/test_js8tx.cpp): every kind decodes and unpacks as JS8Call shows it.

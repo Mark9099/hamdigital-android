@@ -2,6 +2,25 @@
 
 Newest first.
 
+## 2026-10-09: 0.7.3, stage 7d (JS8 sending), so stage 7 is complete
+
+- `cpp/js8/js8_pack.cpp`: JS8Call's packers ported from Qt. They build heartbeat, CQ, directed-command and
+  directed/@ALLCALL text frames as buildMessageFrames does (first/last flags), with Huffman data frames, and the
+  audio as JS8Call's Modulator makes it. Free text to everyone is a directed message to @ALLCALL, because ':' cannot
+  go in a Huffman frame. Details are in `js8/ANDROID_CHANGES.txt`.
+- PC round trip (`tools/test/test_js8tx.cpp`) through the app's JS8 receiver. Each came back as JS8Call shows it:
+  - "M7JVY: @HB HEARTBEAT IO91"
+  - "M7JVY: @ALLCALL CQ CQ CQ IO91"
+  - "M7JVY: G4ABC SNR?"
+  - "M7JVY: G4ABC SNR -12"
+  - a 3-frame "M7JVY: G4ABC" / "HELLO FROM THE" / "PHONE APP", with first/middle/last bits 1/0/2
+  - "M7JVY: @ALLCALL TESTING 123"
+- `core/Js8Tx.kt` queues a message's frames and sends one a slot (slot + 0.5 s) on the receive offset through
+  Transmitter. It has Halt and status.
+- JS8 page: a To field (tapping a call in Calls fills it and moves the RX/TX offset there), Message + Send (to the
+  station, or @ALLCALL), HB, CQ, SNR?, GRID?, ACK, 73, Halt and status.
+- Stage 7 is done: every mode transmits. Nothing has been tried on the air yet.
+
 ## 2026-10-09: 0.7.2, stage 7c (RTTY, PSK31 and CW sending)
 
 - `cpp/fldigi/kb_tx.cxx` builds the transmit audio for a whole message, following fldigi's transmitters.

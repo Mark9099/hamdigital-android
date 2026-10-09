@@ -22,3 +22,26 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_uk_hamdigital_engine_Js8Native_de
     }
     return out;
 }
+
+// ---- transmit ----
+#include "js8/js8_pack.h"                            // frame packing, audio
+
+static std::string str(JNIEnv *env, jstring s) { const char *c = env->GetStringUTFChars(s, nullptr); std::string r(c); env->ReleaseStringUTFChars(s, c); return r; }
+
+// kind 0 heartbeat, 1 CQ (cq number in cmd), 2 directed (to, cmd, num, text), 3 text to everyone. Returns "frame\tbits" a frame.
+extern "C" JNIEXPORT jobjectArray JNICALL Java_uk_hamdigital_engine_Js8Native_build(JNIEnv *env, jclass, jint kind, jstring jcall, jstring jgrid, jstring jto, jint cmd, jstring jnum, jstring jtext)
+{
+    std::string call = str(env, jcall), grid = str(env, jgrid), to = str(env, jto), num = str(env, jnum), text = str(env, jtext);
+    std::vector<Js8TxFrame> f = kind == 0 ? js8_heartbeat(call, grid, -1) : kind == 1 ? js8_heartbeat(call, grid, cmd)
+                              : kind == 2 ? js8_directed(call, to, cmd, num, text) : js8_text(call, text);
+    jobjectArray out = env->NewObjectArray((jsize)f.size(), env->FindClass("java/lang/String"), nullptr);
+    for (size_t i = 0; i < f.size(); i++) env->SetObjectArrayElement(out, (jsize)i, env->NewStringUTF((f[i].frame + "\t" + std::to_string(f[i].bits)).c_str()));
+    return out;
+}
+
+// JS8 Normal audio for one frame from f0 Hz (12 kHz, 12.64 s).
+extern "C" JNIEXPORT jshortArray JNICALL Java_uk_hamdigital_engine_Js8Native_audio(JNIEnv *env, jclass, jstring jframe, jint bits, jdouble f0, jdouble amplitude)
+{
+    std::vector<int16_t> a = js8_tx_audio(Js8TxFrame{str(env, jframe), bits}, f0, amplitude);
+    jshortArray out = env->NewShortArray((jsize)a.size()); env->SetShortArrayRegion(out, 0, (jsize)a.size(), a.data()); return out;
+}

@@ -1,4 +1,4 @@
-// JNI bridge to the shared CW (Morse) decoder engine (HamPropCore hamprop_common: cw_decoder.cpp, from the
+// JNI bridge to the CW (Morse) decoder engine (cw/cw_decoder.cpp, copied from HamPropCore - cw/ORIGIN.txt - from the
 // Tab5CWDecoder project, also used by HF Propagation). One decoder for the app; the audio thread feeds it, the screen reads it (a mutex between).
 #include <jni.h>                                     // JNI
 #include <mutex>                                     // the lock

@@ -14,15 +14,19 @@ decoder shared with HF Propagation, Robot36 and SSTV Encoder 2 for SSTV, and cod
 GNU General Public License v3 ([LICENSE](LICENSE)), because it includes GPL code from WSJT-X, JS8Call and fldigi. Each
 library under `app/src/main/cpp/` keeps its own licence file.
 
+## Install
+
+Download the APK from the [Releases](https://github.com/Mark9099/hamdigital-android/releases) page on the phone or
+tablet and open it (Android asks once to allow installing apps from the browser or file manager). Android 8.0 or newer.
+Each release installs over the previous one and keeps the logbook and settings.
+
 ## Building
 
-To build, you need the same tools as HF Propagation:
+You need Android Studio, with SDK Platform 35, the NDK (Side by side) and CMake from the SDK Manager. Everything the
+app is built from is in this repository (the CW decoder is a copy from HF Propagation's shared code: `app/src/main/cpp/cw/ORIGIN.txt`).
 
-- Android Studio, with SDK Platform 35, the NDK (Side by side) and CMake from the SDK Manager.
-- **HamPropCore** in `Documents\HamPropCore`, next to the AndroidStudioProjects folder. The CW decoder is compiled from
-  there.
-
-To build from a terminal, set `JAVA_HOME` to Studio's `jbr` folder, then run `gradlew assembleDebug`.
+To build from a terminal, set `JAVA_HOME` to Studio's `jbr` folder, then run `gradlew assembleDebug`. A release APK
+(`gradlew assembleRelease`) is signed when `keystore.properties` names the release key (not in this repository).
 
 ## Using it with the IC-705
 

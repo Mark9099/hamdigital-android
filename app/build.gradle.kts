@@ -7,7 +7,9 @@ plugins {
 }
 
 // Release signing: keystore.properties (project root, not in version control) names the keystore and its passwords.
-// Without it the release build is left unsigned (debug builds always use Android Studio's own debug key).
+// Without it the release build is left unsigned and debug builds use Android Studio's own debug key. With it, debug builds
+// are signed with the release key too, so a test build and the released APK install over each other (keeping the
+// logbook and settings) - Android refuses an update signed with a different key.
 val signing = Properties().apply {                   // the signing details, if present
     val f = rootProject.file("keystore.properties")  // the file
     if (f.exists()) f.inputStream().use { load(it) } // read it when there
@@ -37,6 +39,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfigs.findByName("release")?.let { signingConfig = it } // the same key as the releases (see above)
+        }
         release {
             signingConfigs.findByName("release")?.let { signingConfig = it } // signed with the release key when it is set up
             isMinifyEnabled = false                  // no shrinking (keeps JNI names simple)

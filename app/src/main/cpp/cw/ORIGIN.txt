@@ -1,0 +1,7 @@
+The CW (Morse) decoder of HF Propagation and the Tab5 display, by M7JVY - the author of this app - and licensed with it
+under the GNU GPL v3 (see LICENSE at the top of the repository).
+
+Copied unchanged from HamPropCore (hamprop_common/src: cw_decoder.cpp, cw_decoder.h, cw_goertzel.h, cw_morse_table.h)
+at commit 2a176a5 (2026-10-07). HamPropCore is a private repository shared with HF Propagation; the copy is here so
+this public repository holds the complete source of the app (the GPL requires it for the released APK) and builds on
+its own. When the decoder changes in HamPropCore, copy the four files here again and note the commit above.

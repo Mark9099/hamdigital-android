@@ -2,6 +2,75 @@
 
 Newest first.
 
+## 2026-10-09: 0.11.0 (SSTV and FreeDV)
+
+- **Asked for by the user:** "could you add FreeDV and SSTV to this project? proceed".
+- **Open-source code chosen (licences checked with `gh api`):**
+  - codec2: drowe67, LGPL-2.1, 310777b.
+  - Robot36: xdsopl, 0BSD, 2af2390.
+  - SSTV Encoder 2: olgamiller, Apache-2.0, 8576681.
+  
+  All three can go in a GPL v3 app. Clones are in `_upstream/`.
+- **SSTV receive (`core/SstvRx.kt`, `xdsopl/robot36/`).**
+  - Robot36's decoder classes are copied unchanged (25 files, plus LICENSE). They are plain Java; three use
+    android.graphics.Bitmap.
+  - `SstvDecoder.java` (ours, in that package because Decoder is package-private) holds the scope and image
+    `PixelBuffer`s as Robot36's MainActivity does.
+  - Audio at 12 kHz. A finished picture (image.line == height) is saved as `files/sstv/SSTV_<UTC>_<mode>.png`, then
+    image.line is set to -1 (Robot36's way of saving it once).
+  - Our transmissions are not decoded.
+- **SSTV transmit (`core/SstvTx.kt`, `om/sstvencoder/`).**
+  - SSTV Encoder 2's Modes, ModeInterfaces and Output/IOutput are copied unchanged, with LICENSE and NOTICE.
+  - `compose()` crops the picture to the mode's shape (middle kept), scales it, and writes the call and a line of
+    text in white with a black edge.
+  - `encode()` collects the samples through an IOutput into a ShortArray sized from init(samples) (an ArrayList of
+    Shorts would be ~55 MB for PD 290), then sends them with Transmitter.send.
+  - The Transmitter's USB watchdog is now max(130 s, the audio's length + 10 s), since PD 290 is 289 s.
+- **Sideband:** `RigMode` (USB-D, LSB-D, CW) replaces the cw flag in `Ic705.setMode`/`tune`/`isIn`.
+  `Mode.rigMode(khz)` gives LSB-D for SSTV below 10 MHz. RigBar's "(… needed)" note and AutoTune use it.
+- **SSTV page (`ui/SstvScreen.kt`).**
+  - A waterfall of 1000–2500 Hz.
+  - Receive tab: the picture so far (or Robot36's scope, or the last picture), progress, a thumbnail strip, and a
+    full-size dialog with Share (FileProvider), Save to Photos (MediaStore, Android 10+) and Delete.
+  - Send tab: photo picker or camera (TakePicture into the cache; `cache-path` added to file_paths.xml), mode chips
+    with size and seconds, top/bottom text, a preview, Send through the licence gate, and a progress bar.
+  - Dials: 3.735 / 7.165 LSB, 14.230 / 21.340 / 28.680 USB.
+- **FreeDV (codec2, `cpp/codec2/`).**
+  - The library sources and headers are copied unchanged. The eight `codebook*.c` were generated on the PC (zig cc
+    of generate_codebook.c, using upstream's command lines), because upstream generates them at build time, which
+    can't run when cross-compiling.
+  - `version.h` written for 1.2.0; GIT_HASH defined.
+  - Built as the static library `codec2_hd`, with its KISS FFT functions renamed (`c2_kiss_fft*`) and its LDPC
+    `encode` renamed (`c2_ldpc_encode`) by compile definitions, which fixed a duplicate `encode` with wsprd's fano.c.
+    ft8_lib's KISS FFT stays as it is.
+  - 2020 needs LPCNet, so it isn't built.
+  - **PC test (`tools/test/test_freedv.c`, `run_freedv.sh`):** codec2's hts1a.raw through 700D, 700E and 1600 at 20,
+    5 and 0 dB in 3 kHz. Sync came in about 2 frames; speech came back at -1.3 to +0.1 dB of the input level (700E at
+    0 dB: -4.5).
+- **FreeDV bridge (`freedv_jni.c`, `engine/FreeDvNative.kt`):** a session per handle with open/close/sizes/rx/tx/
+  stats, the text channel (received characters collected; the send text repeated), and squelch.
+- **FreeDV engine (`core/FreeDv.kt`).**
+  - Receive: 8 kHz into frames of nin samples. Speech plays through an AudioTrack aimed at headphones, then
+    Bluetooth, then the speaker, never the USB sound card. "Radio audio" passes the radio's audio through. Sync, SNR
+    and text are StateFlows.
+  - Talk: the phone's built-in mic (AudioRecord, 8 kHz), freedv_tx a frame at a time, the gain from the transmit
+    level, into a stream.
+- **Streamed transmit (new).**
+  - `Transmitter.startStream/streamWrite/stopStream`: over USB, an AudioTrack at the stream's rate; over WiFi, linear
+    resampling to 12 kHz into `IcomNet.streamPush`.
+  - A 5-minute time-out and a link check every 200 ms; halt() ends a stream; send() is refused while one is on.
+  - FT8CN's `IcomAudioUdp` gained `pushTxAudio/startTxStream/stopTxStream`: a 2 s queue and a thread sending one
+    20 ms packet every 20 ms, paced to the clock, silence when empty (icom/ANDROID_CHANGES.txt). Its own
+    `sendTxAudioData` sends a single recording and can't take live speech.
+- **FreeDV page (`ui/FreeDvScreen.kt`):** a sync light and SNR, mode chips, Play (speech / radio audio / off),
+  squelch, the received text, the text to send (your call), and a big talk button (hold, or tap on/off) through the
+  licence gate. Dials: 3.643, 7.177, 14.236, 18.118, 21.313, 24.933, 28.330 MHz USB.
+- **DevTest:**
+  - `files/test/sstv/` present: every SSTV mode encoded and decoded (colour bars + gradient + "M7JVY"; Robot 36 also
+    with noise). Logs the mode named, the size and the mean difference.
+  - `files/test/freedv/*.raw`: each FreeDV mode round trip at 5 dB.
+- Built; to be checked on the phone (it was off USB), then on the air.
+
 ## 2026-10-09: 0.10.5 (fixes from the on-air tests)
 
 - **The user confirmed CW does transmit:** BK-IN shows on the radio, and TX and the power meter pulsed during the CQ.

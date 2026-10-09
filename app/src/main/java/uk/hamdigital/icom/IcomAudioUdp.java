@@ -91,6 +91,52 @@ public class IcomAudioUdp extends AudioUdp {
     }
 
 
+    // ---- HF Digital Modes: streamed transmit audio (FreeDV voice), added to FT8CN's code (ANDROID_CHANGES.txt) ----
+    // sendTxAudioData above sends one finished recording (padded with silence, on its own thread); live speech needs a
+    // stream instead: pushTxAudio queues 12 kHz samples as they are made, and the stream thread sends a packet of
+    // TX_BUFFER_SIZE samples (20 ms) every 20 ms while PTT is on - silence if the queue has run dry.
+    private final short[] txFifo = new short[12000 * 2];   // 2 s of queue
+    private int txHead = 0, txCount = 0;                   // where the oldest sample is, how many are queued
+    private volatile boolean streaming = false;            // the stream thread runs
+
+    /** Queue 12 kHz transmit samples (the oldest are dropped if the queue is full). */
+    public synchronized void pushTxAudio(short[] s, int n) {
+        for (int i = 0; i < n; i++) {
+            if (txCount == txFifo.length) { txHead = (txHead + 1) % txFifo.length; txCount--; } // (full: drop the oldest)
+            txFifo[(txHead + txCount) % txFifo.length] = s[i]; txCount++;
+        }
+    }
+
+    private synchronized void pullTxAudio(short[] out) {   // the next packet's samples (zeros where the queue is short)
+        for (int i = 0; i < out.length; i++) {
+            if (txCount > 0) { out[i] = txFifo[txHead]; txHead = (txHead + 1) % txFifo.length; txCount--; } else out[i] = 0;
+        }
+    }
+
+    /** Start sending the queue (PTT must be on): a packet every 20 ms until stopTxStream or PTT off. */
+    public void startTxStream() {
+        if (streaming) return; streaming = true;
+        synchronized (this) { txHead = 0; txCount = 0; }
+        new Thread(() -> {
+            short[] samples = new short[IComPacketTypes.TX_BUFFER_SIZE];
+            byte[] audioPacket = new byte[IComPacketTypes.TX_BUFFER_SIZE * 2];
+            long next = System.currentTimeMillis();
+            while (streaming && isPttOn) {
+                pullTxAudio(samples);
+                for (int j = 0; j < samples.length; j++) System.arraycopy(IComPacketTypes.shortToBigEndian(samples[j]), 0, audioPacket, j * 2, 2); // (as sendTxAudioData packs them)
+                sendTrackedPacket(IComPacketTypes.AudioPacket.getTxAudioPacket(audioPacket, (short) 0, localId, remoteId, innerSeq));
+                innerSeq++;
+                next += 20;                                // 20 ms a packet, paced to the clock (no drift)
+                long wait = next - System.currentTimeMillis();
+                if (wait > 0) try { Thread.sleep(wait); } catch (InterruptedException e) { break; }
+            }
+            streaming = false;
+        }, "icom-tx-stream").start();
+    }
+
+    /** Stop sending the queue (and forget what is left in it). */
+    public void stopTxStream() { streaming = false; synchronized (this) { txCount = 0; } }
+
     @Override
     public void onDataReceived(DatagramPacket packet, byte[] data) {
         super.onDataReceived(packet, data);

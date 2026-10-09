@@ -1,0 +1,16 @@
+codec2 (David Rowe and others, LGPL 2.1 - COPYING) in HF Digital Modes, for FreeDV digital voice.
+
+Source: https://github.com/drowe67/codec2 at commit 310777b (2026-03-17), version 1.2.0.
+
+What is here and how it differs from upstream's build:
+- The library sources upstream's src/CMakeLists.txt lists (CODEC2_SRCS) and all of src/*.h, copied unchanged.
+- The eight codebook*.c files are generated, not in upstream's tree: upstream builds its generate_codebook program and
+  runs it during the build, which cannot run when cross-compiling for Android. They were made once on a PC (zig cc
+  generate_codebook.c, then the same command lines as src/CMakeLists.txt, from src/codebook/*.txt) and are kept here.
+- version.h (and codec2/version.h, which codec2.h includes as <codec2/version.h>) written by hand from
+  cmake/version.h.in for 1.2.0; GIT_HASH is defined as "310777b" by the app's CMakeLists.txt.
+- Built as the static library codec2_hd (app/src/main/cpp/CMakeLists.txt) with its KISS FFT functions renamed
+  (kiss_fft* -> c2_kiss_fft*) and its LDPC encode renamed (encode -> c2_ldpc_encode) by compile definitions only,
+  because ft8_lib carries its own KISS FFT and wsprd's fano.c has an encode(): no source file is changed.
+- FreeDV 2020 needs LPCNet, which is not built (no __LPCNET__): the app offers 700D, 700E and 1600.
+- Checked on a PC (tools/test/test_freedv.c) and on the phone (DevTest): speech through each mode, noise added, back.

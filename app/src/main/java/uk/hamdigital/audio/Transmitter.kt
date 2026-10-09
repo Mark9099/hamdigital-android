@@ -25,7 +25,7 @@ object Transmitter {
     @Volatile private var stop = false                // Halt
     @Volatile private var thread: Thread? = null      // the transmission
     @Volatile var owner = ""; private set             // the mode sending (Mode.name: "FT8", "WSPR" ...)
-    private const val WATCHDOG_MS = 130_000L          // longest allowed transmission
+    private const val WATCHDOG_MS = 130_000L          // longest allowed transmission - or the transmission's own length and 10 s, if longer (SSTV's PD 290 is 289 s)
 
     /** The IC-705's (or any) USB sound card's output, if plugged in. */
     fun usbOutput(ctx: Context): AudioDeviceInfo? =
@@ -48,7 +48,7 @@ object Transmitter {
      */
     fun send(ctx: Context, callsign: String, audio: ShortArray, rate: Int, startAtMs: Long = 0, tag: String = "", onDone: (Boolean) -> Unit = {}): Boolean {
         blocked(ctx, callsign)?.let { lastError.value = it; return false } // safety first
-        if (thread != null) { lastError.value = "Already transmitting"; return false }
+        if (thread != null || streamOn) { lastError.value = "Already transmitting"; return false }
         owner = tag
         if (Ic705.net) return sendNet(audio, rate, startAtMs, onDone) // over WiFi
         val dev = usbOutput(ctx)!!                    // the radio's sound card
@@ -73,7 +73,8 @@ object Transmitter {
                 track.play()
                 val t0 = System.currentTimeMillis()
                 var i = 0
-                while (i < audio.size && !stop && System.currentTimeMillis() - t0 < WATCHDOG_MS) { // in 50 ms pieces, so Halt is quick
+                val watchdog = maxOf(WATCHDOG_MS, audio.size * 1000L / rate + 10_000) // (the audio's own length, with time to spare)
+                while (i < audio.size && !stop && System.currentTimeMillis() - t0 < watchdog) { // in 50 ms pieces, so Halt is quick
                     if (Ic705.state.value.link != RigState.Link.CONNECTED) { lastError.value = "The IC-705's CI-V went during the transmission: stopped"; break }
                     val n = minOf(rate / 20, audio.size - i)
                     val w = track.write(audio, i, n)   // blocks while the buffer is full
@@ -138,6 +139,75 @@ object Transmitter {
      *  decoders skip such slots, as WSJT-X does - the radio hears nobody else while it transmits. */
     fun sentDuring(fromMs: Long, toMs: Long): Boolean = synchronized(sent) { sent.any { it[0] < toMs && it[1] > fromMs } }
 
-    /** Stop transmitting now (and drop a transmission waiting to start). */
-    fun halt() { stop = true; if (thread == null) Ic705.ptt(false) }
+    // ---- A stream: audio made as it goes (FreeDV voice while the talk button is held) ----
+    @Volatile private var streamOn = false            // streaming now
+    private var streamTrack: AudioTrack? = null       // USB: the radio's sound card
+    private var streamRate = 8000                     // the stream's sample rate
+    private var rsT = 0.0; private var rsPrev: Short = 0 // WiFi: resampling to 12 kHz (position, last sample)
+    private var streamWatch: java.util.Timer? = null  // the time-out and the link check
+    private const val STREAM_MAX_MS = 300_000L        // longest stream (5 minutes): a talk button stuck down ends here
+    private val streamLock = Any()
+
+    /** Key the radio for a stream of [rate] Hz audio from mode [tag] (then streamWrite, stopStream). False (with
+     *  lastError) if it cannot start - the same checks as send. */
+    fun startStream(ctx: Context, callsign: String, rate: Int, tag: String): Boolean = synchronized(streamLock) {
+        blocked(ctx, callsign)?.let { lastError.value = it; return false }
+        if (thread != null || streamOn) { lastError.value = "Already transmitting"; return false }
+        owner = tag; stop = false; lastError.value = ""; streamRate = rate; rsT = 0.0; rsPrev = 0
+        val link = uk.hamdigital.rig.IcomNet.rig      // (WiFi: the link it goes out on)
+        if (Ic705.net) {
+            if (link == null || !uk.hamdigital.rig.IcomNet.loggedIn) { lastError.value = "The WiFi link to the IC-705 is down"; return false }
+            Ic705.ptt(true); keyed(true); uk.hamdigital.rig.IcomNet.streamStart() // PTT, then the packets
+        } else {
+            val t = AudioTrack.Builder()
+                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                .setAudioFormat(AudioFormat.Builder().setSampleRate(rate).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .setBufferSizeInBytes(maxOf(AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT), rate / 5 * 2)) // 0.2 s
+                .build()
+            t.setPreferredDevice(usbOutput(ctx))      // the radio, never the speaker
+            Ic705.ptt(true); keyed(true); t.play(); streamTrack = t
+        }
+        streamOn = true
+        val start = System.currentTimeMillis()
+        streamWatch = java.util.Timer("tx-stream", true).apply {
+            scheduleAtFixedRate(object : java.util.TimerTask() { override fun run() {
+                val why = when {
+                    System.currentTimeMillis() - start > STREAM_MAX_MS -> "Transmission stopped after 5 minutes (the time-out)"
+                    Ic705.net && (uk.hamdigital.rig.IcomNet.rig !== link || !uk.hamdigital.rig.IcomNet.loggedIn) -> "The WiFi link to the IC-705 dropped: transmission stopped"
+                    !Ic705.net && Ic705.state.value.link != RigState.Link.CONNECTED -> "The IC-705's CI-V went: transmission stopped"
+                    else -> null
+                }
+                if (why != null) { lastError.value = why; stopStream() }
+            } }, 200, 200)
+        }
+        true
+    }
+
+    /** The stream's next samples (at its rate). Blocks briefly over USB while the sound card's buffer is full. */
+    fun streamWrite(s: ShortArray, n: Int = s.size) {
+        if (!streamOn) return
+        if (Ic705.net) {                              // to 12 kHz (linear), into the network queue
+            val step = streamRate / 12000.0; val out = ShortArray((n / step).toInt() + 2); var m = 0
+            for (i in 0 until n) { val cur = s[i]
+                while (rsT <= 1.0 && m < out.size) { out[m++] = (rsPrev + (cur - rsPrev) * rsT).toInt().toShort(); rsT += step }
+                rsT -= 1.0; rsPrev = cur }
+            uk.hamdigital.rig.IcomNet.streamPush(out, m)
+        } else streamTrack?.let { t -> try { t.write(s, 0, n) } catch (e: Exception) { } }
+    }
+
+    /** End the stream: PTT off. */
+    fun stopStream() = synchronized(streamLock) {
+        if (!streamOn) return
+        streamOn = false; streamWatch?.cancel(); streamWatch = null
+        if (Ic705.net) uk.hamdigital.rig.IcomNet.streamStop()
+        streamTrack?.let { t -> try { t.stop() } catch (e: Exception) { }; t.release() }; streamTrack = null
+        Ic705.ptt(false); Ic705.ptt(false); keyed(false) // (twice: CI-V has no acknowledgement here)
+    }
+
+    /** Streaming now. */
+    val streaming get() = streamOn
+
+    /** Stop transmitting now (and drop a transmission waiting to start, or end a stream). */
+    fun halt() { stop = true; if (streamOn) stopStream() else if (thread == null) Ic705.ptt(false) }
 }

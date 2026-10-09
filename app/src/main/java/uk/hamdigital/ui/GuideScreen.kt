@@ -190,6 +190,36 @@ private val GUIDE = listOf(
         "takes several slots; the line under the buttons shows progress. Halt stops and drops the rest. Text can be letters, " +
         "figures, spaces and . - + ? ! \" /.",
 
+    "SSTV" to
+        "Pictures by radio: receive with Robot36's decoder (Ahmet Inan), send with SSTV Encoder 2's modes (Olga Miller). " +
+        "The band chips tune to the usual SSTV frequencies - 3.735 and 7.165 MHz on lower sideband (LSB-D), as SSTV is sent " +
+        "below 10 MHz, and 14.230, 21.340 and 28.680 MHz on upper sideband. The waterfall shows 1000-2500 Hz: the sync tone " +
+        "(1200 Hz, red line) and the picture's tones between black (1500) and white (2300).\n\n" +
+        B + "Receive: a picture starts with its VIS code, which names the mode (Robot 36 and 72, Martin 1 and 2, Scottie 1, 2 " +
+        "and DX, PD 50 to 290, Wraase SC2-180); it then arrives line by line - the line above it says which mode and how far. " +
+        "Between pictures the box shows the scan lines as they come in, or the last picture. Each finished picture is saved " +
+        "and added to the strip below, newest first; tap one to see it full size, share it, save it to Photos (Pictures/HF " +
+        "Digital Modes) or delete it.\n" +
+        B + "Send: choose a picture or take a photo, choose the mode (its size and time on the air: Robot 36 is 36 s, Martin 1 " +
+        "114 s, PD 290 nearly 5 minutes), and the text written over it - your call at the top, a line at the bottom. The " +
+        "picture is cropped to the mode's shape (the middle kept). Send makes the audio and transmits it as one transmission; " +
+        "the progress bar shows how far, and Halt (the TRANSMITTING bar) stops it. Listen first: a picture takes the " +
+        "frequency for its whole length.",
+
+    "FreeDV" to
+        "Digital voice with codec2 (David Rowe and others) - the codec and modems of the FreeDV program. Modes 700D (the " +
+        "most used on HF), 700E and 1600; both stations must use the same one. The band chips tune to FreeDV's calling " +
+        "frequencies (7.177, 14.236 MHz ...) in USB-D. A FreeDV signal is a block about 1.1 kHz wide in the middle of the " +
+        "waterfall (grey lines).\n\n" +
+        B + "Receive: the light turns green and the SNR shows when the modem is in sync; the decoded speech plays on the " +
+        "phone - headphones or Bluetooth if connected, never into the radio. Play: FreeDV speech, the radio's own audio (to " +
+        "tune, or hear SSB), or off. The squelch keeps it quiet without a FreeDV signal. Stations send a short text " +
+        "alongside the voice (usually their call), shown under the controls.\n" +
+        B + "Talk: hold the round button and speak into the phone's microphone, a hand's width away (or set Talk to tap on " +
+        "/ off). Your text (your call) goes out with the voice. The transmit level is Settings > Transmit level (FreeDV's " +
+        "audio is fuller than the data modes': start low and watch the radio's ALC). Transmitting stops after 5 minutes, " +
+        "if the radio link goes, or with Halt.",
+
     "Logbook" to
         "Every contact you make, kept in an ADIF file - the format every logging program, and the LoTW, QRZ, Club Log and eQSL upload " +
         "pages, read. Open it from the menu.\n\n" +
@@ -217,6 +247,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.11.0 (October 2026): two new modes - SSTV (pictures: receive with Robot36, send with SSTV Encoder 2; LSB on " +
+        "80 and 40 m) and FreeDV digital voice (codec2: 700D, 700E, 1600; talk with the phone's microphone).\n" +
         B + "0.10.5 (October 2026): from the on-air tests - JS8Call says \"Sent\" when a message has gone; RTTY and PSK31 no " +
         "longer print what you send twice; CW warns if the radio's break-in is off; a JS8 frame whose sender is not a callsign " +
         "is shown as a false decode.\n" +

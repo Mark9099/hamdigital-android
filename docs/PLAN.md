@@ -27,8 +27,8 @@ page. The decoders are reused open-source code rather than written from scratch.
 | IC-705 WiFi | FT8CN's `icom` package (Icom network protocol) | MIT | Stage 8 |
 
 The upstream copies used for reference are in `Documents\AndroidStudioProjects\_upstream`, as shallow git clones that
-are not part of this repository. Each copied library goes into `app/src/main/cpp/<name>/` with its LICENSE and an
-`ANDROID_CHANGES.txt` listing what was changed.
+are not part of this repository. Each copied library goes into `app/src/main/cpp/<name>/` (native code) or its own Java
+package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` listing what was changed.
 
 ## Stages
 
@@ -48,6 +48,12 @@ are not part of this repository. Each copied library goes into `app/src/main/cpp
    Logbook page lists, searches, filters by band and mode, edits and deletes contacts, and shares, saves and imports
    ADIF files (skipping duplicates, keeping unknown fields). Each mode page has a Log button, and FT8/FT4 marks stations
    worked before (B4).
+10. **SSTV (0.11.0).** Built; to be checked on the air. Asked for by the user. Receive with Robot36's decoder (Ahmet Inan,
+    0BSD; `xdsopl/robot36`), send with SSTV Encoder 2's modes (Olga Miller, Apache 2.0; `om/sstvencoder`), both Java,
+    copied unchanged. LSB-D below 10 MHz.
+11. **FreeDV (0.11.0).** Built; to be checked on the air. Asked for by the user. codec2 (David Rowe and others, LGPL 2.1;
+    `cpp/codec2`): 700D, 700E and 1600, with receive to the phone's speaker and transmit from its microphone through a
+    new streamed transmit path (FT8CN's WiFi sender gained a 20 ms packet queue).
 
 ## Testing
 

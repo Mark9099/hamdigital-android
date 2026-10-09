@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.ByteArrayOutputStream
 
+/** How a mode wants the radio: upper or lower sideband with DATA on, or CW. */
+enum class RigMode(val label: String) { USB_D("USB-D"), LSB_D("LSB-D"), CW("CW") }
+
 /** The radio as last heard. */
 data class RigState(
     val link: Link = Link.NONE,                       // connection
@@ -187,14 +190,22 @@ object Ic705 {
     /** Tune to [hz]. */
     fun setFrequency(hz: Long) { send(0x05, *hzToBcd(hz)); set { it.copy(freqHz = hz) } }
 
-    /** Set the mode: USB with DATA on for the digital modes ("USB-D"), or CW. */
-    fun setMode(cw: Boolean) {
-        if (cw) { send(0x06, 0x03, 0x01); send(0x1A, 0x06, 0x00, 0x00) } // CW, filter 1; DATA off
-        else { send(0x06, 0x01, 0x01); send(0x1A, 0x06, 0x01, 0x01) }    // USB, filter 1; DATA on (D1), filter 1
+    /** Set the mode: USB or LSB with DATA on for the digital modes ("USB-D", "LSB-D"), or CW. */
+    fun setMode(m: RigMode) {
+        when (m) {
+            RigMode.CW -> { send(0x06, 0x03, 0x01); send(0x1A, 0x06, 0x00, 0x00) }    // CW, filter 1; DATA off
+            RigMode.USB_D -> { send(0x06, 0x01, 0x01); send(0x1A, 0x06, 0x01, 0x01) } // USB, filter 1; DATA on (D1), filter 1
+            RigMode.LSB_D -> { send(0x06, 0x00, 0x01); send(0x1A, 0x06, 0x01, 0x01) } // LSB (SSTV below 10 MHz), DATA on
+        }
+    }
+
+    /** Is the radio in mode [m] now? */
+    fun isIn(m: RigMode, s: RigState = state.value) = when (m) {
+        RigMode.CW -> s.mode.startsWith("CW"); RigMode.USB_D -> s.mode == "USB" && s.data; RigMode.LSB_D -> s.mode == "LSB" && s.data
     }
 
     /** Tune to a mode's dial frequency and set its mode. */
-    fun tune(khz: Double, cw: Boolean) { setFrequency(Math.round(khz * 1000)); setMode(cw) }
+    fun tune(khz: Double, m: RigMode) { setFrequency(Math.round(khz * 1000)); setMode(m) }
 
     /** Key / unkey the transmitter (over WiFi this also opens the transmit audio stream). */
     fun ptt(on: Boolean) { if (net) IcomNet.ptt(on) else send(0x1C, 0x00, if (on) 0x01 else 0x00) }

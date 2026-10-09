@@ -1,0 +1,7 @@
+SSTV Encoder 2 (Olga Miller, Apache 2.0 - LICENSE, NOTICE) in HF Digital Modes, for SSTV transmit.
+
+Source: https://github.com/olgamiller/SSTVEncoder2 at commit 8576681 (2026-08-25).
+
+The encoder's modes (Modes/, ModeInterfaces/) and the output interface (Output/IOutput.java) are copied unchanged.
+The app's own code (uk.hamdigital.core.SstvTx) prepares the picture, collects the samples through an IOutput, and
+sends them; SSTV Encoder 2's activities, cropping view, text editor and audio output are not used.

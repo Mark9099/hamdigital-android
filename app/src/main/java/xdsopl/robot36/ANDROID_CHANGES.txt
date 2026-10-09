@@ -1,0 +1,8 @@
+Robot36 (Ahmet Inan, 0BSD - LICENSE) in HF Digital Modes, for SSTV receive.
+
+Source: https://github.com/xdsopl/robot36 at commit 2af2390 (2026-10-03).
+
+The decoder's classes (Decoder, Demodulator, the modes and the filters they use) are copied unchanged; Robot36's
+activity, audio sources, file readers and settings are not used. SstvDecoder.java is the app's own (GPL v3, as the
+app): it sits in this package because Decoder's constructor and current mode are package-private, and holds the two
+pixel buffers as Robot36's MainActivity does.

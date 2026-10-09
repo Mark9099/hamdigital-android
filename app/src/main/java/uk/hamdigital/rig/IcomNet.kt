@@ -145,4 +145,11 @@ object IcomNet {
 
     /** Transmit audio: 12 kHz floats, -1..1, sent in real time by the protocol code (20 ms packets). */
     fun sendAudio(samples: FloatArray) { val r = rig ?: return; if (audioReady(r)) r.sendWaveData(samples) }
+
+    /** Streamed transmit audio (FreeDV voice, made as it goes): start sending the queue - PTT must be on - ... */
+    fun streamStart() { val r = rig ?: return; if (audioReady(r)) (r.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.startTxStream() }
+    /** ... queue 12 kHz 16-bit samples ... */
+    fun streamPush(s: ShortArray, n: Int) { val r = rig ?: return; (r.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.pushTxAudio(s, n) }
+    /** ... and stop. */
+    fun streamStop() { (rig?.controlUdp?.audioUdp as? uk.hamdigital.icom.IcomAudioUdp)?.stopTxStream() }
 }

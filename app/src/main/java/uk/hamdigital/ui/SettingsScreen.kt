@@ -127,7 +127,8 @@ fun SettingsScreen(vm: MainViewModel) {
             Text("Free software under the GNU General Public License v3: you may share and change it, and anyone given the app may have its " +
                 "source code. Built on open-source code: ft8_lib by Kārlis Goba (MIT) for FT8 and FT4; wsprd from WSJT-X by Joe Taylor K1JT " +
                 "and others (GPL v3) for WSPR; the JS8Call decoder by Jordan Sherer KN4CRD and others (GPL v3); fldigi by Dave Freese W1HKJ " +
-                "and others (GPL v3) for RTTY and PSK31; the CW decoder from HamPropCore (as HF Propagation); the IC-705 WiFi protocol from FT8CN by BG7YOZ (MIT); the " +
+                "and others (GPL v3) for RTTY and PSK31; the CW decoder from HamPropCore (as HF Propagation); the IC-705 WiFi protocol from FT8CN by BG7YOZ (MIT); SSTV receive from Robot36 by Ahmet Inan (0BSD) and send from " +
+                "SSTV Encoder 2 by Olga Miller (Apache 2.0); FreeDV from codec2 by David Rowe and others (LGPL 2.1); the " +
                 "Orbitron font (SIL OFL). Map outlines from Natural Earth (public domain); countries from cty.dat by AD1C (country-files.com, " +
                 "downloaded); WSPR spots shared through WSPRnet, and who heard you read from wspr.live.",
                 color = Pal.Text2, fontSize = 13.sp, lineHeight = 17.sp)

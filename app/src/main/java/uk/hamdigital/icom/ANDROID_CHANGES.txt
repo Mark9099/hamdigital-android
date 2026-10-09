@@ -25,3 +25,8 @@ app gave no login, or a login with no CI-V, for a minute or two):
   - ControlUdp.closeAll: closes the CI-V and audio streams first, then deletes the token and disconnects the control
     stream (as wfview does); FT8CN closed the control socket first and sent the CI-V close after the CI-V socket was
     shut.
+
+Added (0.11.0, for FreeDV voice): IcomAudioUdp.pushTxAudio / startTxStream / stopTxStream - a queue of 12 kHz transmit
+samples and a thread that sends one 20 ms packet (TX_BUFFER_SIZE samples, packed as sendTxAudioData packs them) every
+20 ms while PTT is on, paced to the clock, silence when the queue is empty. FT8CN's sendTxAudioData sends one finished
+recording at a time and cannot take speech as it is made. sendTxAudioData itself is unchanged.

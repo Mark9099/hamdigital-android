@@ -37,9 +37,8 @@ fun AutoTune(m: Mode) {
         tuned = true
         if (busyTransmitting()) return@LaunchedEffect // never while sending, or with a contact, beacon or message under way
         val dial = dialFor(m, rig.freqHz)             // this mode's frequency nearest the radio's
-        val wantCw = m == Mode.CW
-        val modeOk = if (wantCw) rig.mode.startsWith("CW") else rig.mode == "USB" && rig.data // already right?
-        if (abs(Math.round(dial * 1000) - rig.freqHz) > 50 || !modeOk) Ic705.tune(dial, wantCw)
+        val rm = m.rigMode(dial)                      // USB-D, LSB-D or CW
+        if (abs(Math.round(dial * 1000) - rig.freqHz) > 50 || !Ic705.isIn(rm, rig)) Ic705.tune(dial, rm) // (unless already right)
     }
 }
 
@@ -70,17 +69,17 @@ fun RigBar(m: Mode) {
         if (on) {
             Text(rig.freqText, color = Pal.Text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 20.sp) // 14.074.000
             Text("  ${rig.modeText}", color = Pal.Cyan, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)                 // USB-D
-            val want = if (m == Mode.CW) rig.mode.startsWith("CW") else rig.mode == "USB" && rig.data // right mode for this page?
-            if (rig.mode.isNotEmpty() && !want) Text("  (${if (m == Mode.CW) "CW" else "USB-D"} needed)", color = Pal.Amber, fontSize = 13.sp)
+            val rm = m.rigMode(rig.freqHz / 1000.0)    // right mode for this page (and band)?
+            if (rig.mode.isNotEmpty() && !Ic705.isIn(rm, rig)) Text("  (${rm.label} needed)", color = Pal.Amber, fontSize = 13.sp)
             if (rig.tx) Text("  TX", color = Pal.Red, fontWeight = FontWeight.Bold, fontSize = 15.sp)                       // transmitting
         } else {
             val khz = m.dialsKHz.first { it.first == picked }.second // tune by hand
-            Text("Tune %s MHz %s".format(if (khz % 1.0 != 0.0) "%.4f".format(khz / 1000.0) else "%.3f".format(khz / 1000.0), if (m == Mode.CW) "CW" else "USB-D"), color = Pal.Text, fontSize = 15.sp, modifier = Modifier.weight(1f, false))
+            Text("Tune %s MHz %s".format(if (khz % 1.0 != 0.0) "%.4f".format(khz / 1000.0) else "%.3f".format(khz / 1000.0), m.rigMode(khz).label), color = Pal.Text, fontSize = 15.sp, modifier = Modifier.weight(1f, false))
             Text("  ${rig.message.ifEmpty { "IC-705 not connected" }}", color = Pal.Muted, fontSize = 12.sp, maxLines = 1, modifier = Modifier.weight(1f))
             if (rig.link == RigState.Link.NONE && Ic705.findDevice(ctx) != null) TextButton({ Ic705.connect(ctx) }) { Text("Connect") } // plugged in but not open
         }
     }
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { // bands
-        m.dialsKHz.forEach { (b, khz) -> SmallChip("$b m", b == shown) { picked = b; if (on) Ic705.tune(khz, m == Mode.CW) } } // tap: tune the radio
+        m.dialsKHz.forEach { (b, khz) -> SmallChip("$b m", b == shown) { picked = b; if (on) Ic705.tune(khz, m.rigMode(khz)) } } // tap: tune the radio
     }
 }

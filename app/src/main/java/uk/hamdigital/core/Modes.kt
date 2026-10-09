@@ -23,7 +23,19 @@ enum class Mode(
     PSK31("PSK31", "Keyboard chat in a narrow signal", 8000, "fldigi (GPL v3)", 0,
         listOf("80" to 3580.0, "40" to 7040.0, "30" to 10142.0, "20" to 14070.0, "17" to 18100.0, "15" to 21070.0, "12" to 24920.0, "10" to 28120.0)),
     CW("CW", "Morse decoder", 16000, "HamPropCore CW decoder (from Tab5CWDecoder)", 0,
-        listOf("80" to 3560.0, "40" to 7030.0, "30" to 10116.0, "20" to 14060.0, "17" to 18086.0, "15" to 21060.0, "12" to 24906.0, "10" to 28060.0));
+        listOf("80" to 3560.0, "40" to 7030.0, "30" to 10116.0, "20" to 14060.0, "17" to 18086.0, "15" to 21060.0, "12" to 24906.0, "10" to 28060.0)),
+    SSTV("SSTV", "Pictures by radio: receive and send", 12000, "Robot36 (0BSD) and SSTV Encoder 2 (Apache 2.0)", 0, // (LSB below 10 MHz, as SSTV is sent there)
+        listOf("80" to 3735.0, "40" to 7165.0, "20" to 14230.0, "15" to 21340.0, "10" to 28680.0)),
+    FREEDV("FreeDV", "Digital voice with codec2", 8000, "codec2 / FreeDV API (LGPL 2.1)", 0, // (FreeDV's calling frequencies, always USB)
+        listOf("80" to 3643.0, "40" to 7177.0, "20" to 14236.0, "17" to 18118.0, "15" to 21313.0, "12" to 24933.0, "10" to 28330.0));
 
     val working get() = stage == 0                    // decoder in this version?
+
+    /** How the radio is set for this mode on [khz]: CW for CW; SSTV is lower sideband below 10 MHz (as it is sent
+     *  there); everything else upper sideband - all with DATA on, so the audio comes and goes over the lead / WiFi. */
+    fun rigMode(khz: Double): uk.hamdigital.rig.RigMode = when {
+        this == CW -> uk.hamdigital.rig.RigMode.CW
+        this == SSTV && khz < 10_000 -> uk.hamdigital.rig.RigMode.LSB_D
+        else -> uk.hamdigital.rig.RigMode.USB_D
+    }
 }

@@ -3,6 +3,7 @@
 #  - FT8 / FT4: ft8_lib (MIT). WSPR: wsprd from WSJT-X (GPL v3). RTTY / PSK31: fldigi's demodulators (GPL v3).
 #  - JS8: JS8Call's decoder and message unpacking (GPL v3), without Qt / Boost (js8/ANDROID_CHANGES.txt).
 #  - fftw_kiss: FFTW's API on KISS FFT, for wsprd and JS8. Each library's folder has its LICENSE and ANDROID_CHANGES.txt.
+#  - FreeDV: codec2 (LGPL 2.1), a static library of its own (below).
 cmake_minimum_required(VERSION 3.22.1)
 project(hamdigital C CXX)                             # C and C++ decoders
 
@@ -26,6 +27,19 @@ set(JS8_SOURCES js8/JS8.cpp js8/js8_run.cpp js8/js8_unpack.cpp js8/js8_pack.cpp)
 set_source_files_properties(${JS8_SOURCES} js8_jni.cpp PROPERTIES COMPILE_OPTIONS "-std=c++20;-w" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # <vendor/Eigen/Dense>, commons.h
 set_source_files_properties(js8/jsc_map.cpp PROPERTIES COMPILE_OPTIONS "-w;-O0" INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/js8") # the JSC word table (262144 entries: nothing to optimise, much faster to build)
 
+# codec2 (LGPL 2.1; drowe67/codec2 at 310777b): FreeDV's modems and the speech codec, built as its own static library.
+# Its codebook tables are generated once on a PC (its generate_codebook) and kept in codec2/ (codec2/ANDROID_CHANGES.txt).
+# It carries its own KISS FFT, as ft8_lib does: its functions are renamed here so the two copies cannot be mixed up.
+file(GLOB CODEC2_SOURCES CONFIGURE_DEPENDS codec2/*.c)
+add_library(codec2_hd STATIC ${CODEC2_SOURCES})
+target_compile_definitions(codec2_hd PRIVATE GIT_HASH="310777b"
+    kiss_fft_alloc=c2_kiss_fft_alloc kiss_fft_stride=c2_kiss_fft_stride kiss_fft=c2_kiss_fft kiss_fft_cleanup=c2_kiss_fft_cleanup
+    kiss_fft_next_fast_size=c2_kiss_fft_next_fast_size kiss_fftr_alloc=c2_kiss_fftr_alloc kiss_fftr=c2_kiss_fftr kiss_fftri=c2_kiss_fftri
+    encode=c2_ldpc_encode)                           # (its LDPC encode, as wsprd's fano.c has an encode)
+target_compile_options(codec2_hd PRIVATE -O2 -w)     # optimised; upstream's warnings are not ours to change
+target_include_directories(codec2_hd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # (<codec2/version.h> is in codec2/codec2/)
+set_source_files_properties(freedv_jni.c PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # codec2's headers for the bridge alone (theirs and ft8_lib's share names)
+
 add_library(hamdigital SHARED
     ${HAMPROP_CORE}/hamprop_common/src/cw_decoder.cpp # CW decoder (shared)
     cw_jni.cpp                                       # CW decoder: JNI
@@ -40,10 +54,11 @@ add_library(hamdigital SHARED
     fldigi_jni.cpp                                   # RTTY, PSK31: JNI
     ${JS8_SOURCES}                                   # JS8
     js8/jsc_map.cpp                                  # JS8: the JSC word table
-    js8_jni.cpp)                                     # JS8: JNI
+    js8_jni.cpp                                      # JS8: JNI
+    freedv_jni.c)                                    # FreeDV (codec2): JNI
 
 target_include_directories(hamdigital PRIVATE ${HAMPROP_CORE}/hamprop_common/src ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ft8_lib
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_kiss)           # <fftw3.h> is the stand-in
 set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} ${FLDIGI_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
 target_compile_options(hamdigital PRIVATE -O2)       # optimised (the decoders run in real time)
-target_link_libraries(hamdigital log m)              # logcat, maths
+target_link_libraries(hamdigital codec2_hd log m)    # FreeDV, logcat, maths

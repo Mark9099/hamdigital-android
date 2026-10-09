@@ -20,6 +20,12 @@ Newest first.
      "<compound><extra>"), so JS8Call would print it too, but the sender is not a callsign. `Js8Decoder.parse` now
      checks the sender against JS8Call's Varicode callsign pattern. One that fails is marked low-confidence (shown
      [in brackets]) and kept out of Calls.
+- **Checked on the S23 (0.10.5):**
+  - CW page: the radio answered 16 47 with 01 (semi break-in) three times; opening CW tuned to 7.030 CW.
+  - JS8 heartbeat: "Sending frame [...]", then "Sent: heartbeat" at 15:44:00.
+  - RTTY CQ: the text shows once, as the [TX] line, with no second copy from the monitor audio. PSK31 uses the same
+    page code and was not transmitted again.
+  - The JS8 false-decode rule only shows when one turns up.
 
 ## 2026-10-09: on-air tests of the other modes (0.10.4, 40 m, WiFi, 2 W)
 

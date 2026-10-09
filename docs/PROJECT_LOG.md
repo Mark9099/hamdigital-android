@@ -2,6 +2,27 @@
 
 Newest first.
 
+## 2026-10-09: 0.13.0 (PSK63 and PSK125)
+
+- **Asked for by the user:** a new-modes list - "aprs and packet, freedata, olivia, wefax and aprrs along with
+  psk63/125". The order is easiest first: PSK63/125, Olivia, WEFAX, APRS and packet (Direwolf), FreeDATA.
+- **PSK63/125:**
+  - fldigi's settings per speed: symbol length 128 / 64, DCD length 64 / 128, and the SINC filter pair for PSK125.
+    The demodulator is otherwise the same (`fldigi/ANDROID_CHANGES.txt`).
+  - The transmitter takes the speed too, with a preamble and postamble of `dcdbits` symbols.
+  - The JNI has `control(7, speed)`, which rebuilds the receiver keeping the frequency, AFC and squelch.
+    `KbNative.encode` gained `rate` (RTTY baud / PSK speed).
+- **Page:**
+  - A Speed row (PSK31, PSK63, PSK125) on the PSK31 page, remembered while the app runs.
+  - The page title, the send box and the logged mode follow the speed. ADIF already maps PSK63/125 to MODE=PSK with
+    that SUBMODE; reports are 599.
+- **PC test** (the app's transmitter into its receiver, 3 Hz off, noise in 2500 Hz):
+  - PSK31: full copy to -7 dB.
+  - PSK63: full copy to -4 dB, one character wrong at -7 dB.
+  - PSK125: full copy to -4 dB, lost at -7 dB.
+- **Phone:** the Speed row is shown, and switching to PSK63 changes the title and the hint, with no crash.
+- **Not yet done:** on air.
+
 ## 2026-10-09: 0.12.1 (SSTV receive frame)
 
 - **Asked by the user:** "is the sstv receive box the right size? doesnt seem right".

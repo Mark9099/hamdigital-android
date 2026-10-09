@@ -19,6 +19,13 @@ Newest first.
   hidden). Fix: `merge()` in `MapDialog` makes stations at the same point one dot, labelled "A, B" or "A +N", with
   its details listing each (the card scrolls). The WSPR list puts the strongest first, so a shared dot takes its
   colour. The Logbook map benefits too.
+- **Checked on the S23:**
+  - Heard me: 52 reports from 50 stations, all in the 13:00 bar (the two beacon transmissions). Tapping it showed
+    "13:00-14:00 UTC: 50 stations"; tapping an empty hour showed 0. M9PSY and two others share a square, shown as
+    "M9PSY-1 +2".
+  - Heard here: after 3 slots, 32 stations from 41 reports, with three 2-minute bars (14:08, 14:10, 14:12) and
+    shared dots "G4SXT, G0HFH", "DK2DB, DB1IAT" and "M0GUC +3".
+  - Play stepped through the slots and stopped on the last.
 
 ## 2026-10-09: 0.10.1 (maps centred on you; 0.10.0 checked on the phone)
 

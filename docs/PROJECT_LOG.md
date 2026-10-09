@@ -2,6 +2,24 @@
 
 Newest first.
 
+## 2026-10-09: first release (0.11.1 APK on GitHub)
+
+- **Asked for by the user:** a GitHub release with a signed APK, the way HF Propagation is released.
+- **Release key:** created with the JBR keytool, PKCS12, RSA 4096, valid 100 years, alias `hamdigital`, DN "CN=HF Digital
+  Modes Android, OU=Amateur Radio, C=GB", in `%USERPROFILE%\.android\hamdigital-release.jks`.
+  - A random password, in `keystore.properties` (gitignored; the build already read it, copied from HF Propagation).
+  - Certificate SHA-256: 7643ba4f6232ffaa8abee4ed70660a3b8a54c9c62b6181d6f97beb1bc0d936bf.
+- **Debug builds are signed with the release key too** (`buildTypes.debug`), so test builds installed over USB and the
+  released APK update each other and keep the logbook and settings. The phone's current debug-key install has to be
+  replaced once: back up `files/` with run-as, uninstall, install, then restore.
+- **GPL completeness:** the app is GPL v3 (WSJT-X, JS8Call and fldigi code), so the released APK needs its complete
+  source available. The CW decoder came from HamPropCore, a private repository the public one couldn't build without.
+  The user chose to copy it in: `cpp/cw/` (cw_decoder.cpp/.h, cw_goertzel.h, cw_morse_table.h, unchanged, from
+  HamPropCore 2a176a5; `cw/ORIGIN.txt`). The CMake HAMPROP_CORE lookup is gone, and the repository builds on its own.
+- **The file:** `assembleRelease` gives a 51 MB APK (arm64-v8a, armeabi-v7a, x86_64; target 35; not debuggable),
+  copied to `dist/HF-Digital-Modes-0.11.1.apk`. `apksigner` verifies it with the key above.
+- README: an "Install" section, and Building without HamPropCore.
+
 ## 2026-10-09: 0.11.0 (SSTV and FreeDV)
 
 - **Asked for by the user:** "could you add FreeDV and SSTV to this project? proceed".

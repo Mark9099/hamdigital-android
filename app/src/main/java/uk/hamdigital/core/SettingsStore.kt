@@ -18,6 +18,7 @@ enum class AudioChoice(val label: String) {
     AUTO("IC-705 (USB) when plugged in, else the microphone"), // the radio first
     USB("IC-705 (USB) only"),                         // never the microphone
     MIC("Phone microphone"),                          // e.g. held near a speaker
+    WIFI("IC-705 over WiFi (no lead)"),               // Icom's network protocol (Settings > Connection)
 }
 
 data class Settings(
@@ -28,6 +29,10 @@ data class Settings(
     val civAddr: Int = 0xA4,                          // the IC-705's CI-V address (its default)
     val txLevel: Int = 30,                            // transmit audio level, % of full scale
     val txOk: Boolean = false,                        // the licence notice has been accepted (transmitting allowed)
+    val wifiIp: String = "",                          // the IC-705's IP address (WiFi link)
+    val wifiPort: Int = 50001,                        // its control port (the radio's default)
+    val wifiUser: String = "",                        // its Network User1 name
+    val wifiPass: String = "",                        // and password
 )
 
 class SettingsStore(private val ctx: Context) {
@@ -38,6 +43,8 @@ class SettingsStore(private val ctx: Context) {
     private val kCiv = intPreferencesKey("civ_address")
     private val kTxLevel = intPreferencesKey("tx_level")
     private val kTxOk = booleanPreferencesKey("tx_ok")
+    private val kWIp = stringPreferencesKey("wifi_ip"); private val kWPort = intPreferencesKey("wifi_port")
+    private val kWUser = stringPreferencesKey("wifi_user"); private val kWPass = stringPreferencesKey("wifi_pass")
 
     val flow: Flow<Settings> = ctx.store.data.map { p -> // the settings, as they change
         Settings(
@@ -48,6 +55,7 @@ class SettingsStore(private val ctx: Context) {
             civAddr = p[kCiv] ?: 0xA4,
             txLevel = p[kTxLevel] ?: 30,
             txOk = p[kTxOk] ?: false,
+            wifiIp = p[kWIp] ?: "", wifiPort = p[kWPort] ?: 50001, wifiUser = p[kWUser] ?: "", wifiPass = p[kWPass] ?: "",
         )
     }
 
@@ -60,6 +68,7 @@ class SettingsStore(private val ctx: Context) {
             p[kCiv] = s.civAddr
             p[kTxLevel] = s.txLevel
             p[kTxOk] = s.txOk
+            p[kWIp] = s.wifiIp.trim(); p[kWPort] = s.wifiPort; p[kWUser] = s.wifiUser; p[kWPass] = s.wifiPass
         }
     }
 }

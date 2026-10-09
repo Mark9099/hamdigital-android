@@ -47,7 +47,12 @@ private val GUIDE = listOf(
         "to sit around the middle on band noise; red means too loud.\n" +
         B + "Settings > Receive audio chooses the IC-705 when it is plugged in (else the microphone), the IC-705 only, or the microphone - " +
         "handy for trying a page with the phone held near a speaker.\n" +
-        B + "WiFi (no lead) is planned after the USB link is complete.",
+        B + "WiFi (no lead): the app can reach the IC-705 over WiFi instead, with Icom's network protocol (as the RS-BA1 " +
+        "software does) - receive and transmit audio and CI-V, so every mode works the same. On the radio: MENU > SET > WLAN Set " +
+        "(WLAN on, joined to the same network as the phone - or join the phone to the radio's own access point); its IP address is " +
+        "under WLAN Set > Connection Status; MENU > SET > Network > Network User1 sets a user name and password. Enter them in " +
+        "Settings > Connection: WiFi and tap Connect over WiFi; the app then connects by WiFi whenever it starts, until you tap " +
+        "\"Use the USB lead\". The page's status line shows \"Audio: IC-705 (WiFi)\".",
 
     "The menu" to
         "A tile for each mode: its name, what it is for, and whether its decoder is in this version (\"Decoder ready\") or still to come " +
@@ -143,6 +148,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.0 (October 2026): the IC-705 over WiFi (Icom's network protocol, from the FT8CN app): audio and control without " +
+        "a lead, for every mode. Settings > Connection: WiFi.\n" +
         B + "0.7.3 (October 2026): JS8Call sending (heartbeat, CQ, SNR? / GRID? / ACK / 73, and messages). Every mode now " +
         "transmits as well as receives.\n" +
         B + "0.7.2 (October 2026): sending in RTTY and PSK31 (typed text, CQ, 73) and CW (through the IC-705's keyer).\n" +

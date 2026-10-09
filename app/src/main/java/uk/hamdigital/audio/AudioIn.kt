@@ -40,6 +40,11 @@ object AudioIn {
     @Suppress("MissingPermission")                    // checked by allowed()
     fun start(ctx: Context, who: Any, choice: AudioChoice, sampleRate: Int, block: Int, sink: (ShortArray, Int) -> Unit): String? {
         stopNow()                                     // one capture at a time (the previous page's)
+        if (choice == AudioChoice.WIFI) {             // the radio's audio over WiFi (IcomNet): no recording here
+            netSink = sink; netBlock = ShortArray(block); netFill = 0; netPos = 0.0; netStep = 12000.0 / sampleRate // resample 12 kHz to the page's rate
+            sourceName = "IC-705 (WiFi)"; rate = sampleRate; owner = who; running = true
+            return if (uk.hamdigital.rig.IcomNet.loggedIn) null else "WiFi: ${uk.hamdigital.rig.IcomNet.status.value.ifEmpty { "not connected - Settings > Connection" }}"
+        }
         if (!allowed(ctx)) return "Audio not allowed - Android Settings > Apps > HF Digital Modes > Permissions"
         val usb = if (choice == AudioChoice.MIC) null else usbInput(ctx) // the radio's sound card?
         if (choice == AudioChoice.USB && usb == null) return "IC-705 not found - plug in its USB lead (or Settings > Receive audio)"
@@ -71,5 +76,26 @@ object AudioIn {
     /** Stop, if [who] started it (a page closing must not stop the next page's capture). */
     fun stop(who: Any) { if (owner === who) stopNow() }
 
-    private fun stopNow() { running = false; thread?.join(500); thread = null; owner = null } // the thread ends after its next block
+    private fun stopNow() { running = false; thread?.join(500); thread = null; owner = null; netSink = null } // the thread ends after its next block
+
+    // ---- WiFi audio (IcomNet hands it in on its network thread): 12 kHz, converted to the page's rate ----
+    @Volatile private var netSink: ((ShortArray, Int) -> Unit)? = null // the page's decoder and waterfall
+    private var netBlock = ShortArray(0); private var netFill = 0      // the block being filled
+    private var netPos = 0.0; private var netStep = 1.0                // resampling: position in the input, input samples a output sample
+    private var netLast: Short = 0                                    // the previous input sample (for interpolation across packets)
+
+    /** Receive audio from the radio over WiFi. */
+    fun netAudio(s: ShortArray, n: Int) {
+        val sink = netSink ?: return; if (!running || n == 0) return
+        var peak = 0; for (i in 0 until n) { val v = abs(s[i].toInt()); if (v > peak) peak = v } // input level
+        val l = peak / 32768f; level = if (l > level) l else level * 0.95f
+        while (netPos < n) {                          // linear interpolation between input samples
+            val i = netPos.toInt(); val f = netPos - i
+            val a = if (i == 0) netLast.toInt() else s[i - 1].toInt(); val b = s[i].toInt() // (sample i-1 .. i)
+            netBlock[netFill++] = (a + (b - a) * f).toInt().toShort()
+            if (netFill == netBlock.size) { sink(netBlock, netFill); netFill = 0 } // a block to the page
+            netPos += netStep
+        }
+        netPos -= n; netLast = s[n - 1]               // carry over to the next packet
+    }
 }

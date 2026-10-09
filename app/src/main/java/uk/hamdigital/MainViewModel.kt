@@ -32,6 +32,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch { settings.collect { uk.hamdigital.rig.Ic705.civAddress = it.civAddr } } // the radio's CI-V address, as set
+        viewModelScope.launch {                       // the WiFi link: connect at start when chosen
+            val s = store.flow.first()
+            if (s.audio == uk.hamdigital.core.AudioChoice.WIFI && s.wifiIp.isNotBlank()) uk.hamdigital.rig.IcomNet.connect(s.wifiIp, s.wifiPort, s.wifiUser, s.wifiPass)
+        }
         viewModelScope.launch {                       // the startup screen: skipped if turned off, else 8 s (a tap skips it sooner)
             if (!store.flow.first().showSplash) splash.value = false else { delay(8000); splash.value = false }
         }

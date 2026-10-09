@@ -2,6 +2,25 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.0, stage 8 (the IC-705 over WiFi)
+
+- FT8CN's Icom network-protocol classes (MIT) are copied into `uk.hamdigital.icom` by `tools/port_icom.py`, with the
+  protocol code unchanged. Changes: English stream names, no extra volume scaling, the PTT CI-V frame built in place,
+  and a status callback instead of toasts. FT8CN's phone-speaker playback isn't used. Details are in
+  `icom/ANDROID_CHANGES.txt`.
+- `rig/IcomNet.kt`: connect/close on a background thread. It passes CI-V to and from Ic705, receive audio (12 kHz LE
+  16-bit) to AudioIn, PTT (which also opens the transmit stream), and transmit audio (12 kHz floats).
+- Ic705: commands go over WiFi when `net` is on. `netFrame` splits incoming CI-V into frames for the same handler, a
+  1 s poll timer replaces the USB reader's poll, and USB is closed while WiFi is in use.
+- AudioIn: Receive audio "IC-705 over WiFi". The network audio is linearly resampled from 12 kHz to the page's rate
+  (8 / 12 / 16 kHz) and fed to the same decoders and waterfalls.
+- Transmitter: over WiFi it keys PTT through IcomNet, resamples the audio to 12 kHz floats, lets the protocol code
+  stream it in 20 ms packets, waits for its length, and unkeys. `blocked()` requires the login.
+- Settings: "Connection: WiFi (no lead)" with IP, port (50001), Network User1 name and password, Connect over WiFi
+  (which also sets Receive audio to WiFi), Use the USB lead, and status. The app connects at start when WiFi is chosen.
+- All 8 stages in docs/PLAN.md are now built. None of it has been tried with the radio yet: receive and transmit
+  over USB and WiFi, CI-V and PTT all need checking on the IC-705.
+
 ## 2026-10-09: 0.7.3, stage 7d (JS8 sending), so stage 7 is complete
 
 - `cpp/js8/js8_pack.cpp`: JS8Call's packers ported from Qt. They build heartbeat, CQ, directed-command and

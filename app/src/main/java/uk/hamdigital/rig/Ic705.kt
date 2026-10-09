@@ -1,4 +1,4 @@
-// The IC-705 over its USB lead: CI-V control on the radio's first USB serial port (the second carries GPS data), using
+// The IC-705 over its USB lead (or, with IcomNet, over WiFi): CI-V control on the radio's first USB serial port (the second carries GPS data), using
 // usb-serial-for-android (MIT) for the CDC-ACM serial link. Reads the frequency and mode (asked every second, and from
 // the radio's own transceive broadcasts), tunes it, sets the mode (with DATA for the digital modes), and - from stage 7 -
 // keys the transmitter. CI-V frames: FE FE <to> <from> <command> [sub] [data] FD; the IC-705's address is A4 by default
@@ -63,7 +63,7 @@ object Ic705 {
     /** Connect if the radio is plugged in and not yet connected (asks for USB permission the first time). Safe to call often. */
     fun connect(ctx: Context) {
         val app = ctx.applicationContext               // (outlives any screen)
-        if (port != null) return                       // already connected
+        if (port != null || net) return                // already connected (USB or WiFi)
         val dev = findDevice(app) ?: run { set { it.copy(link = RigState.Link.NONE, message = "IC-705 not plugged in") }; return }
         val um = app.getSystemService(UsbManager::class.java)
         if (!um.hasPermission(dev)) {                  // Android asks the user once
@@ -149,11 +149,36 @@ object Ic705 {
 
     /** Send a command (bytes after the addresses, before FD). */
     private fun send(vararg body: Int) {
-        val p = port ?: return
         val f = ByteArray(body.size + 5)               // FE FE to from .. FD
         f[0] = 0xFE.toByte(); f[1] = 0xFE.toByte(); f[2] = civAddress.toByte(); f[3] = CTRL.toByte()
         body.forEachIndexed { i, b -> f[4 + i] = b.toByte() }; f[f.size - 1] = 0xFD.toByte()
+        if (net) { IcomNet.civ(f); return }            // over WiFi
+        val p = port ?: return
         synchronized(lock) { try { p.write(f, 500) } catch (e: Exception) { } } // (a lost write is retried by the next poll)
+    }
+
+    // ---- WiFi (IcomNet): the same commands and replies over Icom's network protocol ----
+    @Volatile var net = false; private set             // using the WiFi link
+    private var netPoll: java.util.Timer? = null       // asks for the frequency and mode every second
+
+    /** IcomNet: logged in (or not) to the radio over WiFi. */
+    fun netConnected(on: Boolean, why: String = "") {
+        net = on; netPoll?.cancel(); netPoll = null
+        if (on) {
+            if (port != null) disconnect("Using WiFi")     // (one link at a time)
+            net = true
+            set { RigState(link = RigState.Link.CONNECTED, message = "IC-705 connected over WiFi") }
+            netPoll = java.util.Timer("civ-net", true).apply { scheduleAtFixedRate(object : java.util.TimerTask() { override fun run() { send(0x03); send(0x04); send(0x1A, 0x06) } }, 500, 1000) }
+        } else if (port == null) set { RigState(link = RigState.Link.NONE, message = why) }
+    }
+
+    /** IcomNet: CI-V bytes from the radio (one or more frames). */
+    fun netFrame(data: ByteArray) {
+        var start = -1
+        for (i in data.indices) {                      // split at FD
+            if (start < 0 && (data[i].toInt() and 0xFF) == 0xFE) start = i
+            if (start >= 0 && (data[i].toInt() and 0xFF) == 0xFD) { handle(data.copyOfRange(start, i + 1)); start = -1 }
+        }
     }
 
     /** Tune to [hz]. */
@@ -168,8 +193,8 @@ object Ic705 {
     /** Tune to a mode's dial frequency and set its mode. */
     fun tune(khz: Int, cw: Boolean) { setFrequency(khz * 1000L); setMode(cw) }
 
-    /** Key / unkey the transmitter. */
-    fun ptt(on: Boolean) { send(0x1C, 0x00, if (on) 0x01 else 0x00) }
+    /** Key / unkey the transmitter (over WiFi this also opens the transmit audio stream). */
+    fun ptt(on: Boolean) { if (net) IcomNet.ptt(on) else send(0x1C, 0x00, if (on) 0x01 else 0x00) }
 
     /** Send Morse with the radio's own keyer (CI-V 17): up to 30 characters a command, so longer text goes in pieces
      *  (the radio queues them). Needs the radio in CW with break-in on. Only characters the keyer knows are sent. */

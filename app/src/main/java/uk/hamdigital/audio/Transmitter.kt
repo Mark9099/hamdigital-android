@@ -32,6 +32,7 @@ object Transmitter {
     fun blocked(ctx: Context, callsign: String): String? = when {
         callsign.isBlank() -> "Set your callsign in Settings before transmitting"
         Ic705.state.value.link != RigState.Link.CONNECTED -> "The IC-705's CI-V is not connected, so the app cannot key it"
+        Ic705.net -> if (uk.hamdigital.rig.IcomNet.loggedIn) null else "The WiFi link to the IC-705 is not logged in"
         usbOutput(ctx) == null -> "The IC-705's USB sound card is not connected"
         else -> null
     }
@@ -43,6 +44,7 @@ object Transmitter {
     fun send(ctx: Context, callsign: String, audio: ShortArray, rate: Int, startAtMs: Long = 0, onDone: (Boolean) -> Unit = {}): Boolean {
         blocked(ctx, callsign)?.let { lastError.value = it; return false } // safety first
         if (thread != null) { lastError.value = "Already transmitting"; return false }
+        if (Ic705.net) return sendNet(audio, rate, startAtMs, onDone) // over WiFi
         val dev = usbOutput(ctx)!!                    // the radio's sound card
         stop = false; lastError.value = ""
         thread = Thread({
@@ -81,6 +83,29 @@ object Transmitter {
                 onDone(ok)
             }
         }, "tx").apply { priority = Thread.MAX_PRIORITY; start() }
+        return true
+    }
+
+    /** Over WiFi: PTT (which opens the transmit stream), the audio as 12 kHz floats to the protocol code, which sends it
+     *  in real time, then PTT off when it has had time to go. */
+    private fun sendNet(audio: ShortArray, rate: Int, startAtMs: Long, onDone: (Boolean) -> Unit): Boolean {
+        stop = false; lastError.value = ""
+        val n = (audio.size.toLong() * 12000 / rate).toInt() // samples at 12 kHz
+        val f = FloatArray(n) { i -> val p = i.toDouble() * rate / 12000; val k = p.toInt(); val a = audio[minOf(k, audio.size - 1)]; val b = audio[minOf(k + 1, audio.size - 1)]; ((a + (b - a) * (p - k)) / 32768.0).toFloat() } // resampled
+        thread = Thread({
+            var ok = false
+            try {
+                val wait = startAtMs - System.currentTimeMillis() - 60; if (wait > 0) Thread.sleep(wait) // key 60 ms before
+                if (stop) return@Thread
+                Ic705.ptt(true); _on.value = true     // PTT over the network
+                Thread.sleep(60)
+                uk.hamdigital.rig.IcomNet.sendAudio(f) // streamed by the protocol code in 20 ms packets
+                val end = System.currentTimeMillis() + n * 1000L / 12000 + 200 // its length, plus the protocol's lead-in
+                while (!stop && System.currentTimeMillis() < end) Thread.sleep(20) // (at most 110.6 s + 0.2: within the watchdog)
+                ok = !stop
+            } catch (e: Exception) { lastError.value = "Transmit failed: ${e.message}" }
+            finally { Ic705.ptt(false); _on.value = false; thread = null; onDone(ok) }
+        }, "tx-net").apply { priority = Thread.MAX_PRIORITY; start() }
         return true
     }
 

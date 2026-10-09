@@ -1,0 +1,14 @@
+FT8CN's Icom network protocol (https://github.com/N0BOY/FT8CN, ft8cn/app/src/main/java/com/bg7yoz/ft8cn/icom, commit
+a98fbfa), MIT licence (LICENSE-FT8CN), (C) 2023 BG7YOZ. Made by tools/port_icom.py; the protocol code is unchanged.
+
+Copied: AudioUdp, ControlUdp, IComPacketTypes, IComWifiRig, IcomAudioUdp, IcomCivUdp, IcomControlUdp, IcomSeqBuffer,
+IcomUdpBase, IcomUdpClient, WifiRig (package com.bg7yoz.ft8cn.icom -> uk.hamdigital.icom). Not copied: the Xiegu classes.
+
+Changed (FT8CN's own app classes are not part of this app):
+  - IcomUdpBase.getUdpStyle: English stream names instead of FT8CN's string resources.
+  - IcomAudioUdp: no extra transmit-volume scaling (FT8CN's GeneralVariables.volumePercent; the app sets its level).
+  - IcomCivUdp.sendPttAction: the CI-V PTT frame (FE FE civ E0 1C 00 01/00 FD) built in place of FT8CN's IcomRigConstant.
+  - WifiRig: an OnStatus callback; IComWifiRig reports login and network errors through it instead of FT8CN's toasts,
+    and does not open the phone-speaker playback (openAudio): the radio's audio goes to the app's decoders.
+  - An unused checkerframework import removed.
+The app's side is uk.hamdigital.rig.IcomNet (connect / CI-V / PTT / audio) with Ic705, AudioIn and Transmitter.

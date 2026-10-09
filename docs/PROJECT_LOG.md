@@ -19,6 +19,11 @@ Newest first.
 - **The file:** `assembleRelease` gives a 51 MB APK (arm64-v8a, armeabi-v7a, x86_64; target 35; not debuggable),
   copied to `dist/HF-Digital-Modes-0.11.1.apk`. `apksigner` verifies it with the key above.
 - README: an "Install" section, and Building without HamPropCore.
+- **Checked:** a fresh clone of the public repository (no keystore, no HamPropCore) builds debug and release (unsigned).
+- **Released:** https://github.com/Mark9099/hamdigital-android/releases/tag/v0.11.1, with the APK attached (SHA-256
+  ddf8a437d76df3d74b18b3318f89861eb16f38048485cb91ef489b67e04eed4a). The notes say what is tested on air and what isn't.
+- Each later version: build `assembleRelease`, copy it to `dist/HF-Digital-Modes-<version>.apk`, then `gh release create
+  v<version>` with that APK.
 
 ## 2026-10-09: 0.11.0 (SSTV and FreeDV)
 

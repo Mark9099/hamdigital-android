@@ -75,3 +75,20 @@ fun FtTxPanel(qso: FtQso, gate: TxGate) {
         if (q.logged) "logged" else null).joinToString("  •  ").ifEmpty { "Tap a CQ (or a station calling you) to answer it, or Call CQ. Tap the waterfall to set the TX offset." },
         color = if (q.enabled) Pal.Amber else Pal.Muted, fontSize = 12.sp, fontFamily = FontFamily.Default, maxLines = 2)
 }
+
+/** Typing and sending for the keyboard modes: a text box, Send, and quick messages (CQ, 73) with your callsign. */
+@Composable
+fun SendBox(myCall: String, mode: String, onSend: (String) -> Unit, extra: @Composable RowScope.() -> Unit = {}) {
+    var text by remember { mutableStateOf("") }       // being typed
+    val call = myCall.ifBlank { "MYCALL" }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+        CompactField(text, { text = it.uppercase() }, "Type to send ($mode)", Modifier.weight(1f))
+        Button({ if (text.isNotBlank()) { onSend(text.trim()); text = "" } }, contentPadding = PaddingValues(horizontal = 14.dp)) { Text("Send") }
+    }
+    Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        SmallChip("CQ", false) { onSend("CQ CQ CQ DE $call $call $call PSE K") }      // calling CQ
+        SmallChip("73", false) { onSend("TNX FER QSO 73 DE $call SK") }               // ending a contact
+        SmallChip("Callsign", false) { text = (text + " $call").trim() }              // your call into the box
+        extra()
+    }
+}

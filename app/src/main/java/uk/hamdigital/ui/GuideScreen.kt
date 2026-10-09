@@ -66,7 +66,9 @@ private val GUIDE = listOf(
         B + "Speed (WPM), tone and signal strength show beside it, with the letter being received.\n" +
         B + "Sensitivity: higher hears weaker signals but lets more noise through. Follow tone: keeps up with a drifting signal. Start speed: " +
         "the speed it expects before it has measured one; Reset speed measures again.\n" +
-        B + "Pause stops decoding; Clear empties the text; Copy and Share (top right) pass on the decoded text.",
+        B + "Pause stops decoding; Clear empties the text; Copy and Share (top right) pass on the decoded text.\n" +
+        B + "Sending: the IC-705's own keyer sends the Morse (over CI-V), so the radio must be in CW (a band chip sets it) with " +
+        "break-in on (the BK-IN button). Type and tap Send, or CQ / 73; choose the speed (15-30 WPM); Stop ends the message.",
 
     "FT8 and FT4" to
         "Decodes FT8 (15 s slots) and FT4 (7.5 s slots) with ft8_lib, the open-source FT8 / FT4 library also used by the FT8CN app. Slots " +
@@ -119,7 +121,9 @@ private val GUIDE = listOf(
         B + "RTTY: the amateur standard is 45.45 baud with 170 Hz shift. If the text is nonsense, try Reverse (the station's mark and " +
         "space are the other way round). Other shifts are 85, 425 and 850 Hz.\n" +
         B + "The text is kept while the app runs; Copy, Share and Clear are at the top right.\n" +
-        B + "Typing and sending come in stage 7.",
+        B + "Sending: type in the box at the bottom and tap Send, or tap CQ (\"CQ CQ CQ DE call call call PSE K\") or 73. The message " +
+        "goes out on the receive frequency (where the red lines are) as one transmission, and appears in the text marked [TX]. " +
+        "RTTY sends capitals, figures and common punctuation (Baudot); PSK31 sends any text. The TRANSMITTING bar has Halt.",
 
     "JS8Call" to
         "Receives JS8 (the JS8Call keyboard-chat mode, Normal speed: 15 s slots like FT8) with JS8Call's own decoder.\n\n" +
@@ -134,6 +138,7 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.7.2 (October 2026): sending in RTTY and PSK31 (typed text, CQ, 73) and CW (through the IC-705's keyer).\n" +
         B + "0.7.1 (October 2026): the WSPR beacon (transmit percentage, power reported, offset).\n" +
         B + "0.7.0 (October 2026): FT8 and FT4 transmit: answer a CQ or call CQ with WSJT-X-style automatic sequencing, PTT over " +
         "CI-V and audio to the IC-705's USB sound card, the licence notice, the ADIF logbook (Settings > Logbook) and the transmit level.\n" +

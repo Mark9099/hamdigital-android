@@ -81,3 +81,19 @@ int main()
     }
     return 0;
 }
+
+// ---- transmit round trip (kb_tx.cxx): the app's own RTTY / PSK31 audio into its receivers ----
+#include "kb_tx.h"
+int tx_roundtrip()
+{
+    const std::string t = "CQ CQ DE M7JVY M7JVY IO91 PSE K 599 73";
+    std::mt19937 rng(3); std::normal_distribution<double> g(0, 1);
+    { auto a = psk31_tx_audio(t, 1200, 0.3); std::vector<double> s; for (auto v : a) s.push_back(v / 32768.0 + 0.02 * g(rng));
+      Psk31Rx rx; rx.set_freq(1202); std::string got; for (size_t i = 0; i < s.size(); i += 512) { rx.rx_process(&s[i], (int)std::min<size_t>(512, s.size() - i)); got += rx.take_text(); }
+      printf("PSK31 TX -> RX: [%s]\n", got.c_str()); }
+    { auto a = rtty_tx_audio(t, 1500, 170, 45.45, 0.3); std::vector<double> s; for (auto v : a) s.push_back(v / 32768.0 + 0.02 * g(rng));
+      RttyRx rx; rx.set_freq(1501); rx.set_squelch(0); std::string got; for (size_t i = 0; i < s.size(); i += 512) { rx.rx_process(&s[i], (int)std::min<size_t>(512, s.size() - i)); got += rx.take_text(); }
+      printf("RTTY  TX -> RX: [%s]\n", got.c_str()); }
+    return 0;
+}
+static int run_tx = tx_roundtrip();                  // (runs before main)

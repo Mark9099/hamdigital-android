@@ -1,7 +1,7 @@
 // CW page: Morse from the IC-705's USB audio (or the microphone) through the decoder shared with HF Propagation and the
 // Tab5 (HamPropCore cw_decoder.cpp) - HF Propagation's CW decoder tool, as a full page: Pause / Listen, auto tune,
 // reset speed, clear; sensitivity, start speed, follow tone; a waterfall of the 14 tone bins (350-1000 Hz; tap a column
-// to lock on it); speed, tone and signal; the decoded text (copy / share).
+// to lock on it); speed, tone and signal; the decoded text (copy / share); and sending with the IC-705's keyer (CI-V).
 package uk.hamdigital.ui
 
 import android.content.Intent
@@ -31,11 +31,15 @@ import kotlinx.coroutines.delay
 import uk.hamdigital.MainViewModel
 import uk.hamdigital.core.Mode
 import uk.hamdigital.engine.CwNative
+import uk.hamdigital.rig.Ic705
+import uk.hamdigital.rig.RigState
+import androidx.compose.runtime.saveable.rememberSaveable
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.log10
 
 private const val WF_ROWS = 150                       // waterfall history (one row a tick: about 12 s)
 private val CW_SPD = listOf(12f, 18f, 25f, 30f)       // start speeds offered
+private val CW_TX_WPM = listOf(15, 20, 25, 30)         // keyer speeds offered
 
 @Composable
 fun CwScreen(vm: MainViewModel) {
@@ -64,6 +68,18 @@ fun CwScreen(vm: MainViewModel) {
     val conf = LocalConfiguration.current
     val wide = conf.screenWidthDp >= 600              // controls beside the waterfall
     val sideways = conf.screenWidthDp > conf.screenHeightDp && conf.screenHeightDp < 480 // a phone on its side: the text gets its own column
+    val gate = rememberTxGate(vm)                       // the licence notice before transmitting
+    var txWpm by rememberSaveable { mutableIntStateOf(20) } // keyer speed
+    var txMsg by remember { mutableStateOf("") }       // why sending did not start
+    // Send [t] with the IC-705's own keyer (CI-V): the radio keys itself in CW with break-in on.
+    fun sendCw(t: String) = gate.ask {
+        txMsg = when {
+            s.callsign.isBlank() -> "Set your callsign in Settings before transmitting"
+            Ic705.state.value.link != RigState.Link.CONNECTED -> "The IC-705's CI-V is not connected"
+            !Ic705.state.value.mode.startsWith("CW") -> "Put the IC-705 in CW (a band chip above) with break-in on"
+            else -> { Ic705.setCwSpeed(txWpm); Ic705.sendCw(t); CwNative.control(0, 0f); "" } // (the decoder's text is cleared so the reply starts afresh)
+        }
+    }
     ModeFrame("CW", { vm.back() }, actions = {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) } // the transcript
         TextButton({ ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share the decoded text")) }) { Text("Share", color = Pal.Text2) }
@@ -135,6 +151,11 @@ fun CwScreen(vm: MainViewModel) {
             if (wide) Row(Modifier.padding(vertical = 6.dp)) { waterfall(Modifier.weight(1f)); Spacer(Modifier.width(12.dp)); numbers(Modifier.weight(1f)) }
             else { waterfall(Modifier.padding(vertical = 6.dp)); numbers(Modifier) }
             textBox(Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp))
+            SendBox(s.callsign, "CW", ::sendCw) {           // typing and sending (the IC-705's keyer)
+                CW_TX_WPM.forEach { w -> SmallChip("$w WPM", w == txWpm) { txWpm = w; Ic705.setCwSpeed(w) } }
+                SmallChip("Stop", false) { Ic705.stopCw() }
+            }
+            if (txMsg.isNotEmpty()) Text(txMsg, color = Pal.Red, fontSize = 12.sp) // why it did not send
         }
     }
 }

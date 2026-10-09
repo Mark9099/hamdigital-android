@@ -67,3 +67,12 @@ extern "C" JNIEXPORT void JNICALL Java_uk_hamdigital_engine_KbNative_control(JNI
         }
     }
 }
+
+// Transmit audio for a whole message (8 kHz): mode 0 RTTY (centre f0, shift Hz, 45.45 baud), 1 PSK31 (carrier f0).
+#include "fldigi/kb_tx.h"
+extern "C" JNIEXPORT jshortArray JNICALL Java_uk_hamdigital_engine_KbNative_encode(JNIEnv *env, jclass, jint mode, jstring jtext, jdouble f0, jdouble shift, jdouble amplitude)
+{
+    const char *c = env->GetStringUTFChars(jtext, nullptr); std::string text(c); env->ReleaseStringUTFChars(jtext, c); // the text
+    std::vector<int16_t> a = mode == 0 ? rtty_tx_audio(text, f0, shift, 45.45, amplitude) : psk31_tx_audio(text, f0, amplitude);
+    jshortArray out = env->NewShortArray((jsize)a.size()); env->SetShortArrayRegion(out, 0, (jsize)a.size(), a.data()); return out;
+}

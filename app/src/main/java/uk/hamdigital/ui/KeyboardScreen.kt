@@ -27,6 +27,7 @@ import kotlinx.coroutines.delay
 import uk.hamdigital.MainViewModel
 import uk.hamdigital.audio.Spectrum
 import uk.hamdigital.core.Mode
+import uk.hamdigital.audio.Transmitter
 import uk.hamdigital.engine.KbNative
 
 /** The decoded text of each keyboard mode, kept while the app runs. */
@@ -52,6 +53,13 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     var shift by rememberSaveable { mutableIntStateOf(170) } // RTTY shift
     LaunchedEffect(k) { KbNative.control(k, 1, if (afc) 1.0 else 0.0); KbNative.control(k, 2, sql.toDouble()); if (k == KbNative.RTTY) KbNative.control(k, 3, if (rev) 1.0 else 0.0) } // settings into the receiver
     LaunchedEffect(k) { while (true) { val t = KbNative.text(k); if (t.isNotEmpty()) { KbText.add(k, t); text = KbText.text[k].toString() }; st = KbNative.state(k); delay(100) } } // ten times a second
+    val gate = rememberTxGate(vm)                       // the licence notice before transmitting
+    var txMsg by remember { mutableStateOf("") }       // why a transmission did not start
+    // Send [t] on the receive frequency: the whole message as audio to the IC-705, the text copied into the window.
+    fun send(t: String) = gate.ask {
+        val a = KbNative.encode(k, if (k == KbNative.RTTY) "\n$t\n" else " $t ", st[0], shift.toDouble(), s.txLevel / 100.0) // (RTTY: new lines around it)
+        if (Transmitter.send(ctx, s.callsign, a, 8000)) { KbText.add(k, "\n[TX] $t\n"); text = KbText.text[k].toString(); txMsg = "" } else txMsg = Transmitter.lastError.value
+    }
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     ModeFrame(m.title, { vm.back() }, actions = {
         TextButton({ clip.setText(AnnotatedString(text)) }) { Text("Copy", color = Pal.Text2) }
@@ -59,6 +67,7 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
         TextButton({ KbText.text[k].clear(); text = "" }) { Text("Clear", color = Pal.Text2) }
     }) {
         RxStatus(rx)                                      // audio, level
+        if (txMsg.isNotEmpty()) Text(txMsg, color = Pal.Red, fontSize = 12.sp) // why it did not transmit
         if (!sideways) RigBar(m)                          // the radio, the bands
         val f = st[0].toFloat()                           // the receive frequency
         val marks = if (k == KbNative.RTTY) listOf(f - shift / 2f to Pal.Red, f + shift / 2f to Pal.Red) else listOf(f to Pal.Red) // tones / carrier
@@ -97,6 +106,8 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
             wf(Modifier.fillMaxWidth().height(140.dp).padding(vertical = 4.dp))
             controls()
             textBox(Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp))
+            TxBanner { Transmitter.halt() }
+            SendBox(s.callsign, m.title, ::send)              // typing and sending
         }
     }
 }

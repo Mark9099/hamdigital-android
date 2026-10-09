@@ -13,4 +13,6 @@ object KbNative {
     @JvmStatic external fun text(mode: Int): String  // decoded since the last call
     /** 0 frequency, 1 AFC on/off, 2 squelch 0..100, 3 reverse (RTTY), 4 reset, 5 RTTY shift (Hz). */
     @JvmStatic external fun control(mode: Int, what: Int, value: Double)
+    /** Transmit audio for a whole message (8 kHz): RTTY (centre [f0], [shift] Hz) or PSK31 (carrier [f0]); peak [amplitude] 0..1. */
+    @JvmStatic external fun encode(mode: Int, text: String, f0: Double, shift: Double, amplitude: Double): ShortArray
 }

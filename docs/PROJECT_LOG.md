@@ -2,6 +2,21 @@
 
 Newest first.
 
+## 2026-10-09: 0.7.2, stage 7c (RTTY, PSK31 and CW sending)
+
+- `cpp/fldigi/kb_tx.cxx` builds the transmit audio for a whole message, following fldigi's transmitters.
+  - PSK31: a 32-symbol reversal preamble (receivers' DCD on), varicode + "00" per character (CR is followed by LF),
+    a 32-symbol steady-carrier postamble (DCD off), and fldigi's raised-cosine shaping between symbols.
+  - RTTY: Baudot with LTRS/FIGS (FIGS re-sent after a space for unshift-on-space receivers), start, 5 bits and 1.5
+    stop bits, continuous-phase FSK with mark high, and 10 ms ramps.
+- PC round trip (`run_fldigi.sh`): the app's PSK31 and RTTY receivers copy the app's own transmissions exactly.
+- `KbNative.encode` sends the message on the RX frequency (and shift) through Transmitter at 8 kHz. What was sent goes
+  into the text as "[TX] ...". The SendBox (`TxUi.kt`) has a text field, Send, CQ, 73 and Callsign.
+- CW uses the IC-705's own keyer over CI-V: 17 + text in 30-character pieces (only the keyer's characters), 17 FF to
+  stop, and 14 0C to set the speed (6–48 WPM as 0–255 BCD). The CW page refuses unless the radio is in CW, and needs
+  break-in on. It offers 15/20/25/30 WPM and Stop.
+- Not yet tried on the air.
+
 ## 2026-10-09: 0.7.1, stage 7b (WSPR beacon)
 
 - `wspr_run.c` `wspr_encode_audio`: WSJT-X's `get_wspr_channel_symbols` (wsprsim_utils.c, already built) produces 162

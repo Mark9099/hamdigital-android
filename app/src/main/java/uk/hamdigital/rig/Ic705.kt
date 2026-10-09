@@ -168,8 +168,24 @@ object Ic705 {
     /** Tune to a mode's dial frequency and set its mode. */
     fun tune(khz: Int, cw: Boolean) { setFrequency(khz * 1000L); setMode(cw) }
 
-    /** Key / unkey the transmitter (stage 7). */
+    /** Key / unkey the transmitter. */
     fun ptt(on: Boolean) { send(0x1C, 0x00, if (on) 0x01 else 0x00) }
+
+    /** Send Morse with the radio's own keyer (CI-V 17): up to 30 characters a command, so longer text goes in pieces
+     *  (the radio queues them). Needs the radio in CW with break-in on. Only characters the keyer knows are sent. */
+    fun sendCw(text: String) {
+        val ok = text.uppercase().filter { it in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/?.,-=+@: " } // the IC-705 keyer's characters
+        ok.chunked(30).forEach { part -> send(0x17, *part.map { it.code }.toIntArray()) }
+    }
+
+    /** Stop the keyer's message now (CI-V 17 FF). */
+    fun stopCw() { send(0x17, 0xFF) }
+
+    /** Keyer speed, 6-48 WPM (CI-V 14 0C, 0-255 as 4-digit BCD). */
+    fun setCwSpeed(wpm: Int) {
+        val v = ((wpm.coerceIn(6, 48) - 6) * 255 + 21) / 42 // 6 WPM = 0, 48 WPM = 255
+        send(0x14, 0x0C, (v / 100), ((v / 10 % 10) shl 4) or (v % 10)) // BCD: 0x0X 0xYZ
+    }
 
     private inline fun set(f: (RigState) -> RigState) { _state.value = f(_state.value) } // update the state
 }

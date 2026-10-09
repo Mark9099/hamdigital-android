@@ -7,5 +7,5 @@ F="$HERE/../../app/src/main/cpp/fldigi"              # the app's fldigi code
 CXX=${CXX:-"$ZIG c++"}                               # the compiler
 OUT=${OUT:-"$HERE/build"}; mkdir -p "$OUT"           # build folder
 $CXX -O2 -w -I"$F" -o "$OUT/test_fldigi.exe" "$HERE/test_fldigi.cxx" "$F/rtty_rx.cxx" "$F/psk31_rx.cxx" \
-    "$F/fftfilt.cxx" "$F/filters.cxx" "$F/pskcoeff.cxx" "$F/pskvaricode.cxx" # same sources as the app
+    "$F/fftfilt.cxx" "$F/filters.cxx" "$F/pskcoeff.cxx" "$F/pskvaricode.cxx" "$F/kb_tx.cxx" # same sources as the app
 "$OUT/test_fldigi.exe"

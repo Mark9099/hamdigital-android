@@ -2,6 +2,33 @@
 
 Newest first.
 
+## 2026-10-09: on-air tests of the other modes (0.10.4, 40 m, WiFi, 2 W)
+
+- **FT4:** opening the page tuned to 7.047 and decoded CQs (II5GG Italy, F5OZC France, DC1OA Germany). Answering
+  F5OZC by double-tap ran a complete contact: Tx1 ×5; his -12 at 15:08:07; R-09; his RR73 at 15:08:22; 73. It
+  logged as MODE MFSK / SUBMODE FT4 / COUNTRY France. The transmit slots were not decoded (0.8.6).
+- **JS8Call:** 7.078, receiving. One heartbeat at 15:10:30 was acknowledged by G0MDL (-10), M7EVV (-24), G0BMH
+  (-12) and LA7HKA (-11) ("To me"). PSK Reporter has 10 reports, mode JS8: LA7HKA, PD5DLB, ON6URE, F6KGL, OE6ADD,
+  EI4HQ (+4), ON8ST, M7NXS and others.
+- **PSK31:** 7.040, with no PSK31 on 40 m to receive. Two CQs at 1081 Hz (7.041081): the page decoded our own
+  transmission from the radio's monitor audio perfectly, so the radio was keyed and the audio is right. No outside
+  report: no PSK Reporter or RBN PSK spot (no PSK skimmers heard it, or none were listening).
+- **RTTY:** 7.040, with no RTTY to receive (squelch 0 prints noise, as fldigi does). One CQ at about 1011 Hz was
+  **spotted by RBN** at 15:17Z on 7041.1: MM0ZBH 14 dB (twice) and MM9PSY 12 dB, 45 baud, CQ. PSK Reporter also has
+  MM9PSY, mode RTTY. The monitor decode was perfect too.
+- **CW:** 7.030 CW, receiving (it locked on a 600 Hz signal at 15 dB). One CQ at 20 WPM through the IC-705's keyer
+  (CI-V 0x17) at 15:19:40: the radio replied FB to the speed and both message parts, but **no RBN spot** in two
+  minutes, where the RTTY CQ at the same power was spotted at 12-14 dB. The keyer most likely played the sidetone
+  without transmitting because the radio's break-in (BK-IN) is off. To check with the user.
+- **RBN access for tests:** the telnet feeds `telnet.reversebeacon.net` 7000 (CW, RTTY) and 7001 (digital), logged
+  in as M7JVY, recorded with bash `/dev/tcp` and grepped. The web `spots.php` API ignores `spotted_call`.
+- **Found (to fix):**
+  1. JS8 status stays "Sending frame [...]" after the last frame has gone.
+  2. RTTY/PSK31 pages decode our own transmission (monitor audio) as well as printing the [TX] line, so the text
+     appears twice.
+  3. CW sending gives no warning if the radio's break-in is off.
+  4. JS8 showed one false decode, "4YZGXD/8UU HEARTBEAT SNR -21".
+
 ## 2026-10-09: 0.10.4 (one mode at a time; no transmitting without the link)
 
 - **Incident, found while starting the other-mode tests (14:43 UTC).** The FT4 page opened without retuning (AutoTune

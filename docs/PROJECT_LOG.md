@@ -2,6 +2,24 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.3 (WSPR map: keeping up with new stations)
+
+- **Asked by the user:** "does the heard here auto update when new locations heard? didn't seem to".
+- **Checked on the S23:** it does update. With nothing touched, Heard here went from 47 stations (92 reports) to 54
+  (125) over two decodes (the list is the decoder's StateFlow, collected by the WSPR page behind the dialog). Three
+  things could make it look as if it didn't:
+  1. Stations only arrive at 1:54 of each 2-minute slot.
+  2. A chosen time holds the map to that bin, and Play left the last bin chosen when it finished. My own test had
+     left it there, so the map showed only the 14:12 slot while later slots were decoded.
+  3. Each decode re-fitted the view (`fitTo` changed), undoing any zoom.
+- **Fixes:**
+  - Play ends on All.
+  - If the newest bin is chosen when a new one appears, the choice moves to it (`lastBins`).
+  - The choice resets if the bins change from slots to hours.
+  - `WorldMap` re-fits for new stations only if the map hasn't been zoomed or dragged since the last fit (`moved`).
+    Fit, and the other list (`MapDialog.view`), always re-fit.
+  - The note says spots arrive "at 1:54 of each slot".
+
 ## 2026-10-09: 0.10.2 (WSPR map timeline; one dot per shared locator square)
 
 - **Asked for by the user:** a timeline on the WSPR map like wspr.rocks's. Its help describes a map "hours" slider

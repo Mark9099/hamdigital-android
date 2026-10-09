@@ -130,7 +130,10 @@ private val GUIDE = listOf(
         B + "Timeline (under the map, as wspr.rocks's hours slider): a bar for each hour of the last 24 (Heard me), or for each hour " +
         "or 2-minute slot the page has heard (Heard here: slots when it covers under 3 hours), as tall as the reports in it. Tap or " +
         "drag along the bars to show just that time's stations - the line above the map says which; Play steps through them one " +
-        "by one; All shows everything again. The map stays where it is while the time changes.\n" +
+        "by one, then shows everything again; All shows everything. The map stays where it is while the time changes.\n" +
+        B + "Heard here keeps up by itself: new stations appear at 1:54 of each 2-minute slot, as the page decodes them. With the " +
+        "newest bar chosen it moves on to each new one. The map re-frames itself for new stations until you zoom or drag it; " +
+        "after that it stays as you left it (Fit frames them all again).\n" +
         B + "WSPR's usual message carries a 4-character locator (a square about 110 x 75 km here) and each station is placed at " +
         "its square's centre, so stations in the same square share one dot, labelled \"G4ABC, G7XYZ\" or \"G4ABC +3\"; tap it for them all.\n" +
         B + "Keep the radio on the same frequency for the whole slot. Clear empties the list; it is kept while the app runs.\n" +
@@ -205,6 +208,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.3 (October 2026): the WSPR map keeps up better: Play ends showing everything (it stayed on the last step, so " +
+        "new slots seemed not to arrive), the newest bar follows new slots, and new stations no longer undo your zoom.\n" +
         B + "0.10.2 (October 2026): the WSPR map has a timeline (reports per hour or slot; tap, drag or Play to step through " +
         "the stations heard in each). Stations sharing a locator square share one dot, labelled with all their calls (they showed " +
         "as two calls either side of one dot).\n" +

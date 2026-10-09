@@ -149,20 +149,27 @@ private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClo
             if (last - first <= 3 * hour) Triple(first / slot * slot, slot, ((last - first / slot * slot + slot - 1) / slot).toInt())
             else { val s0 = first / hour * hour; Triple(s0, hour, ((last - s0 + hour - 1) / hour).toInt()) } }
     }
-    var sel by remember(tab) { mutableStateOf<Int?>(null) } // the time chosen (null: all)
+    var sel by remember(tab, step) { mutableStateOf<Int?>(null) } // the time chosen (null: all) (a change from slots to hours starts again)
     var playing by remember(tab) { mutableStateOf(false) } // stepping through
-    LaunchedEffect(playing) {                         // Play: one step every 0.8 s, from the start (or the time chosen), to the end
+    LaunchedEffect(playing) {                         // Play: one step every 0.8 s, from the start (or the time chosen), to the end, then all again
         if (!playing) return@LaunchedEffect
         var i = sel?.let { if (it >= bins - 1) 0 else it } ?: 0
         while (playing && i < bins) { sel = i; kotlinx.coroutines.delay(800); i++ }
+        if (playing) sel = null                       // (it used to stay on the last step, so the map stopped showing new slots - reported)
         playing = false
+    }
+    var lastBins by remember(tab, step) { mutableIntStateOf(bins) } // (to follow the newest)
+    LaunchedEffect(bins) {                            // a new slot (or hour) decoded: if the newest was chosen, move on to the new newest
+        if (!playing && sel != null && sel == lastBins - 1 && bins > lastBins) sel = bins - 1
+        lastBins = bins
     }
     val shown = sel?.let { b -> all.filter { it.ms >= start + b * step && it.ms < start + (b + 1) * step } } ?: all // the reports for the time chosen
     val points = remember(shown) { dots(shown) }; val every = remember(all) { dots(all) }
     val period = sel?.let { b -> "${hhmm(start + b * step)}-${hhmm(start + (b + 1) * step)} UTC: " } ?: ""
     MapDialog("WSPR map", points, Locator.toLatLon(myGrid), onClose,
         note = when {
-            tab == 0 -> if (spots.isEmpty()) "Nothing heard yet on this page." else "$period${points.size} stations heard here (${shown.size} reports). Tap a dot."
+            tab == 0 -> if (spots.isEmpty()) "Nothing heard yet on this page - spots arrive at 1:54 of each 2-minute slot." else
+                "$period${points.size} stations heard here (${shown.size} reports); more at 1:54 of each slot. Tap a dot."
             err.isNotEmpty() -> err
             heard == null -> "Asking WSPRnet who heard $myCall in the last 24 hours..."
             else -> "$period${points.size} stations reported hearing $myCall (${shown.size} reports) - WSPRnet, last 24 hours. Tap a dot."
@@ -175,7 +182,7 @@ private fun WsprMap(spots: List<WsprSpot>, myCall: String, myGrid: String, onClo
                 listOf(0 to "0 dB +", -10 to "-10", -15 to "-15", -20 to "-20", -25 to "below").forEach { (v, t) -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Spacer(Modifier.size(10.dp).background(snrColor(v), androidx.compose.foundation.shape.CircleShape)); Text(" $t", color = Pal.Text2, fontSize = 12.sp) } } }
         } },
-        paths = false, fitTo = every)                     // (no lines from you; the view frames every station of the list)
+        paths = false, fitTo = every, view = tab)         // (no lines from you; the view frames every station of the list, afresh for the other list)
 }
 
 /**

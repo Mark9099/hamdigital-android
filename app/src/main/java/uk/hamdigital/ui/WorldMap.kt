@@ -70,8 +70,10 @@ fun snrColor(snr: Int): Color = Pal.Heat[if (snr >= 0) 5 else if (snr >= -10) 4 
 @Composable
 fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?, onClose: () -> Unit, note: String = "",
               top: @Composable () -> Unit = {}, legend: @Composable () -> Unit = {}, paths: Boolean = true, // paths: the lines from you to each station
-              fitTo: List<MapPoint> = points) {      // what Fit frames (WSPR's timeline shows part of it at a time: the view stays put)
-    var fit by remember { mutableIntStateOf(0) }      // Fit pressed (count)
+              fitTo: List<MapPoint> = points,        // what Fit frames (WSPR's timeline shows part of it at a time: the view stays put)
+              view: Int = 0) {                       // another list (WSPR's heard here / heard me): fit it afresh
+    var fitPressed by remember { mutableIntStateOf(0) } // Fit pressed (count)
+    val fit = fitPressed * 100 + view                 // a new fit for either
     var picked by remember { mutableStateOf<MapPoint?>(null) } // the dot tapped
     val dots = remember(points) { merge(points) }     // one dot per place (stations sharing a locator square share its centre)
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false)) {
@@ -79,7 +81,7 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
                     Text(title, fontFamily = OrbitronFamily, fontWeight = FontWeight.Bold, color = Pal.Cyan, fontSize = 18.sp, modifier = Modifier.weight(1f), maxLines = 1)
-                    TextButton({ fit++; picked = null }) { Text("Fit", color = Pal.Text2) }   // all the stations again
+                    TextButton({ fitPressed++; picked = null }) { Text("Fit", color = Pal.Text2) } // all the stations again
                     TextButton(onClose) { Text("Close", color = Pal.Text2) }
                 }
                 Column(Modifier.padding(horizontal = 12.dp)) {
@@ -133,8 +135,12 @@ fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, m
     var w by remember { mutableFloatStateOf(0f) }; var h by remember { mutableFloatStateOf(0f) } // the view's size
     var zoom by remember { mutableFloatStateOf(1f) }  // 1 = the whole world (the rim) fits the shorter side
     var ox by remember { mutableFloatStateOf(0f) }; var oy by remember { mutableFloatStateOf(0f) } // the view's centre, in unit coordinates
-    LaunchedEffect(w, h, fitKey, fitPts) {            // fit: open, Fit, new stations (e.g. the other WSPR list)
+    var moved by remember { mutableStateOf(false) }   // you have zoomed or dragged since the last fit
+    var lastKey by remember { mutableStateOf<Int?>(null) } // the fitKey last fitted for
+    LaunchedEffect(w, h, fitKey, fitPts) {            // fit: on opening, Fit, another list - and new stations, unless you have moved the map
         if (w <= 0f || h <= 0f) return@LaunchedEffect
+        if (fitKey == lastKey && moved) return@LaunchedEffect // (more stations decoded while you were zoomed in: the view stays - it used to jump back out at every WSPR slot)
+        lastKey = fitKey; moved = false
         val xs = fitPts.map { it[0] } + listOfNotNull(home?.let { 0f }); val ys = fitPts.map { it[1] } + listOfNotNull(home?.let { 0f }) // (you are at 0, 0)
         if (xs.isEmpty()) { zoom = 1f; ox = 0f; oy = 0f; return@LaunchedEffect }
         val bw = max(xs.max() - xs.min(), 0.012f); val bh = max(ys.max() - ys.min(), 0.012f) // (at least ~250 km across: one station alone is not a dot filling the screen)
@@ -146,6 +152,7 @@ fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, m
     Canvas(modifier.clipToBounds().onSizeChanged { w = it.width.toFloat(); h = it.height.toFloat() }
         .pointerInput(Unit) {                         // pinch and drag
             detectTransformGestures { _, pan, z, _ ->
+                moved = true                          // (new stations no longer re-fit the view; Fit does)
                 zoom = (zoom * z).coerceIn(1f, 400f)
                 val r = min(w, h) / 2 * zoom          // pixels per unit
                 ox = (ox - pan.x / r).coerceIn(-1f, 1f); oy = (oy - pan.y / r).coerceIn(-1f, 1f) // (the view stays over the disc)

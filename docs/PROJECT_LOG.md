@@ -2,6 +2,30 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.1 (maps centred on you; 0.10.0 checked on the phone)
+
+- **Asked for by the user:** use HF Propagation's centred map, which shows the land shapes better close in.
+  - `map/MapProjection.kt` is now `CentredMap`, HF Propagation's azimuthal equidistant `Centred`, in unit
+    coordinates (rim = 1, y down).
+  - `WorldMap` projects the outlines once per centre (HF Propagation's `projectedPaths`: torn rings near the
+    antipode are dropped, border and graticule lines are broken at jumps), then draws them translated and scaled. So
+    pinch and drag don't re-project 80k points.
+  - Paths to stations are straight lines from the centre (they are great circles). The rim and the area beyond it
+    are drawn.
+  - Fit frames the unit bounding box of the stations and you (70% of the width, leaving room for the calls). Zoom
+    runs 1–400.
+  - It is centred on your locator, or on the stations' middle if no locator is set.
+  - The flat `FlatMap` was removed.
+- **0.10.0 checked on the S23:**
+  - cty.dat downloaded at start-up (106 KB).
+  - Logbook rows show France and England, and the summary says "2 countries". The contacts map opened fitted to the
+    four contacts, and tapping F6FHZ showed its details.
+  - FT8 decodes showed France, Fed. Rep. of Germany, Spain, Italy, Netherlands and Latvia.
+  - Auto-tune: opening FT8 moved 7.0386 to 7.074 USB-D, CW went to 7.030 CW, and WSPR went back to 7.0386 USB-D.
+- **Checked on the S23 after the change:** the centred contacts map, and WSPR "Heard me" with 50 stations from
+  wspr.live (EI4ACB, M9PSY, DC4HP-1, F5178SWL ...), fitted, with the SNR legend.
+- The Logbook search box mentions country.
+
 ## 2026-10-09: 0.10.0 (countries, maps, tuning on opening a mode)
 
 - **Asked for by the user:** a country for every station on every page (the Logbook included); a Logbook map of the

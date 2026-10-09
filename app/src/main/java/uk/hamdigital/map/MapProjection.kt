@@ -1,27 +1,24 @@
-// The flat world map (equirectangular, with zoom and pan, wrapping east-west), as HF Propagation's
-// (uk.hamprop.map.MapProjection.Flat).
+// The map view centred on the station, as HF Propagation's (uk.hamprop.map.MapProjection.Centred): azimuthal
+// equidistant - straight lines from the centre are great circles (beam headings) and distance from the centre is true
+// distance, so land keeps its shape close in; the antipode is the rim. Here in "unit" coordinates (the rim at radius 1,
+// y downwards): the map's outlines are projected once for a centre, then drawn moved and scaled to the view.
 package uk.hamdigital.map
 
-import kotlin.math.floor
-import kotlin.math.max
+import kotlin.math.*
 
-/** [w] x [h] pixels; [zoom] 1 = the whole world's width (or height) across the view; centre [clon], [clat]. */
-class FlatMap(val w: Float, val h: Float, val clon: Double, val clat: Double, val zoom: Double) {
-    val ppd = max(w / 360.0, h / 180.0) * zoom        // pixels per degree: at 1x the world fills the width or the height, whichever is more
-    val lat0: Double                                  // latitude at the view's centre (clamped so the map fills the height)
-    init {
-        val halfLat = h / 2 / ppd                     // degrees above and below the centre
-        lat0 = if (halfLat >= 90) 0.0 else clat.coerceIn(-90 + halfLat, 90 - halfLat) // keep the poles in view's bounds
+/** Centred on [lat0], [lon0] (degrees). */
+class CentredMap(val lat0: Double, val lon0: Double) {
+    private val sp = sin(lat0 * D); private val cp = cos(lat0 * D) // centre latitude
+
+    /** lat/lon -> unit x, y into [out] (distance from the centre: 0 here, 1 at the antipode, 20,015 km). */
+    fun unit(lat: Double, lon: Double, out: FloatArray) {
+        val p = lat * D; val dl = (lon - lon0) * D    // radians
+        val cosc = (sp * sin(p) + cp * cos(p) * cos(dl)).coerceIn(-1.0, 1.0) // cos of the angular distance
+        val c = acos(cosc)                            // angular distance
+        val az = atan2(sin(dl) * cos(p), cp * sin(p) - sp * cos(p) * cos(dl)) // bearing
+        val rho = c / PI                              // distance from the centre (1 = the rim)
+        out[0] = (rho * sin(az)).toFloat(); out[1] = (-rho * cos(az)).toFloat() // east right, north up
     }
-    /** Screen x of a longitude, for the copy of the world nearest the view centre. */
-    fun xOf(lon: Double): Double { var d = lon - clon; d -= 360.0 * floor((d + 180.0) / 360.0); return w / 2 + d * ppd } // wrap
-    fun yOf(lat: Double): Double = h / 2 - (lat - lat0) * ppd // down = south
-    /** Screen x, y -> lat/lon into [out]; false off the map. */
-    fun toGeo(x: Float, y: Float, out: DoubleArray): Boolean {
-        val lat = lat0 + (h / 2 - y) / ppd            // latitude
-        if (lat < -90 || lat > 90) return false       // off the map
-        var lon = clon + (x - w / 2) / ppd            // longitude
-        lon -= 360.0 * floor((lon + 180.0) / 360.0)   // -180..180
-        out[0] = lat; out[1] = lon; return true
-    }
+
+    companion object { const val D = PI / 180.0 }     // degrees -> radians
 }

@@ -1,8 +1,11 @@
-// The map (Logbook contacts, WSPR stations): a full-screen window over the page with the flat world map - land, coast
-// and borders drawn as in HF Propagation (Natural Earth outlines, the Tab5's colours) - a dot for each station, a
-// great-circle line to it from your locator (the white diamond), and its call beside it where there is room. It opens
-// zoomed to fit every station (and you); pinch to zoom, drag to move, Fit to see them all again; tap a dot for its
-// details. A hollow dot is placed at its country's middle (cty.dat), its locator not being known.
+// The map (Logbook contacts, WSPR stations): a full-screen window over the page with HF Propagation's map centred on
+// your station (azimuthal equidistant: land keeps its shape close in, a straight line from you is the great-circle path
+// and distance from you is true distance; the rim is the far side of the world) - land, coast and borders as HF
+// Propagation draws them (Natural Earth outlines, the Tab5's colours) - a dot for each station with the path to it from
+// you (the white diamond), and its call beside it where there is room. It opens zoomed to fit every station (and you);
+// pinch to zoom, drag to move, Fit to see them all again; tap a dot for its details. A hollow dot is at its country's
+// middle (cty.dat), its locator not being known. The outlines are projected once for your position (in rim = 1 units)
+// and drawn moved and scaled, so zooming and dragging stay smooth.
 package uk.hamdigital.ui
 
 import androidx.compose.foundation.Canvas
@@ -19,10 +22,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -35,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import uk.hamdigital.map.FlatMap
+import uk.hamdigital.map.CentredMap
 import uk.hamdigital.map.WorldData
 import kotlin.math.*
 
@@ -47,6 +49,7 @@ private val GRAT = Color(0xFF13263A)                  // graticule
 private val LAND = Color(0xFF2C3D33)                  // land
 private val COAST = Color(0xFF6A8A74)                 // coastline
 private val BORDER = Color(0xFF50685A)                // country borders
+private val OUTSIDE = Color(0xFF05080C)               // beyond the rim (the far side of the world)
 
 /** A colour for each band, for maps that show several. */
 fun bandColor(band: String): Color = when (band) {
@@ -59,8 +62,9 @@ fun bandColor(band: String): Color = when (band) {
 fun snrColor(snr: Int): Color = Pal.Heat[if (snr >= 0) 5 else if (snr >= -10) 4 else if (snr >= -15) 3 else if (snr >= -20) 2 else 1]
 
 /**
- * The map window: [title], [points], your position [home] (null: no locator), [note] under the title, [top] for the
- * page's own controls (e.g. WSPR's heard here / heard me), [legend] under the map. Closes with Back or Close.
+ * The map window: [title], [points], your position [home] (null: no locator - the map is then centred on the stations),
+ * [note] under the title, [top] for the page's own controls (e.g. WSPR's heard here / heard me), [legend] under the map.
+ * Closes with Back or Close.
  */
 @Composable
 fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?, onClose: () -> Unit, note: String = "",
@@ -100,65 +104,73 @@ fun MapDialog(title: String, points: List<MapPoint>, home: Pair<Double, Double>?
     }
 }
 
+/** The outlines projected for one centre, in unit coordinates (rim = 1): land rings, borders, the graticule. */
+private class Projected(val land: Path, val borders: Path, val grat: Path)
+
 /** The map itself: [points] and [home]; zooms to fit them when it opens and whenever [fitKey] changes; [onPick] gets a tapped dot. */
 @Composable
 fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, modifier: Modifier, onPick: (MapPoint?) -> Unit) {
     val ctx = LocalContext.current
     val world = remember { WorldData.load(ctx) }      // the outlines (cached)
-    val land = remember(world) { worldPath(world.land, true) }; val brd = remember(world) { worldPath(world.borders, false) } // in degrees
+    val centre = home ?: points.takeIf { it.isNotEmpty() }?.let { ps -> ps.map { it.lat }.average() to ps.map { it.lon }.average() } ?: (0.0 to 0.0) // you (else the stations' middle)
+    val proj = remember(centre) { CentredMap(centre.first, centre.second) }
+    val shapes = remember(proj, world) { project(world, proj) } // projected once for this centre
+    val pts = remember(proj, points) { points.map { p -> FloatArray(2).also { proj.unit(p.lat, p.lon, it) } } } // the stations, unit coordinates
     var w by remember { mutableFloatStateOf(0f) }; var h by remember { mutableFloatStateOf(0f) } // the view's size
-    var zoom by remember { mutableFloatStateOf(1f) }; var clon by remember { mutableFloatStateOf(0f) }; var clat by remember { mutableFloatStateOf(0f) } // the view
-    LaunchedEffect(w, h, fitKey, points) {            // fit: open, Fit, new stations (e.g. the other WSPR list)
+    var zoom by remember { mutableFloatStateOf(1f) }  // 1 = the whole world (the rim) fits the shorter side
+    var ox by remember { mutableFloatStateOf(0f) }; var oy by remember { mutableFloatStateOf(0f) } // the view's centre, in unit coordinates
+    LaunchedEffect(w, h, fitKey, pts) {               // fit: open, Fit, new stations (e.g. the other WSPR list)
         if (w <= 0f || h <= 0f) return@LaunchedEffect
-        val ref = home?.second ?: points.firstOrNull()?.lon ?: 0.0 // longitudes are taken relative to you (so a spread across 180 degrees stays together)
-        val lats = points.map { it.lat } + listOfNotNull(home?.first)
-        val rels = points.map { wrap(it.lon - ref) } + listOfNotNull(home?.let { 0.0 })
-        if (lats.isEmpty()) { zoom = 1f; clon = ref.toFloat(); clat = 0f; return@LaunchedEffect }
-        val lonSpan = max(rels.max() - rels.min(), 3.0); val latSpan = max(lats.max() - lats.min(), 2.0) // (at least a few degrees: one station alone is not a dot filling the screen)
-        val base = max(w / 360.0, h / 180.0)          // pixels per degree at 1x
-        zoom = min(w * 0.82 / (lonSpan * base), h * 0.80 / (latSpan * base)).coerceIn(1.0, 120.0).toFloat() // fill most of the view
-        clon = wrap(ref + (rels.max() + rels.min()) / 2).toFloat(); clat = ((lats.max() + lats.min()) / 2).toFloat()
+        val xs = pts.map { it[0] } + listOfNotNull(home?.let { 0f }); val ys = pts.map { it[1] } + listOfNotNull(home?.let { 0f }) // (you are at 0, 0)
+        if (xs.isEmpty()) { zoom = 1f; ox = 0f; oy = 0f; return@LaunchedEffect }
+        val bw = max(xs.max() - xs.min(), 0.012f); val bh = max(ys.max() - ys.min(), 0.012f) // (at least ~250 km across: one station alone is not a dot filling the screen)
+        val r0 = min(w, h) / 2                        // the rim's radius at zoom 1
+        zoom = min(w * 0.70f / (bw * r0), h * 0.75f / (bh * r0)).coerceIn(1f, 400f) // fill most of the view, room for the calls beside the dots
+        ox = (xs.max() + xs.min()) / 2; oy = (ys.max() + ys.min()) / 2
     }
-    val proj = FlatMap(max(w, 1f), max(h, 1f), clon.toDouble(), clat.toDouble(), zoom.toDouble()) // the view now
     val tm = rememberTextMeasurer()                   // labels
     Canvas(modifier.clipToBounds().onSizeChanged { w = it.width.toFloat(); h = it.height.toFloat() }
         .pointerInput(Unit) {                         // pinch and drag
             detectTransformGestures { _, pan, z, _ ->
-                zoom = (zoom * z).coerceIn(1f, 120f)
-                val ppd = max(w / 360.0, h / 180.0) * zoom
-                clon = wrap(clon - pan.x / ppd).toFloat(); clat = (clat + pan.y / ppd).toFloat().coerceIn(-85f, 85f)
+                zoom = (zoom * z).coerceIn(1f, 400f)
+                val r = min(w, h) / 2 * zoom          // pixels per unit
+                ox = (ox - pan.x / r).coerceIn(-1f, 1f); oy = (oy - pan.y / r).coerceIn(-1f, 1f) // (the view stays over the disc)
             }
         }
-        .pointerInput(points) {                       // tap: the nearest dot (within a finger's width)
+        .pointerInput(pts) {                          // tap: the nearest dot (within a finger's width)
             detectTapGestures { pos ->
-                val pr = FlatMap(w, h, clon.toDouble(), clat.toDouble(), zoom.toDouble())
-                onPick(points.minByOrNull { hypot(pr.xOf(it.lon).toFloat() - pos.x, pr.yOf(it.lat).toFloat() - pos.y) }
-                    ?.takeIf { hypot(pr.xOf(it.lon).toFloat() - pos.x, pr.yOf(it.lat).toFloat() - pos.y) < 28.dp.toPx() })
+                val r = min(w, h) / 2 * zoom
+                val best = pts.indices.minByOrNull { i -> hypot(w / 2 + (pts[i][0] - ox) * r - pos.x, h / 2 + (pts[i][1] - oy) * r - pos.y) }
+                onPick(best?.takeIf { i -> hypot(w / 2 + (pts[i][0] - ox) * r - pos.x, h / 2 + (pts[i][1] - oy) * r - pos.y) < 28.dp.toPx() }?.let { points[it] })
             }
         }) {
-        drawRect(SEA)                                 // sea
-        val ppd = proj.ppd.toFloat()
-        for (k in -1..1) withTransform({ translate(left = (proj.xOf(0.0) + k * 360 * proj.ppd).toFloat(), top = proj.yOf(0.0).toFloat()); scale(ppd, ppd, Offset.Zero) }) { // up to three copies (east-west wrap)
-            drawPath(land, LAND); drawPath(land, COAST, style = Stroke(1.2f / ppd)); drawPath(brd, BORDER, style = Stroke(0.8f / ppd))
+        val r = min(size.width, size.height) / 2 * zoom // pixels per unit
+        fun sx(u: Float) = size.width / 2 + (u - ox) * r // unit -> screen
+        fun sy(v: Float) = size.height / 2 + (v - oy) * r
+        drawRect(OUTSIDE)                             // beyond the rim
+        drawCircle(SEA, r, Offset(sx(0f), sy(0f)))    // the world: sea ..
+        withTransform({ translate(sx(0f), sy(0f)); scale(r, r, Offset.Zero) }) { // .. land, coast, borders, graticule (unit coordinates, scaled)
+            drawPath(shapes.grat, GRAT, style = Stroke(1f / r))
+            drawPath(shapes.land, LAND); drawPath(shapes.land, COAST, style = Stroke(1.2f / r)); drawPath(shapes.borders, BORDER, style = Stroke(0.8f / r))
         }
-        graticule(proj)                               // every 10 degrees (30 when zoomed out)
-        home?.let { (hla, hlo) -> points.forEach { p -> greatCircle(proj, hla, hlo, p.lat, p.lon, p.color.copy(alpha = 0.35f)) } } // the paths
-        val r = 4.5f.dp.toPx(); val placed = ArrayList<Rect>() // dot size; space taken by labels and dots
-        for (p in points) { val x = proj.xOf(p.lon).toFloat(); val y = proj.yOf(p.lat).toFloat(); placed += Rect(x - r, y - r, x + r, y + r) }
-        for (p in points) {                           // the dots
-            val o = Offset(proj.xOf(p.lon).toFloat(), proj.yOf(p.lat).toFloat())
-            if (p.exact) { drawCircle(p.color, r, o); drawCircle(Color.Black, r, o, style = Stroke(1f)) } else drawCircle(p.color, r, o, style = Stroke(2f)) // hollow: country's middle
+        drawCircle(Pal.Dim, r, Offset(sx(0f), sy(0f)), style = Stroke(1.5f)) // the rim (the far side of the world)
+        if (home != null) for (i in pts.indices) drawLine(points[i].color.copy(alpha = 0.4f), Offset(sx(0f), sy(0f)), Offset(sx(pts[i][0]), sy(pts[i][1])), 1.5f.dp.toPx()) // paths: straight from the centre
+        val d = 4.5f.dp.toPx(); val placed = ArrayList<Rect>() // dot size; space taken by dots and labels
+        for (q in pts) { val x = sx(q[0]); val y = sy(q[1]); placed += Rect(x - d, y - d, x + d, y + d) }
+        for (i in pts.indices) {                      // the dots
+            val o = Offset(sx(pts[i][0]), sy(pts[i][1])); val p = points[i]
+            if (p.exact) { drawCircle(p.color, d, o); drawCircle(Color.Black, d, o, style = Stroke(1f)) } else drawCircle(p.color, d, o, style = Stroke(2f)) // hollow: country's middle
         }
-        home?.let { (hla, hlo) ->                     // you: a white diamond
-            val x = proj.xOf(hlo).toFloat(); val y = proj.yOf(hla).toFloat(); val s = 7.dp.toPx()
-            val d = Path().apply { moveTo(x, y - s); lineTo(x + s, y); lineTo(x, y + s); lineTo(x - s, y); close() }
-            drawPath(d, Color.White); drawPath(d, Color.Black, style = Stroke(1.5f)); placed += Rect(x - s, y - s, x + s, y + s)
+        if (home != null) {                           // you: a white diamond at the centre
+            val x = sx(0f); val y = sy(0f); val s = 7.dp.toPx()
+            val dm = Path().apply { moveTo(x, y - s); lineTo(x + s, y); lineTo(x, y + s); lineTo(x - s, y); close() }
+            drawPath(dm, Color.White); drawPath(dm, Color.Black, style = Stroke(1.5f)); placed += Rect(x - s, y - s, x + s, y + s)
         }
         val style = TextStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-        for (p in points) {                           // calls beside the dots: right, else left, else none (no overlaps)
-            val x = proj.xOf(p.lon).toFloat(); val y = proj.yOf(p.lat).toFloat()
+        for (i in pts.indices) {                      // calls beside the dots: right, else left, else none (no overlaps)
+            val x = sx(pts[i][0]); val y = sy(pts[i][1])
             if (x < -50 || x > size.width + 50 || y < -20 || y > size.height + 20) continue // off screen
-            val t = tm.measure(p.label, style); val gap = 7.dp.toPx()
+            val t = tm.measure(points[i].label, style); val gap = 7.dp.toPx()
             for (side in 0..1) {
                 val left = if (side == 0) x + gap else x - gap - t.size.width
                 val rc = Rect(left, y - t.size.height / 2f, left + t.size.width, y + t.size.height / 2f)
@@ -169,36 +181,28 @@ fun WorldMap(points: List<MapPoint>, home: Pair<Double, Double>?, fitKey: Int, m
     }
 }
 
-private fun wrap(lon: Double): Double = lon - 360.0 * floor((lon + 180.0) / 360.0) // -180..180
-
-/** The world outlines as one path in degrees (x = lon, y = -lat), for scaled drawing. */
-private fun worldPath(lines: List<FloatArray>, closed: Boolean): Path = Path().apply {
-    for (r in lines) {
-        if (r.size < 4) continue                       // nothing to draw
-        moveTo(r[0], -r[1]); var i = 2; while (i < r.size) { lineTo(r[i], -r[i + 1]); i += 2 } // the points
-        if (closed) close()                            // ring
+/** The outlines projected for [p] (HF Propagation's projectedPaths, in unit coordinates): a land ring that reaches
+ *  round the far side tears - its points jump across the disc - and is left out rather than filled wrongly; border and
+ *  graticule lines are broken where they jump. */
+private fun project(world: WorldData, p: CentredMap): Projected {
+    val land = Path(); val brd = Path(); val grat = Path(); val q = FloatArray(2)
+    for (r in world.land) {                           // land rings
+        val ring = Path(); var torn = false; var px = 0f; var py = 0f; var i = 0
+        while (i < r.size) {
+            p.unit(r[i + 1].toDouble(), r[i].toDouble(), q)
+            if (i == 0) ring.moveTo(q[0], q[1]) else { if (hypot(q[0] - px, q[1] - py) > 0.5f) { torn = true; break }; ring.lineTo(q[0], q[1]) } // a jump = torn
+            px = q[0]; py = q[1]; i += 2
+        }
+        if (torn) continue                            // would fill wrongly across the rim
+        ring.close(); land.addPath(ring)
     }
-}
-
-private fun DrawScope.graticule(p: FlatMap) {          // parallels and meridians
-    val step = if (p.zoom >= 4) 10 else 30            // degrees
-    for (lat in -80..80 step step) { val y = p.yOf(lat.toDouble()).toFloat(); if (y in 0f..size.height) drawLine(GRAT, Offset(0f, y), Offset(size.width, y), 1f) }
-    for (lon in -180 until 180 step step) { val x = p.xOf(lon.toDouble()).toFloat(); if (x in 0f..size.width) drawLine(GRAT, Offset(x, 0f), Offset(x, size.height), 1f) }
-}
-
-/** The great-circle path between two points, broken where it crosses the map's east-west edge (as HF Propagation draws it). */
-private fun DrawScope.greatCircle(p: FlatMap, la1: Double, lo1: Double, la2: Double, lo2: Double, col: Color) {
-    val r = PI / 180.0
-    val d = acos((sin(la1 * r) * sin(la2 * r) + cos(la1 * r) * cos(la2 * r) * cos((lo2 - lo1) * r)).coerceIn(-1.0, 1.0)) // angular distance
-    if (d < 1e-6) return                              // same place
-    val path = Path(); var px = 0f; val n = 48
-    for (k in 0..n) {                                 // intermediate points
-        val f = k.toDouble() / n; val a = sin((1 - f) * d) / sin(d); val b = sin(f * d) / sin(d)
-        val x = a * cos(la1 * r) * cos(lo1 * r) + b * cos(la2 * r) * cos(lo2 * r)
-        val y = a * cos(la1 * r) * sin(lo1 * r) + b * cos(la2 * r) * sin(lo2 * r)
-        val z = a * sin(la1 * r) + b * sin(la2 * r)
-        val sx = p.xOf(atan2(y, x) / r).toFloat(); val sy = p.yOf(atan2(z, sqrt(x * x + y * y)) / r).toFloat()
-        if (k == 0 || abs(sx - px) > 180 * p.ppd) path.moveTo(sx, sy) else path.lineTo(sx, sy); px = sx // (a jump of half a world: across the edge)
+    fun line(path: Path, n: Int, pt: (Int) -> Pair<Double, Double>) { // a polyline, broken where it jumps
+        var px = 0f; var py = 0f
+        for (k in 0 until n) { val (la, lo) = pt(k); p.unit(la, lo, q)
+            if (k == 0 || hypot(q[0] - px, q[1] - py) > 1f / 6) path.moveTo(q[0], q[1]) else path.lineTo(q[0], q[1]); px = q[0]; py = q[1] }
     }
-    drawPath(path, col, style = Stroke(1.5f.dp.toPx()))
+    for (r in world.borders) line(brd, r.size / 2) { k -> r[2 * k + 1].toDouble() to r[2 * k].toDouble() } // borders
+    for (lat in -80..80 step 10) line(grat, 181) { k -> lat.toDouble() to (-180.0 + 2 * k) } // parallels every 10 degrees
+    for (lon in -180 until 180 step 10) line(grat, 89) { k -> (-88.0 + 2 * k) to lon.toDouble() } // meridians
+    return Projected(land, brd, grat)
 }

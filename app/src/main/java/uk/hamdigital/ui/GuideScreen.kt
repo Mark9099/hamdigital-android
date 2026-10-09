@@ -187,7 +187,9 @@ private val GUIDE = listOf(
         "Search finds a call, locator, name, QTH, comment or country; the chips show one band or one mode. The line above the list counts the " +
         "contacts, different stations, countries, locator squares and bands. Tap a contact to change or delete it.\n" +
         B + "Map (beside the counts): the contacts the list shows (so search or choose a band first to map just those), one dot per " +
-        "station coloured by band, with a line from you. It opens zoomed to fit them all; pinch to zoom, drag to move, Fit to see " +
+        "station coloured by band, with a line from you. The map is centred on you, as HF Propagation's centred view: land keeps its " +
+        "shape close in, the line to a station is the great-circle path (its beam heading), distance from you is true distance, and " +
+        "the rim is the far side of the world. It opens zoomed to fit them all; pinch to zoom, drag to move, Fit to see " +
         "them all again, tap a dot for the contact. A station with no locator logged is placed at its country's middle (a hollow dot).\n" +
         B + "The menu (⋮): Share sends the log file to another app (email, Drive, a logging app). Save to a file puts a copy where you " +
         "choose. Import reads another program's ADIF (.adi) file - contacts already in the log (the same call, band and mode within " +
@@ -197,6 +199,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.1 (October 2026): the maps are centred on you (HF Propagation's centred view), so land keeps its shape close in " +
+        "and the line to each station is its great-circle path.\n" +
         B + "0.10.0 (October 2026): countries (cty.dat) on the FT8 / FT4, WSPR, JS8Call and Logbook pages and in the log form " +
         "(logged as ADIF COUNTRY); a map of the Logbook's contacts and of WSPR stations (heard here, and who heard you), zoomed to " +
         "fit; opening a mode tunes the radio to that mode's frequency.\n" +

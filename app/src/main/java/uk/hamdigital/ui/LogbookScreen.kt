@@ -121,7 +121,7 @@ fun LogbookScreen(vm: MainViewModel) {
     }) {
         if (err.isNotEmpty()) Text(err, color = Pal.Red, fontSize = 13.sp)
         if (note.isNotEmpty()) Text(note, color = Pal.Green, fontSize = 13.sp, modifier = Modifier.clickable { note = "" })
-        CompactField(query, { query = it }, "Search: call, locator, name, QTH, comment", Modifier.fillMaxWidth().padding(top = 4.dp),
+        CompactField(query, { query = it }, "Search: call, country, locator, name, QTH, comment", Modifier.fillMaxWidth().padding(top = 4.dp),
             trailing = if (query.isNotEmpty()) ({ TextButton({ query = "" }) { Text("Clear", color = Pal.Text2) } }) else null)
         val bands = remember(all) { all.map { it.bandName }.filter { it.isNotEmpty() }.distinct().sortedBy { Logbook.BANDS.indexOf(it) } } // bands in the log
         val modes = remember(all) { all.map { it.mode }.filter { it.isNotEmpty() }.distinct().sorted() } // modes in the log

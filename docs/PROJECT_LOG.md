@@ -77,7 +77,14 @@ Newest first.
     picture, though the scope still shows the lines). Normal for analogue SSTV.
   - FreeDV at 5 dB: 700D sync 21/23 frames, speech -1.5 dB of the input; 700E 40/42, -1.3 dB; 1600 143/161, -0.5 dB.
     It runs at about 100× real time.
-- To be checked on the air.
+- **On the air (receive only, WiFi):**
+  - Opening SSTV from 7.0386 USB-D tuned to 7.165.000 LSB-D, so the new LSB-D works. The 20 m chip gave 14.230.000
+    USB-D.
+  - Four minutes on 14.230 at 18:00 UTC: no SSTV signal. The page showed band noise as scan lines (the scope).
+- **0.11.1:** the status said "last: Robot 36 Color" before any picture, which is the decoder's starting mode.
+  `SstvRx.mode` is now set only once a picture has started (VIS heard).
+- Transmitting SSTV and FreeDV on the air is still to do: it needs someone or something listening (another receiver
+  or a WebSDR), as there is no automatic reporting network for either.
 
 ## 2026-10-09: 0.10.5 (fixes from the on-air tests)
 

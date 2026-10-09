@@ -17,7 +17,7 @@ object SstvRx {
     const val RATE = 12000                            // the decoder's audio rate (the WiFi link's own)
     val dec = SstvDecoder(RATE)                       // Robot36
     val lines = MutableStateFlow(0)                   // scan lines decoded so far (the page redraws when it moves)
-    val mode = MutableStateFlow("")                   // the mode heard
+    val mode = MutableStateFlow("")                   // the mode of the last picture that started ("" until one has: the decoder's own starting mode is not one heard)
     val pictures = MutableStateFlow<List<File>>(emptyList()) // pictures received, newest first
     val saved = MutableStateFlow("")                  // the last picture saved (its name)
     private var dir: File? = null                     // where they go
@@ -36,8 +36,9 @@ object SstvRx {
         if (f.size != n) f = FloatArray(n)
         for (i in 0 until n) f[i] = b[i] / 32768f
         if (!dec.process(f)) return                   // no new lines
-        lines.value++; mode.value = dec.modeName()
+        lines.value++
         val img = dec.image
+        if (img.line in 0 until img.height) mode.value = dec.modeName() // a picture is coming in: its mode (from its VIS code)
         if (img.line >= img.height && img.height > 0) { // a picture finished: keep it
             save(Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888), dec.modeName())
             img.line = -1                             // (Robot36 does the same: so it is saved once)

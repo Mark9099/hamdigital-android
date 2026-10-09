@@ -15,6 +15,7 @@ object Js8Tx {
     val queued = MutableStateFlow(0)                  // frames still to send
     private val frames = ArrayDeque<Pair<String, Int>>() // frame, bits
     private var timer: Timer? = null                  // the next frame's slot
+    private var label = ""                            // what is being sent ("heartbeat", "CQ" ...), for the status
     private lateinit var app: Context
     @Volatile var myCall = ""; @Volatile var myGrid = ""; @Volatile var level = 0.3f; @Volatile var txHz = 1500 // you, the level, the offset
 
@@ -24,7 +25,7 @@ object Js8Tx {
     @Synchronized fun send(kind: Int, to: String = "", cmd: Int = 0, num: String = "", text: String = "", label: String): Boolean {
         val f = Js8Native.build(kind, myCall, myGrid, to, cmd, num, text).mapNotNull { l -> l.split('\t').takeIf { it.size == 2 }?.let { it[0] to (it[1].toIntOrNull() ?: 0) } }
         if (f.isEmpty()) { status.value = "Cannot send that (callsigns must be standard; text: letters, figures and . - + ? ! \" /)"; return false }
-        frames.clear(); frames.addAll(f); queued.value = f.size
+        frames.clear(); frames.addAll(f); queued.value = f.size; this.label = label
         status.value = "Queued: $label (${f.size} frame${if (f.size > 1) "s" else ""})"
         schedule(); return true
     }
@@ -42,7 +43,13 @@ object Js8Tx {
         val f = frames.removeFirstOrNull() ?: return
         queued.value = frames.size
         val audio = Js8Native.audio(f.first, f.second, txHz.toDouble(), level.toDouble())
-        val ok = Transmitter.send(app, myCall, audio, 12000, at, Mode.JS8.name) { schedule() } // then the next frame
+        val ok = Transmitter.send(app, myCall, audio, 12000, at, Mode.JS8.name) { done -> // then the next frame - or, after the last, say so (it stayed at "Sending frame": 0.10.5)
+            synchronized(this) {
+                if (!done) { if (status.value != "Halted") status.value = Transmitter.lastError.value.ifEmpty { "Stopped" }; frames.clear(); queued.value = 0 }
+                else if (frames.isEmpty()) status.value = "Sent: $label"
+            }
+            schedule()
+        }
         status.value = if (ok) "Sending frame [${f.first}]${if (frames.isNotEmpty()) ", ${frames.size} more" else ""}" else Transmitter.lastError.value
         if (!ok) { frames.clear(); queued.value = 0 }
     }

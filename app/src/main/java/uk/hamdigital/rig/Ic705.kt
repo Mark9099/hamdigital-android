@@ -27,6 +27,7 @@ data class RigState(
     val mode: String = "",                            // USB, LSB, CW, ...
     val data: Boolean = false,                        // DATA mode on (USB-D)
     val tx: Boolean = false,                          // transmitting
+    val breakIn: Int = -1,                            // CW break-in: 0 off, 1 semi, 2 full (-1 not known yet)
 ) {
     enum class Link { NONE, ASKING, CONNECTED }       // not connected / waiting for USB permission / talking to it
     /** "14.074.000" */
@@ -139,6 +140,7 @@ object Ic705 {
             0x01, 0x04 -> if (d.isNotEmpty()) set { it.copy(mode = MODES[d[0]] ?: "?") } // mode (broadcast / reply)
             0x1A -> if (d.size >= 2 && d[0] == 0x06) set { it.copy(data = d[1] != 0) } // data mode
             0x1C -> if (d.size >= 2 && d[0] == 0x00) set { it.copy(tx = d[1] != 0) } // transmit state
+            0x16 -> if (d.size >= 2 && d[0] == 0x47) set { it.copy(breakIn = d[1]) } // break-in (reply to 16 47)
             0xFA -> set { it.copy(message = "The IC-705 refused a command") } // NG
         }
     }
@@ -203,6 +205,10 @@ object Ic705 {
         val ok = text.uppercase().filter { it in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/?.,-=+@: " } // the IC-705 keyer's characters
         ok.chunked(30).forEach { part -> send(0x17, *part.map { it.code }.toIntArray()) }
     }
+
+    /** Ask the radio for its CW break-in setting (CI-V 16 47; the reply lands in state.breakIn): with it off the keyer
+     *  only sounds the sidetone, so the CW page warns rather than seem to send. */
+    fun askBreakIn() { send(0x16, 0x47) }
 
     /** Stop the keyer's message now (CI-V 17 FF). */
     fun stopCw() { send(0x17, 0xFF) }

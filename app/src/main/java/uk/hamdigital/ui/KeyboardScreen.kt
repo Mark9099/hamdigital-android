@@ -44,7 +44,9 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     val k = if (m == Mode.RTTY) KbNative.RTTY else KbNative.PSK31 // which receiver
     val s by vm.settings.collectAsStateWithLifecycle()  // the audio choice
     val spec = remember(m) { Spectrum(8000, size = 2048, hop = 512) } // waterfall: 3.9 Hz bins, 16 rows a second
-    val rx = rememberRx(8000, 256, s.audio) { b, n -> spec.feed(b, n); KbNative.process(k, b, n) } // fldigi's 8 kHz
+    val rx = rememberRx(8000, 256, s.audio) { b, n -> spec.feed(b, n) // fldigi's 8 kHz: the waterfall always ..
+        val now = System.currentTimeMillis()
+        if (!Transmitter.sentDuring(now - 600, now)) KbNative.process(k, b, n) } // .. the decoder not while we send (the radio passes our own audio back: the text came out twice, 0.10.5)
     var st by remember { mutableStateOf(KbNative.state(k)) } // [freq, metric, s/n, dcd, imd]
     var text by remember { mutableStateOf(KbText.text[k].toString()) } // what has been decoded
     var afc by rememberSaveable(m) { mutableStateOf(true) } // follow the signal

@@ -90,7 +90,9 @@ private val GUIDE = listOf(
         "the speed it expects before it has measured one; Reset speed measures again.\n" +
         B + "Pause stops decoding; Clear empties the text; Copy and Share (top right) pass on the decoded text.\n" +
         B + "Sending: the IC-705's own keyer sends the Morse (over CI-V), so the radio must be in CW (a band chip sets it) with " +
-        "break-in on (the BK-IN button). Type and tap Send, or CQ / 73; choose the speed (15-30 WPM); Stop ends the message.",
+        "break-in on (the BK-IN button). Type and tap Send, or CQ / 73; choose the speed (15-30 WPM); Stop ends the message. The " +
+        "page reads the radio's break-in setting and says so instead of sending if it is off (the keyer would only sound the " +
+        "sidetone). Over WiFi the radio does not pass its sidetone back, so your own sending does not show in the text.",
 
     "FT8 and FT4" to
         "Decodes FT8 (15 s slots) and FT4 (7.5 s slots) with ft8_lib, the open-source FT8 / FT4 library also used by the FT8CN app. Slots " +
@@ -167,14 +169,16 @@ private val GUIDE = listOf(
         "space are the other way round). Other shifts are 85, 425 and 850 Hz.\n" +
         B + "The text is kept while the app runs; Copy, Share and Clear are at the top right.\n" +
         B + "Sending: type in the box at the bottom and tap Send, or tap CQ (\"CQ CQ CQ DE call call call PSE K\") or 73. The message " +
-        "goes out on the receive frequency (where the red lines are) as one transmission, and appears in the text marked [TX]. " +
+        "goes out on the receive frequency (where the red lines are) as one transmission, and appears in the text marked [TX] " +
+        "(the receiver rests while you send, so it is not printed a second time from the radio's own audio). " +
         "RTTY sends capitals, figures and common punctuation (Baudot); PSK31 sends any text. The TRANSMITTING bar has Halt.",
 
     "JS8Call" to
         "Receives JS8 (the JS8Call keyboard-chat mode, Normal speed: 15 s slots like FT8) with JS8Call's own decoder.\n\n" +
         B + "At the end of each slot the frames heard are decoded and turned into text as JS8Call shows it: heartbeats " +
         "(\"G4ABC: @HB HEARTBEAT IO91\"), CQs, directed messages (\"G4ABC: M7JVY SNR -10\") and free text. Longer messages " +
-        "arrive over several slots; a diamond marks a message's end. Text in [brackets] was decoded with low confidence.\n" +
+        "arrive over several slots; a diamond marks a message's end. Text in [brackets] was decoded with low confidence, or its " +
+        "sender is not a callsign (a false decode) - those are left out of Calls.\n" +
         B + "Band activity: the text at each audio offset, newest first. Tap a line (or the waterfall) to set the receive " +
         "offset - the red lines mark it and the 50 Hz a JS8 signal takes; the decoder tries there first.\n" +
         B + "Calls: the stations heard, with country, signal, locator (from their heartbeats) and distance.\n" +
@@ -213,6 +217,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.5 (October 2026): from the on-air tests - JS8Call says \"Sent\" when a message has gone; RTTY and PSK31 no " +
+        "longer print what you send twice; CW warns if the radio's break-in is off; a JS8 frame whose sender is not a callsign " +
+        "is shown as a false decode.\n" +
         B + "0.10.4 (October 2026): one mode at a time - opening a mode stops the others sending (the WSPR beacon carried on " +
         "while other modes were opened), and closing the app stops all sending; a transmission stops if the radio link goes, and " +
         "none starts without it.\n" +

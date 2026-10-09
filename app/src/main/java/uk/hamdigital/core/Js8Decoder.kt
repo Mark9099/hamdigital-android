@@ -50,9 +50,17 @@ class Js8Decoder private constructor() {
 
     private fun parse(slot: Long, line: String): Js8Frame? {
         val p = line.split('\t'); if (p.size < 10) return null
+        val from = p[6].trim('<', '>')
+        val suspect = from.isNotEmpty() && !from.startsWith("@") && from != "...." && !CALL.matches(from) // (not a callsign: a false decode)
         return Js8Frame(slot, p[0].toIntOrNull() ?: 0, p[1].toFloatOrNull() ?: 0f, p[2].toFloatOrNull()?.toInt() ?: 0, p[3].toIntOrNull() ?: 0,
-            p[4] == "1", p[5].toIntOrNull() ?: 255, p[6], p[7], p[8], p[9])
+            p[4] == "1" || suspect, p[5].toIntOrNull() ?: 255, if (suspect) "" else p[6], p[7], p[8], p[9])
     }
+
+    /** JS8Call's callsign pattern (Varicode's): [prefix/] base - an optional character, a character, a figure, up to three
+     *  letters - [/suffix][/extra]. A frame that passed the check but whose sender is not one of these is a false decode
+     *  (0.10.5: "4YZGXD/8UU HEARTBEAT SNR -21" was shown as a station): it is shown [in brackets], as low-confidence
+     *  frames are, and kept out of Calls. */
+    private val CALL = Regex("""^(?:[A-Z0-9]{1,4}/)?(?:[0-9A-Z])?[0-9A-Z][0-9][A-Z]{0,3}(?:/[A-Z0-9]{1,4})?(?:/[A-Z0-9]{1,4})?$""")
 
     /** One frame into the three lists. */
     private fun add(f: Js8Frame) {

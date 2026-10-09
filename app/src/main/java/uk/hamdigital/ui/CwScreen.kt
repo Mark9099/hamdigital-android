@@ -71,6 +71,7 @@ fun CwScreen(vm: MainViewModel) {
     val gate = rememberTxGate(vm)                       // the licence notice before transmitting
     var txWpm by rememberSaveable { mutableIntStateOf(20) } // keyer speed
     var txMsg by remember { mutableStateOf("") }       // why sending did not start
+    LaunchedEffect(Unit) { while (true) { Ic705.askBreakIn(); delay(5000) } } // the radio's break-in setting, kept up to date while the page is open
     var logging by remember { mutableStateOf<uk.hamdigital.core.Qso?>(null) } // the log form, open
     val log = { logging = newQso("CW", s) }            // Log: a new contact, filled in from the radio
     // Send [t] with the IC-705's own keyer (CI-V): the radio keys itself in CW with break-in on.
@@ -79,6 +80,7 @@ fun CwScreen(vm: MainViewModel) {
             s.callsign.isBlank() -> "Set your callsign in Settings before transmitting"
             Ic705.state.value.link != RigState.Link.CONNECTED -> "The IC-705's CI-V is not connected"
             !Ic705.state.value.mode.startsWith("CW") -> "Put the IC-705 in CW (a band chip above) with break-in on"
+            Ic705.state.value.breakIn == 0 -> "Break-in is off on the IC-705, so its keyer would only sound the sidetone: turn BK-IN on (CW mode: the BK-IN setting, semi or full), then Send"
             else -> { Ic705.setCwSpeed(txWpm); Ic705.sendCw(t); CwNative.control(0, 0f); "" } // (the decoder's text is cleared so the reply starts afresh)
         }
     }

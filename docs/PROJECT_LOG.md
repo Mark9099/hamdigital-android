@@ -2,6 +2,25 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.5 (fixes from the on-air tests)
+
+- **The user confirmed CW does transmit:** BK-IN shows on the radio, and TX and the power meter pulsed during the CQ.
+  Two more CQs (sent twice, 15:25:42 UTC, on 7.030 after checking it was clear) still drew no RBN spot. G4ZXN was
+  spotted 500 Hz away at 18–30 dB in the same minutes, and the RTTY CQ at the same 2 W was spotted. Over WiFi the
+  radio does not pass its sidetone back (the CW page decoded nothing of our own sending), so there is no check of the
+  keying from here. Next: listen on a WebSDR during a CQ.
+- **Fixes (user: "fix all"):**
+  1. `Js8Tx` keeps the message label. After the last frame the status is "Sent: <label>"; on failure, the
+     transmitter's reason ("Halted" is kept).
+  2. `KeyboardScreen`: fldigi's receiver is not fed while we transmit, or for 0.6 s after
+     (`Transmitter.sentDuring`). The waterfall carries on.
+  3. `Ic705.askBreakIn()` (CI-V 16 47) puts `RigState.breakIn` (0 off, 1 semi, 2 full) in the state. The CW page asks
+     every 5 s while open, and if it is 0, Send says to turn BK-IN on instead of sending.
+  4. JS8 "4YZGXD/8UU HEARTBEAT SNR -21": our unpack matches JS8Call's DecodedText (a FrameCompoundDirected shows as
+     "<compound><extra>"), so JS8Call would print it too, but the sender is not a callsign. `Js8Decoder.parse` now
+     checks the sender against JS8Call's Varicode callsign pattern. One that fails is marked low-confidence (shown
+     [in brackets]) and kept out of Calls.
+
 ## 2026-10-09: on-air tests of the other modes (0.10.4, 40 m, WiFi, 2 W)
 
 - **FT4:** opening the page tuned to 7.047 and decoded CQs (II5GG Italy, F5OZC France, DC1OA Germany). Answering

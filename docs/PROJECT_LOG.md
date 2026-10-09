@@ -60,7 +60,14 @@ Newest first.
     the service.
   - Swiping the app from Recents already logged out (`RadioService.onTaskRemoved`). `cmd activity stack remove <task>`
     does the same from adb, and was used before the uninstall.
-- **Not yet done:** on air.
+- **x86_64 dropped** (the user's decision): only the emulator, which this PC cannot run, and a few old Intel tablets used
+  it. The ABIs are now arm64-v8a and armeabi-v7a. The release APK went from about 92 MB to 64.6 MB. It is one line in
+  `app/build.gradle.kts` (`abiFilters`) to add back.
+- **On air (2026-10-09, 19:32-19:46 UTC, IC-705 over WiFi, USB-D):** 5 minutes on 7.177 and 5 on 14.236 heard no
+  RADE station. The waterfall showed band noise across the passband, so audio was arriving: the bands were just
+  quiet then.
+  - The radio's WiFi link came back by itself 70 s after an `adb install -r` killed the app without logging out
+    (the IC-705's stale session).
 
 ## 2026-10-09: first release (0.11.1 APK on GitHub)
 

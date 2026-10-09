@@ -26,7 +26,7 @@ android {
         targetSdk = 35                               // Android 15 behaviour
         versionCode = 28                             // store version number
         versionName = "0.12.0"                        // shown on the startup screen and in Settings
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") } // phones, tablets, the emulator
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") } // phones and tablets (ARM); x86_64 (the emulator, a few old Intel tablets) left out from 0.12.0: 28 MB smaller - add it back here to run in the emulator
     }
 
     signingConfigs {

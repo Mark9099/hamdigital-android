@@ -26,7 +26,8 @@ Newest first.
   - `Transmitter` checks the link again when it keys: the CI-V link (USB), or the WiFi link and logged in
     (network). It stops a transmission if the link goes or changes (a reconnect) during it, and reports why in
     `lastError`.
-- Built; not yet installed (the user was using the phone).
+- **Checked on the S23 (no transmission):** the beacon was switched on at 15:04:05 UTC, early in a 2-minute cycle
+  (its first decision would be at 15:05:58). FT8 was opened, and back on WSPR at 15:04:30 it showed "Beacon off".
 
 ## 2026-10-09: 0.10.3 (WSPR map: keeping up with new stations)
 

@@ -125,7 +125,7 @@ class FtQso(private val ft4: Boolean) {
         val msg = text(s.next, s)
         val audio = Ft8Native.encode(msg, ft4, s.txHz.toFloat(), level)
         if (audio == null) { set { it.copy(enabled = false, status = "Cannot send \"$msg\"") }; return }
-        val started = Transmitter.send(app, myCall, audio, 12000, at) { schedule() } // then the next of our slots
+        val started = Transmitter.send(app, myCall, audio, 12000, at, mode) { schedule() } // then the next of our slots
         set { it.copy(repeats = if (started) it.repeats + 1 else it.repeats, status = if (started) "Sending: $msg" else Transmitter.lastError.value) }
         if (!started) set { it.copy(enabled = false) }
     }

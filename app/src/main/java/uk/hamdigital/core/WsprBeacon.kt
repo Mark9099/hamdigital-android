@@ -53,7 +53,7 @@ object WsprBeacon {
         if (myGrid.length < 4) { set { it.copy(enabled = false, status = "Set your locator in Settings first") }; return }
         val audio = WsprNative.encode(message(s), s.txHz.toFloat(), level)
         if (audio == null) { set { it.copy(enabled = false, status = "Cannot send \"${message(s)}\" (WSPR needs a standard callsign)") }; return }
-        val ok = Transmitter.send(app, myCall, audio, 12000, slot + 1000) { schedule() } // 1 s after the even minute; then the next slot
+        val ok = Transmitter.send(app, myCall, audio, 12000, slot + 1000, Mode.WSPR.name) { schedule() } // 1 s after the even minute; then the next slot
         if (ok) set { it.copy(sent = it.sent + 1, status = "Transmitting in the $t slot: ${message(s)}") }
         else set { it.copy(enabled = false, status = Transmitter.lastError.value) }
     }

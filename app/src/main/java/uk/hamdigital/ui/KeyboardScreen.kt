@@ -60,7 +60,7 @@ fun KeyboardScreen(vm: MainViewModel, m: Mode) {
     // Send [t] on the receive frequency: the whole message as audio to the IC-705, the text copied into the window.
     fun send(t: String) = gate.ask {
         val a = KbNative.encode(k, if (k == KbNative.RTTY) "\n$t\n" else " $t ", st[0], shift.toDouble(), s.txLevel / 100.0) // (RTTY: new lines around it)
-        if (Transmitter.send(ctx, s.callsign, a, 8000)) { KbText.add(k, "\n[TX] $t\n"); text = KbText.text[k].toString(); txMsg = "" } else txMsg = Transmitter.lastError.value
+        if (Transmitter.send(ctx, s.callsign, a, 8000, 0, m.name)) { KbText.add(k, "\n[TX] $t\n"); text = KbText.text[k].toString(); txMsg = "" } else txMsg = Transmitter.lastError.value
     }
     val sideways = LocalConfiguration.current.let { it.screenWidthDp > it.screenHeightDp && it.screenHeightDp < 480 } // a phone on its side
     ModeFrame(m.title, { vm.back() }, actions = {

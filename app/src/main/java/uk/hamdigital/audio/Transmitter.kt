@@ -1,7 +1,10 @@
 // Transmitting: keys the IC-705 over CI-V (PTT), plays the audio to the radio's USB sound card, and unkeys it. One
 // transmission at a time, on its own thread. Safety: nothing is sent unless the radio's CI-V is connected (so PTT can
 // be released), the USB sound card is there (never the phone's speaker), and a callsign is set; a watchdog ends any
-// transmission after 2 minutes 10 s (WSPR's 110.6 s is the longest); Halt stops at once.
+// transmission after 2 minutes 10 s (WSPR's 110.6 s is the longest); Halt stops at once. The link is checked again when
+// keying (a transmission is often arranged seconds ahead) and all through: if the radio's CI-V or the WiFi link goes,
+// the transmission stops there (0.10.4: a WSPR beacon "sent" 110 s with the link closed, then carried on when it was
+// back). [owner] says which mode is sending, so opening another mode can stop it (TxControl).
 package uk.hamdigital.audio
 
 import android.content.Context
@@ -21,6 +24,7 @@ object Transmitter {
     val lastError = MutableStateFlow("")              // why the last transmission did not happen
     @Volatile private var stop = false                // Halt
     @Volatile private var thread: Thread? = null      // the transmission
+    @Volatile var owner = ""; private set             // the mode sending (Mode.name: "FT8", "WSPR" ...)
     private const val WATCHDOG_MS = 130_000L          // longest allowed transmission
 
     /** The IC-705's (or any) USB sound card's output, if plugged in. */
@@ -39,11 +43,13 @@ object Transmitter {
 
     /**
      * Send [audio] ([rate] Hz mono) starting at [startAtMs] (UTC epoch ms; 0 = now): PTT on, the audio, PTT off.
-     * [onDone] runs afterwards (true if it was all sent). Returns false (with lastError set) if it cannot start.
+     * [tag] is the mode sending (Mode.name). [onDone] runs afterwards (true if it was all sent). Returns false (with
+     * lastError set) if it cannot start.
      */
-    fun send(ctx: Context, callsign: String, audio: ShortArray, rate: Int, startAtMs: Long = 0, onDone: (Boolean) -> Unit = {}): Boolean {
+    fun send(ctx: Context, callsign: String, audio: ShortArray, rate: Int, startAtMs: Long = 0, tag: String = "", onDone: (Boolean) -> Unit = {}): Boolean {
         blocked(ctx, callsign)?.let { lastError.value = it; return false } // safety first
         if (thread != null) { lastError.value = "Already transmitting"; return false }
+        owner = tag
         if (Ic705.net) return sendNet(audio, rate, startAtMs, onDone) // over WiFi
         val dev = usbOutput(ctx)!!                    // the radio's sound card
         stop = false; lastError.value = ""
@@ -54,6 +60,7 @@ object Transmitter {
                 val wait = startAtMs - System.currentTimeMillis() - 60 // key 60 ms before the audio starts
                 if (wait > 0) Thread.sleep(wait)
                 if (stop) return@Thread
+                if (Ic705.state.value.link != RigState.Link.CONNECTED) { lastError.value = "The IC-705's CI-V went before the transmission: not sent"; return@Thread } // (checked again: arranged seconds ago)
                 track = AudioTrack.Builder()
                     .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
                     .setAudioFormat(AudioFormat.Builder().setSampleRate(rate).setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
@@ -67,6 +74,7 @@ object Transmitter {
                 val t0 = System.currentTimeMillis()
                 var i = 0
                 while (i < audio.size && !stop && System.currentTimeMillis() - t0 < WATCHDOG_MS) { // in 50 ms pieces, so Halt is quick
+                    if (Ic705.state.value.link != RigState.Link.CONNECTED) { lastError.value = "The IC-705's CI-V went during the transmission: stopped"; break }
                     val n = minOf(rate / 20, audio.size - i)
                     val w = track.write(audio, i, n)   // blocks while the buffer is full
                     if (w <= 0) break
@@ -97,12 +105,18 @@ object Transmitter {
             try {
                 val wait = startAtMs - System.currentTimeMillis() - 60; if (wait > 0) Thread.sleep(wait) // key 60 ms before
                 if (stop) return@Thread
+                val link = uk.hamdigital.rig.IcomNet.rig // the link it goes out on
+                if (link == null || !uk.hamdigital.rig.IcomNet.loggedIn) { lastError.value = "The WiFi link to the IC-705 is down: not sent"; return@Thread } // (checked again: arranged seconds ago)
                 Ic705.ptt(true); keyed(true)          // PTT over the network
                 Thread.sleep(60)
                 uk.hamdigital.rig.IcomNet.sendAudio(f) // streamed by the protocol code in 20 ms packets
                 val end = System.currentTimeMillis() + n * 1000L / 12000 + 200 // its length, plus the protocol's lead-in
-                while (!stop && System.currentTimeMillis() < end) Thread.sleep(20) // (at most 110.6 s + 0.2: within the watchdog)
-                ok = !stop
+                var dropped = false
+                while (!stop && System.currentTimeMillis() < end) { // (at most 110.6 s + 0.2: within the watchdog)
+                    if (uk.hamdigital.rig.IcomNet.rig !== link || !uk.hamdigital.rig.IcomNet.loggedIn) { dropped = true; lastError.value = "The WiFi link to the IC-705 dropped during the transmission: stopped"; break }
+                    Thread.sleep(20)
+                }
+                ok = !stop && !dropped
             } catch (e: Exception) { lastError.value = "Transmit failed: ${e.message}" }
             finally { Ic705.ptt(false); keyed(false); thread = null; onDone(ok) }
         }, "tx-net").apply { priority = Thread.MAX_PRIORITY; start() }

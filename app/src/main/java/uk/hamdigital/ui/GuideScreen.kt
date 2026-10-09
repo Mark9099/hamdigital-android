@@ -63,10 +63,15 @@ private val GUIDE = listOf(
         "(\"Waterfall now\" - the page shows the radio's audio as a waterfall so the connection can be checked, and lists the mode's " +
         "frequencies). Above the tiles: your station, and the radio's connection with its frequency and mode. Under the tiles: the " +
         "Logbook (with how many contacts it holds), Settings and this Guide.\n\n" +
+        B + "One mode at a time: opening a mode stops every other mode - its receiving (only the open page decodes) and its " +
+        "sending: an FT8 / FT4 contact or CQ, the WSPR beacon, JS8 messages still to go, an RTTY or PSK31 message, the CW keyer. " +
+        "Closing the app (Back from the menu) stops all sending too. So the WSPR beacon only runs while the WSPR page is the " +
+        "mode you are on (it carries on with the screen off or another app in front).\n" +
         B + "Opening a mode tunes the IC-705 to that mode's frequency on the band it is on, with USB-D (or CW for CW): from FT8 " +
         "on 7.074 the WSPR page goes to 7.0386, CW to 7.030. If the mode has no frequency on that band, the nearest band it has. " +
-        "It does this once each time the page is opened (a band chip still moves it), and never while something is being sent or " +
-        "is due to be - an FT8 / FT4 contact with TX on, the WSPR beacon, or a JS8 message.\n" +
+        "It does this once each time the page is opened (a band chip still moves it), and not while that mode itself is sending " +
+        "or due to - coming back to FT8 with a contact under way leaves the radio where it is.\n" +
+        B + "A transmission stops at once if the radio's control (CI-V) or the WiFi link goes, and none starts without them.\n" +
         B + "Countries: the stations' countries (DXCC entities) come from cty.dat, the list logging and contest programs use " +
         "(country-files.com, by AD1C). The app downloads it the first time it has the internet and once a month after; until then " +
         "no countries are shown.",
@@ -208,6 +213,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.10.4 (October 2026): one mode at a time - opening a mode stops the others sending (the WSPR beacon carried on " +
+        "while other modes were opened), and closing the app stops all sending; a transmission stops if the radio link goes, and " +
+        "none starts without it.\n" +
         B + "0.10.3 (October 2026): the WSPR map keeps up better: Play ends showing everything (it stayed on the last step, so " +
         "new slots seemed not to arrive), the newest bar follows new slots, and new stations no longer undo your zoom.\n" +
         B + "0.10.2 (October 2026): the WSPR map has a timeline (reports per hour or slot; tap, drag or Play to step through " +

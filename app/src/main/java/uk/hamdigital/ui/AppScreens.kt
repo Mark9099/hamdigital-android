@@ -47,7 +47,13 @@ fun AppScreens(vm: MainViewModel) {
 
 /** A mode's page. */
 @Composable
-private fun ModePage(vm: MainViewModel, m: Mode) = when (m) {
+private fun ModePage(vm: MainViewModel, m: Mode) {
+    remember(m) { uk.hamdigital.core.TxControl.stopOthers(m); 0 } // opening a mode: the others stop sending (before this page tunes the radio)
+    ModePageFor(vm, m)
+}
+
+@Composable
+private fun ModePageFor(vm: MainViewModel, m: Mode) = when (m) {
     Mode.CW -> CwScreen(vm)                                    // working: the Morse decoder
     Mode.FT8, Mode.FT4 -> Ft8Screen(vm, m)                     // working: ft8_lib
     Mode.WSPR -> WsprScreen(vm)                                // working: wsprd

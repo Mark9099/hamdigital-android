@@ -42,7 +42,7 @@ object Js8Tx {
         val f = frames.removeFirstOrNull() ?: return
         queued.value = frames.size
         val audio = Js8Native.audio(f.first, f.second, txHz.toDouble(), level.toDouble())
-        val ok = Transmitter.send(app, myCall, audio, 12000, at) { schedule() } // then the next frame
+        val ok = Transmitter.send(app, myCall, audio, 12000, at, Mode.JS8.name) { schedule() } // then the next frame
         status.value = if (ok) "Sending frame [${f.first}]${if (frames.isNotEmpty()) ", ${frames.size} more" else ""}" else Transmitter.lastError.value
         if (!ok) { frames.clear(); queued.value = 0 }
     }

@@ -35,6 +35,7 @@ class RadioService : Service() {
 
     /** The app swiped away from the recent apps: log out of the radio (while this service still keeps the network), then stop. */
     override fun onTaskRemoved(rootIntent: Intent?) {
+        uk.hamdigital.core.TxControl.stopAll()           // nothing goes on sending (0.10.4)
         uk.hamdigital.rig.IcomNet.disconnect { stopSelf() }
         super.onTaskRemoved(rootIntent)
     }

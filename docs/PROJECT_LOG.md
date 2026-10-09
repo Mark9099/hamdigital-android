@@ -2,6 +2,32 @@
 
 Newest first.
 
+## 2026-10-09: 0.10.4 (one mode at a time; no transmitting without the link)
+
+- **Incident, found while starting the other-mode tests (14:43 UTC).** The FT4 page opened without retuning (AutoTune
+  saw something sending) and showed TRANSMITTING. I pressed Halt at 14:44:12. From the log:
+  - The WSPR beacon had been switched on on the phone at about 14:41.
+  - At 14:41:58 the app was closed: `IcomNet.disconnect`, "WiFi connection closed". The beacon's timer lives in
+    the process and carried on. Its 14:42 transmission had been arranged at 14:41:58 and keyed at 14:42:01 with the
+    link closed. `IcomNet.ptt` and `sendAudio` do nothing without a link, but `Transmitter` still showed TRANSMITTING
+    for 110 s.
+  - At 14:42:42 the app was reopened and the link came back. The beacon's next transmission at 14:44:01 really went
+    out, until the halt at 14:44:11 (FT8CN's audio sender logged "audio sending finished").
+  - WSPRnet has no M7JVY reports after 13:26, so neither attempt was decoded.
+  - The beacon then had to be switched off (it was already off when I went to do it).
+- **Asked for by the user:** "when changing mode, must stop other modes from tx and rx".
+- **Fixes:**
+  - `core/TxControl.stopOthers(mode)` stops, for every mode but the one opened: an FT8/FT4 contact with TX on,
+    the WSPR beacon, queued JS8 frames, the transmission on the air if another mode owns it (`Transmitter.owner`, set
+    by each sender: FtQso, WsprBeacon, Js8Tx, RTTY/PSK31), and the IC-705's CW keyer.
+  - It is called when a mode page opens (`ModePage`, in composition, before that page's AutoTune), and through
+    `stopAll()` when the app closes (`MainActivity.onDestroy` finishing, `RadioService.onTaskRemoved`). Receiving
+    already follows the page (AudioIn has one capture, the open page's).
+  - `Transmitter` checks the link again when it keys: the CI-V link (USB), or the WiFi link and logged in
+    (network). It stops a transmission if the link goes or changes (a reconnect) during it, and reports why in
+    `lastError`.
+- Built; not yet installed (the user was using the phone).
+
 ## 2026-10-09: 0.10.3 (WSPR map: keeping up with new stations)
 
 - **Asked by the user:** "does the heard here auto update when new locations heard? didn't seem to".

@@ -10,7 +10,10 @@
 //  - The phone's WiFi is watched: when it drops the link waits; when it is back, the link is made again.
 //  - A watchdog: the radio serves one remote session at a time and ignores a new one while an old one it was not told
 //    about is still open, and FT8CN's code asks "are you ready" only once. So if the login has not succeeded within
-//    10 s, or the radio has sent no CI-V for 8 s, the app logs out and tries again (5 s, then 10, 20, 30 s apart).
+//    10 s, or the radio has sent no CI-V for 8 s (60 s after a fresh login, while it lets go of an old session's CI-V
+//    stream), the app logs out and tries again (5 s, then 10, 20, 30 s apart).
+//  - Nothing is sent on the CI-V or audio stream before the radio has given its port (0.8.4): an early send failed
+//    with EINVAL and FT8CN's code then closed the whole connection.
 //  - Logging out properly (disconnect) when the app is closed, so the radio is not left with a stale session.
 package uk.hamdigital.rig
 
@@ -37,7 +40,8 @@ object IcomNet {
     @Volatile private var target: Target? = null      // what to stay connected to (null: not wanted)
     @Volatile private var wifi: Network? = null       // the phone's WiFi network, while up
     @Volatile private var startedMs = 0L              // when this connection attempt began
-    @Volatile private var lastCivMs = 0L              // when the radio last sent CI-V
+    @Volatile private var lastCivMs = 0L              // when the radio last sent CI-V (or, before any, when we logged in)
+    @Volatile private var civSeen = false             // CI-V has arrived since this login
     @Volatile private var retries = 0                 // failed attempts in a row (for the back-off)
     @Volatile private var nextTryMs = 0L              // when the next attempt may start
     private var watchdog: Timer? = null               // checks the link every 2 s
@@ -87,11 +91,11 @@ object IcomNet {
             if (r !== rig) return@OnStatus           // (an old connection's last words)
             Log.d(TAG, "status: $msg ($ok)")
             status.value = msg; loggedIn = ok
-            if (ok) { retries = 0; lastCivMs = System.currentTimeMillis(); Ic705.netConnected(true) }
+            if (ok) { retries = 0; civSeen = false; lastCivMs = System.currentTimeMillis(); Ic705.netConnected(true) }
             else { Ic705.netConnected(false, msg); rig = null; scheduleRetry() } // (FT8CN closes it itself)
         }
         r.setOnDataEvents(object : WifiRig.OnDataEvents {
-            override fun onReceivedCivData(data: ByteArray) { if (r === rig) { lastCivMs = System.currentTimeMillis(); Ic705.netFrame(data) } } // CI-V from the radio
+            override fun onReceivedCivData(data: ByteArray) { if (r === rig) { lastCivMs = System.currentTimeMillis(); civSeen = true; Ic705.netFrame(data) } } // CI-V from the radio
             override fun onReceivedWaveData(data: ByteArray) {                     // receive audio: 12 kHz 16-bit little-endian
                 if (r !== rig) return
                 val n = data.size / 2; val s = ShortArray(n) { i -> ((data[2 * i].toInt() and 0xFF) or (data[2 * i + 1].toInt() shl 8)).toShort() }
@@ -121,16 +125,22 @@ object IcomNet {
         when {
             rig == null -> if (now >= nextTryMs && wifi != null) open() // waiting to try again
             !loggedIn && now - startedMs > 10_000 -> { Log.d(TAG, "watchdog: no login"); close("The radio did not answer - trying again (an old session may still be open on it)"); scheduleRetry() }
-            loggedIn && now - lastCivMs > 8_000 -> { Log.d(TAG, "watchdog: radio quiet"); close("The radio stopped answering - reconnecting"); scheduleRetry() }
+            loggedIn && civSeen && now - lastCivMs > 8_000 -> { Log.d(TAG, "watchdog: radio quiet"); close("The radio stopped answering - reconnecting"); scheduleRetry() }
+            loggedIn && !civSeen && now - lastCivMs > 60_000 -> { Log.d(TAG, "watchdog: no CI-V"); close("The radio gave no control data - reconnecting"); scheduleRetry() } // (a fresh login: the radio may still be letting go of an old session's CI-V stream - give it a minute)
         }
     }
 
-    /** CI-V command bytes to the radio. */
-    fun civ(frame: ByteArray) { rig?.sendCivData(frame) }
+    /** The radio has told us its CI-V / audio ports: until then a send goes to port 0, fails (EINVAL), and FT8CN's code
+     *  closes the whole connection - which is what broke the first logins (0.8.3). */
+    private fun civReady(r: IComWifiRig) = (r.controlUdp?.civUdp?.rigPort ?: 0) != 0
+    private fun audioReady(r: IComWifiRig) = (r.controlUdp?.audioUdp?.rigPort ?: 0) != 0
+
+    /** CI-V command bytes to the radio (dropped until the CI-V stream is open; the next poll repeats them). */
+    fun civ(frame: ByteArray) { val r = rig ?: return; if (civReady(r)) r.sendCivData(frame) }
 
     /** PTT, which also lets the transmit audio through (FT8CN's setPttOn). */
-    fun ptt(on: Boolean) { rig?.setPttOn(on) }
+    fun ptt(on: Boolean) { val r = rig ?: return; if (civReady(r)) r.setPttOn(on) }
 
     /** Transmit audio: 12 kHz floats, -1..1, sent in real time by the protocol code (20 ms packets). */
-    fun sendAudio(samples: FloatArray) { rig?.sendWaveData(samples) }
+    fun sendAudio(samples: FloatArray) { val r = rig ?: return; if (audioReady(r)) r.sendWaveData(samples) }
 }

@@ -2,6 +2,19 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.4 (WiFi login root cause)
+
+- After a clean logout the radio accepted the next login within 65 ms. Half a second later the app's first CI-V
+  poll failed with "sendto failed: EINVAL": it went out before the radio's status packet had given the CI-V port,
+  so it was sent to port 0. FT8CN's code treats any send error as fatal and closed everything. That left a
+  half-open session on the radio, which caused the run of "no login" retries.
+- Fix: IcomNet sends nothing on the CI-V or audio stream until that stream's radio port is known (`civReady` /
+  `audioReady`). The next 1 s poll repeats anything dropped.
+- The watchdog no longer gives up on a fresh login after 8 s without CI-V. It allows 60 s, because the radio may
+  still be letting go of an old session's CI-V stream. Once CI-V has flowed, 8 s of silence still triggers a
+  reconnect.
+- On the radio: a clean exit and reinstall connected on the first try, with CI-V flowing and no errors.
+
 ## 2026-10-09: 0.8.3, first transmissions (FT8 over WiFi)
 
 - Call CQ on 40 m went out at 07:47:15 UTC: PTT over CI-V ("1C 00 01" / "00" echoed), audio over the network.

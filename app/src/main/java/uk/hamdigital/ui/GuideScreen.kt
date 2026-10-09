@@ -153,6 +153,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.4 (October 2026): the WiFi link connects first time: control commands wait until the radio has opened its " +
+        "control stream (sending too early used to break the connection).\n" +
         B + "0.8.3 (October 2026): first FT8 transmissions over WiFi, heard across Europe. Calling a station from the FT8 / FT4 list " +
         "now needs a double-tap (as WSJT-X's double-click), so a stray touch cannot start a call; the licence notice gives the " +
         "DATA MOD setting for WiFi (WLAN).\n" +

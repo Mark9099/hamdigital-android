@@ -2,6 +2,21 @@
 
 Newest first.
 
+## 2026-10-09: 0.8.3, first transmissions (FT8 over WiFi)
+
+- Call CQ on 40 m went out at 07:47:15 UTC: PTT over CI-V ("1C 00 01" / "00" echoed), audio over the network.
+- PSK Reporter shows M7JVY heard by 10 stations within minutes, all at 7.0755 MHz (7.074 + 1500 Hz):
+  - EI4ACB +4, ON8ST -11, CT1ILT -12, F4FPR -13, M9PSY -14, EI7IN -14, GM0MST -15, F4LTX -16, F4DAI -19, EI4HQ -10.
+  - Transmit audio, timing and PTT over WiFi work.
+- Two unintended calls to GJ0KYZ followed (07:47:45, and 07:48:15 halted after 4 s).
+  - Cause: a test tap aimed at the licence notice arrived 10 s after the user had already accepted it, and landed on
+    a decode line. Samsung's input log (ViewPostIme) showed the touches.
+  - The app did what a tap means. But one stray touch on the list could start a call, so calling from the FT8/FT4
+    list is now a double-tap, like WSJT-X's double-click. A single tap does nothing.
+  - Halt stopped the transmission at once ("1C 00 00").
+- The licence notice and Guide now say DATA MOD = USB with the lead and WLAN over WiFi. They used to say USB only.
+- No message to M7JVY was decoded. The automatic sequencing was not involved.
+
 ## 2026-10-09: 0.8.2, first test with the IC-705 (WiFi)
 
 - **It works over WiFi:**

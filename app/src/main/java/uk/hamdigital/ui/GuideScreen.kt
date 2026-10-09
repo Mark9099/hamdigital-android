@@ -92,7 +92,7 @@ private val GUIDE = listOf(
         B + "The waterfall above the list shows the audio; FT8 signals are short stepped traces 50 Hz wide.\n" +
         B + "Expect about three quarters of what WSJT-X decodes from the same audio - ft8_lib does not yet make WSJT-X's extra passes " +
         "for the weakest signals under stronger ones.\n" +
-        B + "Transmitting: tap a CQ (or a station calling you) to answer it, or Call CQ. The contact then runs itself, as in WSJT-X: " +
+        B + "Transmitting: double-tap a CQ (or a station calling you) to answer it - a single tap does nothing, so a stray touch never starts a call - or tap Call CQ. The contact then runs itself, as in WSJT-X: " +
         "the six standard messages (Tx1 your call and locator, Tx2 a report, Tx3 R + report, Tx4 RR73, Tx5 73, Tx6 CQ) are chosen " +
         "from what the other station sends, and the completed contact goes into the logbook (Settings > Logbook). The next message " +
         "is lit; tap another to send it instead.\n" +
@@ -100,8 +100,9 @@ private val GUIDE = listOf(
         "from theirs). Tap the waterfall to move the TX offset (red lines). Halt stops at once. A message unanswered 6 times turns " +
         "transmitting off.\n" +
         B + "The first time, the app asks you to confirm you hold a licence. It transmits only with the IC-705's CI-V connected (to " +
-        "key it) and its USB sound card present - never through the phone's speaker. Set the radio's DATA MOD input to USB, and the " +
-        "transmit level in Settings so the ALC barely moves.",
+        "key it) and its USB sound card (or the WiFi link) present - never through the phone's speaker. Set the radio's DATA MOD " +
+        "input (MENU > SET > Connectors > MOD Input) to USB when using the lead, or WLAN over WiFi, and the transmit level in " +
+        "Settings so the ALC barely moves. To check you are getting out, look up your callsign on pskreporter.info.",
 
     "WSPR" to
         "Decodes WSPR beacons with wsprd, the decoder inside WSJT-X. WSPR stations transmit for 110.6 seconds starting one second " +
@@ -152,6 +153,9 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.8.3 (October 2026): first FT8 transmissions over WiFi, heard across Europe. Calling a station from the FT8 / FT4 list " +
+        "now needs a double-tap (as WSJT-X's double-click), so a stray touch cannot start a call; the licence notice gives the " +
+        "DATA MOD setting for WiFi (WLAN).\n" +
         B + "0.8.2 (October 2026): first tests with the IC-705 over WiFi: control, tuning and FT8 receive work. The link now keeps " +
         "running when another app is open (a notification shows it is), reconnects by itself if WiFi drops or the radio is slow " +
         "to let go of an old session, and logs out when the app closes.\n" +

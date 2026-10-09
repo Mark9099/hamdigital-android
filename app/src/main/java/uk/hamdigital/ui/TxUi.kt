@@ -35,7 +35,7 @@ fun rememberTxGate(vm: MainViewModel): TxGate {
             text = { Text("Transmitting needs an amateur radio licence: you are responsible for what is sent under your callsign, " +
                 "on frequencies and at powers your licence allows. The app keys the IC-705 over its USB lead (CI-V) and sends the " +
                 "audio to the radio's USB sound card; Halt stops a transmission at once, and nothing is ever sent through the phone's speaker.\n\n" +
-                "Set the IC-705 to USB-D with its DATA MOD input on USB (MENU > SET > Connectors > MOD Input), and the power you want. " +
+                "Set the IC-705 to USB-D, its DATA MOD input (MENU > SET > Connectors > MOD Input) to USB when using the lead or WLAN over WiFi, and the power you want. " +
                 "Keep the ALC low: turn the transmit level (Settings) down until the radio's ALC barely moves.") },
             confirmButton = { TextButton({ vm.updateSettings { it.copy(txOk = true) }; pending = null; act() }) { Text("I hold a licence") } },
             dismissButton = { TextButton({ pending = null }) { Text("Cancel") } })
@@ -72,7 +72,7 @@ fun FtTxPanel(qso: FtQso, gate: TxGate) {
         }
     }
     Text(listOfNotNull(q.dx.takeIf { it.isNotEmpty() }?.let { "DX $it ${q.dxGrid}" }, q.rcvd.takeIf { it.isNotEmpty() }?.let { "rcvd $it" }, q.status.ifEmpty { null },
-        if (q.logged) "logged" else null).joinToString("  •  ").ifEmpty { if (qso.myCall.isBlank()) "Set your callsign and locator in Settings to transmit." else "Tap a CQ (or a station calling you) to answer it, or Call CQ. Tap the waterfall to set the TX offset." },
+        if (q.logged) "logged" else null).joinToString("  •  ").ifEmpty { if (qso.myCall.isBlank()) "Set your callsign and locator in Settings to transmit." else "Double-tap a CQ (or a station calling you) to answer it, or Call CQ. Tap the waterfall to set the TX offset." },
         color = if (q.enabled) Pal.Amber else Pal.Muted, fontSize = 12.sp, fontFamily = FontFamily.Default, maxLines = 2)
 }
 

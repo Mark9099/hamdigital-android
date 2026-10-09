@@ -1,12 +1,12 @@
 // FT8 and FT4 page (one screen, two modes): the radio and its bands, a slot bar (time left in the slot, what the last
 // decode found), the waterfall, and the messages heard - newest slot at the top - with UTC, signal (dB), time offset,
 // audio frequency, the message, and the distance to the sender's locator. CQ calls are green, messages to you amber.
-// Show: everything, CQs only, or to you only. Decoding by ft8_lib (MIT). Transmit (FtTxPanel): tap a line to answer
+// Show: everything, CQs only, or to you only. Decoding by ft8_lib (MIT). Transmit (FtTxPanel): double-tap a line to answer
 // that station, or Call CQ; the contact then runs itself (FtQso) and is logged; tap the waterfall for the TX offset.
 package uk.hamdigital.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -79,7 +79,7 @@ fun Ft8Screen(vm: MainViewModel, m: Mode) {
                 val state = rememberLazyListState()
                 LaunchedEffect(list.firstOrNull()?.slotMs) { state.scrollToItem(0) } // a new slot: back to the top
                 LazyColumn(Modifier.fillMaxSize(), state = state) {
-                    items(shown) { d -> DecodeRow(d, shown.firstOrNull { it.slotMs == d.slotMs } === d) { gate.ask { qso.pick(d) } } } // a line each (a gap above each slot)
+                    items(shown) { d -> DecodeRow(d, shown.firstOrNull { it.slotMs == d.slotMs } === d) { gate.ask { qso.pick(d) } } } // a line each (double-tap: call that station) (a gap above each slot)
                     if (shown.isEmpty()) item { Text(if (list.isEmpty()) "Messages heard appear here at the end of each ${if (m == Mode.FT4) "7.5" else "15"} s slot. " +
                         "Tune the IC-705 to the ${m.title} frequency (a band chip above) in USB-D." else "Nothing to show with this filter.",
                         color = Pal.Dim, fontSize = 13.sp, modifier = Modifier.padding(8.dp)) }
@@ -97,11 +97,12 @@ private fun DecodeHeader() = Row(Modifier.fillMaxWidth().padding(top = 4.dp)) { 
     Text("Message", Modifier.weight(1f), color = Pal.Muted, fontSize = 11.sp); Text("km", color = Pal.Muted, fontSize = 11.sp)
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun DecodeRow(d: FtDecode, firstOfSlot: Boolean, onPick: () -> Unit) {
     val bg = when { d.toMe -> Color(0x40FFB432); d.cq -> Color(0x3000FF88); else -> Color.Transparent } // amber: to you; green: CQ
     if (firstOfSlot) Spacer(Modifier.fillMaxWidth().padding(top = 3.dp).height(1.dp).background(Pal.Tert)) // between slots
-    Row(Modifier.fillMaxWidth().background(bg).clickable(onClick = onPick).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) { // tap: answer / call this station
+    Row(Modifier.fillMaxWidth().background(bg).combinedClickable(onClick = {}, onDoubleClick = onPick).padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) { // double-tap: answer / call this station (as WSJT-X's double-click: a stray tap never starts a call)
         val mono = FontFamily.Monospace
         Text(d.utc, Modifier.width(COLS[0]), color = Pal.Text2, fontSize = 13.sp, fontFamily = mono)
         Text("%+d".format(d.snr), Modifier.width(COLS[1]), color = if (d.snr >= -10) Pal.Green else Pal.Text, fontSize = 13.sp, fontFamily = mono)

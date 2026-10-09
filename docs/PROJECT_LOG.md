@@ -69,7 +69,15 @@ Newest first.
   - `files/test/sstv/` present: every SSTV mode encoded and decoded (colour bars + gradient + "M7JVY"; Robot 36 also
     with noise). Logs the mode named, the size and the mean difference.
   - `files/test/freedv/*.raw`: each FreeDV mode round trip at 5 dB.
-- Built; to be checked on the phone (it was off USB), then on the air.
+- **Checked on the S23 (DevTest, no radio):**
+  - SSTV: all 15 modes came back as their own mode at the right size. The mean colour difference from the picture
+    sent was 2–7 (PD, Scottie, Robot, Martin 1) and 13 (Martin 2), out of 255. Decoding ran at 100–150× real time
+    (PD 290's 290 s in 1.9 s).
+  - Robot 36 with noise: 26 dB → diff 8, 20 → 12, 14 → 19, 10 → 27; at 6 dB in 3 kHz the VIS code is missed (no
+    picture, though the scope still shows the lines). Normal for analogue SSTV.
+  - FreeDV at 5 dB: 700D sync 21/23 frames, speech -1.5 dB of the input; 700E 40/42, -1.3 dB; 1600 143/161, -0.5 dB.
+    It runs at about 100× real time.
+- To be checked on the air.
 
 ## 2026-10-09: 0.10.5 (fixes from the on-air tests)
 

@@ -33,7 +33,7 @@ object DevTest {
         val cols = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF00.toInt(), 0xFF00FFFF.toInt(), 0xFF00FF00.toInt(), 0xFFFF00FF.toInt(), 0xFFFF0000.toInt(), 0xFF0000FF.toInt(), 0xFF000000.toInt())
         for (y in 0 until 480) for (x in 0 until 640) bars.setPixel(x, y, if (y < 320) cols[x * 8 / 640] else android.graphics.Color.rgb(x * 255 / 639, x * 255 / 639, x * 255 / 639))
         val rnd = java.util.Random(1)
-        for (o in uk.hamdigital.core.SstvTx.modes) for (noise in if (o.name == "Robot 36") listOf(0f, 0.5f) else listOf(0f)) {
+        for (o in uk.hamdigital.core.SstvTx.modes) for (noise in if (o.name == "Robot 36") listOf(0f, 0.05f, 0.1f, 0.2f, 0.3f, 0.5f) else listOf(0f)) {
             val t0 = System.currentTimeMillis()
             val pic = uk.hamdigital.core.SstvTx.compose(bars, o, "M7JVY", "IO91")
             val audio = uk.hamdigital.core.SstvTx.encode(pic, o, 0.5f)
@@ -49,7 +49,7 @@ object DevTest {
                 val a = im.pixels[y * im.width + x]; val b = pic.getPixel(x, y)
                 diff += kotlin.math.abs((a shr 16 and 255) - (b shr 16 and 255)) + kotlin.math.abs((a shr 8 and 255) - (b shr 8 and 255)) + kotlin.math.abs((a and 255) - (b and 255)); n += 3
             }
-            Log.i(TAG, "sstv ${o.name}${if (noise > 0) " +noise" else ""}: ${audio.size / 12000.0}s audio -> ${if (done) "${d.modeName()} ${im.width}x${im.height}, mean diff ${if (n > 0) diff / n else -1}" else "NO PICTURE (mode ${d.modeName()}, line ${im.line})"} in ${System.currentTimeMillis() - t0} ms")
+            Log.i(TAG, "sstv ${o.name}${if (noise > 0) " +noise %.0f dB in 3 kHz".format(10 * Math.log10(0.125 / ((noise * 0.5) * (noise * 0.5) * 0.5))) else ""}: ${audio.size / 12000.0}s audio -> ${if (done) "${d.modeName()} ${im.width}x${im.height}, mean diff ${if (n > 0) diff / n else -1}" else "NO PICTURE (mode ${d.modeName()}, line ${im.line})"} in ${System.currentTimeMillis() - t0} ms")
         }
     }
 

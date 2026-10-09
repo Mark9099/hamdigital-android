@@ -31,5 +31,13 @@
             </intent-filter>
             <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" android:resource="@xml/usb_device_filter" />
         </activity>
+        <!-- Shares the logbook (ADIF) with other apps: e-mail, Drive, a logging program. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="uk.hamdigital.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

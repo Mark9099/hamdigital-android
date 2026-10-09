@@ -73,6 +73,29 @@ fun SettingsScreen(vm: MainViewModel) {
                 "page tunes it. The IC-705's address is A4 unless changed (MENU > SET > Connectors > CI-V > CI-V Address). Leave \"CI-V USB " +
                 "Echo Back\" off and \"CI-V Transceive\" on (the defaults).", color = Pal.Muted, fontSize = 13.sp, lineHeight = 17.sp)
 
+            Heading("Transmit")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Transmit level ${s.txLevel}%", color = Pal.Text, fontSize = 15.sp, modifier = Modifier.width(170.dp))
+                var lvl by remember(s.txLevel) { mutableFloatStateOf(s.txLevel.toFloat()) } // being slid
+                Slider(lvl, { lvl = it }, Modifier.weight(1f), valueRange = 1f..100f, onValueChangeFinished = { vm.updateSettings { it.copy(txLevel = lvl.toInt()) } })
+            }
+            Text("The audio level sent to the IC-705 for the digital modes. Start low and raise it until the radio gives the power you " +
+                "want with its ALC meter barely moving - too much distorts the signal and spreads it over other stations.",
+                color = Pal.Muted, fontSize = 13.sp, lineHeight = 17.sp)
+            if (s.txOk) OutlinedButton({ vm.updateSettings { it.copy(txOk = false) } }) { Text("Show the licence notice again") } // before the next transmission
+
+            Heading("Logbook")
+            val n = remember { uk.hamdigital.core.Logbook.count(ctx) } // contacts logged
+            Text("$n contacts logged (ADIF file). Completed FT8 and FT4 contacts are added automatically.", color = Pal.Text2, fontSize = 14.sp)
+            OutlinedButton({                                // share the log with another app
+                val f = uk.hamdigital.core.Logbook.file(ctx)
+                if (f.exists()) {
+                    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "uk.hamdigital.files", f)
+                    ctx.startActivity(android.content.Intent.createChooser(android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(android.content.Intent.EXTRA_STREAM, uri).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share the logbook"))
+                }
+            }, enabled = n > 0) { Text("Share the logbook (ADIF)") }
+
             Heading("Startup screen")
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(s.showSplash, { b -> vm.updateSettings { it.copy(showSplash = b) } })

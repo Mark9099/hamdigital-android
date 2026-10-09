@@ -151,3 +151,66 @@ int ft8_decode_slot(const int16_t *samples, int n, bool ft4, char lines[][FT8_LI
     pthread_mutex_unlock(&g_mx);
     return nlines;
 }
+
+// ---- transmit: ft8_lib's demo/gen_ft8.c (MIT) - message -> tones -> GFSK audio ----
+#define FT8_SYMBOL_BT 2.0f                           // symbol smoothing filter bandwidth factor (BT), as gen_ft8.c
+#define FT4_SYMBOL_BT 1.0f
+#define GFSK_CONST_K 5.336446f                       // == pi * sqrt(2 / log(2))
+
+static void gfsk_pulse(int n_spsym, float symbol_bt, float *pulse) // gen_ft8.c
+{
+    for (int i = 0; i < 3 * n_spsym; ++i) {
+        float t = i / (float)n_spsym - 1.5f;
+        float arg1 = GFSK_CONST_K * symbol_bt * (t + 0.5f);
+        float arg2 = GFSK_CONST_K * symbol_bt * (t - 0.5f);
+        pulse[i] = (erff(arg1) - erff(arg2)) / 2;
+    }
+}
+
+static void synth_gfsk(const uint8_t *symbols, int n_sym, float f0, float symbol_bt, float symbol_period, int signal_rate, float *signal) // gen_ft8.c
+{
+    int n_spsym = (int)(0.5f + signal_rate * symbol_period); // samples per symbol
+    int n_wave = n_sym * n_spsym;                    // output samples
+    float hmod = 1.0f;
+    float dphi_peak = 2 * M_PI * hmod / n_spsym;
+    float *dphi = (float *)malloc(sizeof(float) * (n_wave + 2 * n_spsym)); // (gen_ft8.c: on the stack)
+    for (int i = 0; i < n_wave + 2 * n_spsym; ++i) dphi[i] = 2 * M_PI * f0 / signal_rate; // shift up by f0
+    float *pulse = (float *)malloc(sizeof(float) * 3 * n_spsym);
+    gfsk_pulse(n_spsym, symbol_bt, pulse);
+    for (int i = 0; i < n_sym; ++i) {
+        int ib = i * n_spsym;
+        for (int j = 0; j < 3 * n_spsym; ++j) dphi[j + ib] += dphi_peak * symbols[i] * pulse[j];
+    }
+    for (int j = 0; j < 2 * n_spsym; ++j) {          // dummy symbols at the start and end, equal to the first and last
+        dphi[j] += dphi_peak * pulse[j + n_spsym] * symbols[0];
+        dphi[j + n_sym * n_spsym] += dphi_peak * pulse[j] * symbols[n_sym - 1];
+    }
+    float phi = 0;
+    for (int k = 0; k < n_wave; ++k) { signal[k] = sinf(phi); phi = fmodf(phi + dphi[k + n_spsym], 2 * M_PI); } // the waveform
+    int n_ramp = n_spsym / 8;                        // envelope shaping of the first and last symbols
+    for (int i = 0; i < n_ramp; ++i) {
+        float env = (1 - cosf(2 * M_PI * i / (2 * n_ramp))) / 2;
+        signal[i] *= env; signal[n_wave - 1 - i] *= env;
+    }
+    free(dphi); free(pulse);
+}
+
+int ft8_encode_audio(const char *text, bool ft4, float f0, int16_t *out, int max_samples, float amplitude)
+{
+    pthread_mutex_lock(&g_mx);
+    ftx_message_t msg;
+    ftx_message_rc_t rc = ftx_message_encode(&msg, &g_hash_if, text); // pack the text (the hash table learns <calls>)
+    pthread_mutex_unlock(&g_mx);
+    if (rc != FTX_MESSAGE_RC_OK) return -1;          // not a message FT8 / FT4 can send
+    int num_tones = ft4 ? FT4_NN : FT8_NN;
+    uint8_t tones[FT4_NN > FT8_NN ? FT4_NN : FT8_NN];
+    if (ft4) ft4_encode(msg.payload, tones); else ft8_encode(msg.payload, tones);
+    float period = ft4 ? FT4_SYMBOL_PERIOD : FT8_SYMBOL_PERIOD;
+    int n = (int)(0.5f + num_tones * period * 12000); // samples of signal
+    if (n > max_samples) return -1;
+    float *sig = (float *)malloc(sizeof(float) * n);
+    synth_gfsk(tones, num_tones, f0, ft4 ? FT4_SYMBOL_BT : FT8_SYMBOL_BT, period, 12000, sig);
+    for (int i = 0; i < n; i++) out[i] = (int16_t)(sig[i] * amplitude * 32767.0f); // to 16-bit at the level asked
+    free(sig);
+    return n;
+}

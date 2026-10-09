@@ -1,5 +1,5 @@
-// The user's settings, kept with DataStore: station (callsign, locator), where the receive audio comes from, and
-// whether the startup screen shows.
+// The user's settings, kept with DataStore: station (callsign, locator), where the receive audio comes from, whether
+// the startup screen shows, the radio's CI-V address, and transmitting (audio level, licence notice accepted).
 package uk.hamdigital.core
 
 import android.content.Context
@@ -26,6 +26,8 @@ data class Settings(
     val audio: AudioChoice = AudioChoice.AUTO,        // receive audio source
     val showSplash: Boolean = true,                   // startup screen at start
     val civAddr: Int = 0xA4,                          // the IC-705's CI-V address (its default)
+    val txLevel: Int = 30,                            // transmit audio level, % of full scale
+    val txOk: Boolean = false,                        // the licence notice has been accepted (transmitting allowed)
 )
 
 class SettingsStore(private val ctx: Context) {
@@ -34,6 +36,8 @@ class SettingsStore(private val ctx: Context) {
     private val kAudio = stringPreferencesKey("audio")
     private val kSplash = booleanPreferencesKey("show_splash")
     private val kCiv = intPreferencesKey("civ_address")
+    private val kTxLevel = intPreferencesKey("tx_level")
+    private val kTxOk = booleanPreferencesKey("tx_ok")
 
     val flow: Flow<Settings> = ctx.store.data.map { p -> // the settings, as they change
         Settings(
@@ -42,6 +46,8 @@ class SettingsStore(private val ctx: Context) {
             audio = AudioChoice.entries.firstOrNull { it.name == p[kAudio] } ?: AudioChoice.AUTO,
             showSplash = p[kSplash] ?: true,
             civAddr = p[kCiv] ?: 0xA4,
+            txLevel = p[kTxLevel] ?: 30,
+            txOk = p[kTxOk] ?: false,
         )
     }
 
@@ -52,6 +58,8 @@ class SettingsStore(private val ctx: Context) {
             p[kAudio] = s.audio.name
             p[kSplash] = s.showSplash
             p[kCiv] = s.civAddr
+            p[kTxLevel] = s.txLevel
+            p[kTxOk] = s.txOk
         }
     }
 }

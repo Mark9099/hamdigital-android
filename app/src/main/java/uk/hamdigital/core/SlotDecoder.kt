@@ -49,6 +49,7 @@ class SlotDecoder(val ft4: Boolean) {
         val lines = try { Ft8Native.decode(out, out.size, ft4) } catch (e: Throwable) { emptyArray() } // ft8_lib
         val got = lines.mapNotNull { parse(slot, it) }.sortedBy { it.freq } // by frequency within the slot
         _decodes.value = (got + _decodes.value).take(600) // newest slot first; the most recent 600 kept
+        (if (ft4) FtQso.FT4 else FtQso.FT8).onDecodes(got) // a contact in progress moves on (auto-sequencing)
         lastCount.value = got.size; busy.value = false
     }
 

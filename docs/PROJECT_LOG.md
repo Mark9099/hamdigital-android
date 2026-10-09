@@ -2,6 +2,22 @@
 
 Newest first.
 
+## 2026-10-09: 0.12.1 (SSTV receive frame)
+
+- **Asked by the user:** "is the sstv receive box the right size? doesnt seem right".
+- **What was wrong:** the receive box had no frame and no shape: it took all the leftover height (weight 1f).
+  - Between pictures it showed Robot36's scope cut to 256 lines: a 640x256 strip (2.5:1) of coloured band noise
+    floating in the middle of the page. It looked like a wrongly sized picture.
+  - "Received" sat far below it.
+- **Fix:**
+  - A 4:3 frame (SSTV's picture shape) with a dark background and a border, straight under the status line. It is
+    `weight(1f, fill = false).aspectRatio(4/3)`, so it shrinks on a short screen.
+  - The scope now shows its latest 480 lines (640x480, 4:3), fills the frame, and is labelled "Scan lines (no picture
+    yet)".
+  - A picture is shown whole at its own proportions (ContentScale.Fit, as MMSSTV shows 320x256 and so on).
+  - The received strip follows straight after.
+- Checked on the S23 by screenshot. Released: https://github.com/Mark9099/hamdigital-android/releases/tag/v0.12.1 (APK SHA-256 cf525d33125c9c4b33565612d8d20bb800cea83e1f32dd1274949af005150a17).
+
 ## 2026-10-09: 0.12.0 (FreeDV RADE V1)
 
 - **Asked for by the user:** "number 4 and 8" - 8 was FreeDV RADE.

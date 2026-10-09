@@ -197,7 +197,9 @@ private val GUIDE = listOf(
         "(1200 Hz, red line) and the picture's tones between black (1500) and white (2300).\n\n" +
         B + "Receive: a picture starts with its VIS code, which names the mode (Robot 36 and 72, Martin 1 and 2, Scottie 1, 2 " +
         "and DX, PD 50 to 290, Wraase SC2-180); it then arrives line by line - the line above it says which mode and how far. " +
-        "Between pictures the box shows the scan lines as they come in, or the last picture. Each finished picture is saved " +
+        "The picture frame is 4:3, SSTV's shape; a picture is shown whole in it, at its own proportions. Between pictures " +
+        "the frame shows the scan lines as they come in (marked \"Scan lines\": band noise looks like coloured snow), or the " +
+        "last picture. Each finished picture is saved " +
         "and added to the strip below, newest first; tap one to see it full size, share it, save it to Photos (Pictures/HF " +
         "Digital Modes) or delete it.\n" +
         B + "Send: choose a picture or take a photo, choose the mode (its size and time on the air: Robot 36 is 36 s, Martin 1 " +
@@ -252,6 +254,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.12.1 (October 2026): SSTV receive has a proper picture frame (4:3, with the list of pictures right under " +
+        "it); between pictures the scan lines fill the frame and are labelled, so band noise is not taken for a picture.\n" +
         B + "0.12.0 (October 2026): FreeDV RADE - FreeDV's newest voice mode (rade_c with Opus's FARGAN vocoder), on the " +
         "FreeDV page beside 700D, 700E and 1600, receive and talk, with callsigns sent and shown as freedv-gui does. The " +
         "end of every FreeDV over now goes out in full before the radio unkeys. Releases: the app is on GitHub's Releases " +

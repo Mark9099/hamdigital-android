@@ -18,6 +18,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -89,7 +91,7 @@ private fun SstvReceive(mod: Modifier) {
             val l = SstvRx.lines.value
             if (l != seen) { seen = l
                 view = if (img.line in 0 until img.height) Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888) // the picture so far (rows not yet received are black)
-                else if (lastShown == null) { val h = 256; val off = scope.width * (scope.line + scope.height / 2 - h) // the latest 256 scan lines, newest at the bottom
+                else if (lastShown == null) { val h = minOf(scope.width * 3 / 4, scope.height / 2); val off = scope.width * (scope.line + scope.height / 2 - h) // the latest 480 scan lines (4:3, as the frame), newest at the bottom
                     if (off >= 0) Bitmap.createBitmap(scope.pixels, off, scope.width, scope.width, h, Bitmap.Config.ARGB_8888) else null } else null
             }
             delay(200)
@@ -102,9 +104,13 @@ private fun SstvReceive(mod: Modifier) {
             else -> "Listening for the next picture (its VIS code)" + if (modeName.isNotEmpty()) "  •  last: $modeName" else ""
         }, color = if (receiving) Pal.Green else Pal.Text2, fontSize = 13.sp, lineHeight = 17.sp)
         val shown = if (receiving) view else lastShown ?: view
-        Box(Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-            if (shown != null) Image(shown.asImageBitmap(), "SSTV picture", Modifier.fillMaxSize().clickable(enabled = !receiving && pics.isNotEmpty()) { open = pics.firstOrNull() }, contentScale = ContentScale.Fit)
+        val isScope = !receiving && lastShown == null       // (the scan lines, not a picture)
+        Box(Modifier.padding(vertical = 4.dp).fillMaxWidth().weight(1f, fill = false).aspectRatio(4f / 3f) // the picture frame: 4:3, SSTV's shape (smaller if the page is short)
+            .background(androidx.compose.ui.graphics.Color(0xFF05080C)).border(1.dp, Pal.Tert), contentAlignment = Alignment.Center) {
+            if (shown != null) Image(shown.asImageBitmap(), "SSTV picture", Modifier.fillMaxSize().clickable(enabled = !receiving && pics.isNotEmpty()) { open = pics.firstOrNull() },
+                contentScale = if (isScope) ContentScale.FillBounds else ContentScale.Fit) // scan lines fill the frame; a picture is shown whole, its own shape
             else Text("Pictures appear here as they arrive.", color = Pal.Dim, fontSize = 13.sp)
+            if (isScope && shown != null) Text("Scan lines (no picture yet)", Modifier.align(Alignment.TopStart).background(androidx.compose.ui.graphics.Color(0xAA000000)).padding(horizontal = 6.dp, vertical = 2.dp), color = Pal.Text2, fontSize = 11.sp) // (so the noise is not taken for a picture)
         }
         Text(if (pics.isEmpty()) "Received: none yet" else "Received (${pics.size}) - tap one", color = Pal.Muted, fontSize = 12.sp)
         LazyRow(Modifier.fillMaxWidth().height(76.dp).padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

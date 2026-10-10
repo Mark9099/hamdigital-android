@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import java.io.ByteArrayOutputStream
 
 /** How a mode wants the radio: upper or lower sideband with DATA on, or CW. */
-enum class RigMode(val label: String) { USB_D("USB-D"), LSB_D("LSB-D"), CW("CW") }
+enum class RigMode(val label: String) { USB_D("USB-D"), LSB_D("LSB-D"), CW("CW"), FM_D("FM-D") } // (FM-D: APRS / packet on VHF / UHF)
 
 /** The radio as last heard. */
 data class RigState(
@@ -196,12 +196,14 @@ object Ic705 {
             RigMode.CW -> { send(0x06, 0x03, 0x01); send(0x1A, 0x06, 0x00, 0x00) }    // CW, filter 1; DATA off
             RigMode.USB_D -> { send(0x06, 0x01, 0x01); send(0x1A, 0x06, 0x01, 0x01) } // USB, filter 1; DATA on (D1), filter 1
             RigMode.LSB_D -> { send(0x06, 0x00, 0x01); send(0x1A, 0x06, 0x01, 0x01) } // LSB (SSTV below 10 MHz), DATA on
+            RigMode.FM_D -> { send(0x06, 0x05, 0x01); send(0x1A, 0x06, 0x01, 0x01) }  // FM, filter 1; DATA on (APRS / packet)
         }
     }
 
     /** Is the radio in mode [m] now? */
     fun isIn(m: RigMode, s: RigState = state.value) = when (m) {
         RigMode.CW -> s.mode.startsWith("CW"); RigMode.USB_D -> s.mode == "USB" && s.data; RigMode.LSB_D -> s.mode == "LSB" && s.data
+        RigMode.FM_D -> s.mode == "FM" && s.data
     }
 
     /** Tune to a mode's dial frequency and set its mode. */

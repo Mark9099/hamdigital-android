@@ -62,6 +62,7 @@ private fun ModePageFor(vm: MainViewModel, m: Mode) = when (m) {
     Mode.SSTV -> SstvScreen(vm)                                // working: Robot36 + SSTV Encoder 2
     Mode.FREEDV -> FreeDvScreen(vm)                            // working: codec2's FreeDV
     Mode.WEFAX -> WefaxScreen(vm)                              // working: fldigi's WEFAX receiver
+    Mode.APRS -> AprsScreen(vm)                                // working: Dire Wolf
     else -> ComingScreen(vm, m)                                // the waterfall until its decoder arrives
 }
 

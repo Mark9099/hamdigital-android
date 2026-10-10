@@ -131,6 +131,27 @@ object DevTest {
         Log.i(TAG, "wefax ${f.name}: %.0f s -> %s| kept: %s| %d ms".format(s.size / 11025.0, states, kept.ifEmpty { "none" }, System.currentTimeMillis() - t0))
     }
 
+    /** APRS / packet through Dire Wolf (the JNI): three frames sent at 1200 and 300 baud at 12 kHz, noise added at several
+     *  SNRs, received again: how many come back, and (at the best SNR) each decode line. */
+    private fun aprs() {
+        val frames = listOf("M7JVY-7>APDR16,WIDE1-1,WIDE2-1:=5130.75N/00012.25W>Mobile, HF Digital Modes test",
+            "M7JVY>APRS,WIDE2-1::G4ABC    :Hello from the app{01",
+            "M7JVY-10>APRS,TCPIP*:@101215z5130.00N/00010.00W_090/005g010t055r000p000P000h80b10132")
+        val A = uk.hamdigital.engine.AprsNative; val rnd = java.util.Random(6); val rate = 12000
+        for (baud in listOf(1200, 300)) for (snr in listOf(20.0, 10.0, 5.0, 0.0)) {
+            A.init(baud, rate); var got = 0; val t0 = System.currentTimeMillis(); var secs = 0.0
+            for (f in frames) {
+                val a = A.encode(f, baud, rate, 0.5) ?: run { Log.i(TAG, "aprs: not a frame: $f"); null } ?: continue
+                var p = 0.0; a.forEach { p += it * it.toDouble() }; p /= a.size
+                val sd = Math.sqrt(p / Math.pow(10.0, snr / 10) * (rate / 2.0) / 2500.0)
+                val s = ShortArray(a.size) { (a[it] + rnd.nextGaussian() * sd).toInt().coerceIn(-32768, 32767).toShort() }
+                A.process(s, s.size); secs += s.size / rate.toDouble()
+                val out = A.take(); if (out.isNotEmpty()) { got++; if (snr == 20.0) out.trim().lines().forEach { Log.i(TAG, "  " + it.replace('\t', '|')) } }
+            }
+            Log.i(TAG, "aprs $baud baud, SNR %+.0f dB: %d of %d frames (%.1f s of audio, %d ms)".format(snr, got, frames.size, secs, System.currentTimeMillis() - t0))
+        }
+    }
+
     fun run(ctx: Context) = Thread {
         val dir = File(ctx.filesDir, "test")       // (the app's own folder: adb copies in with run-as)
         Log.i(TAG, "dev test: ${dir.absolutePath}")
@@ -159,6 +180,7 @@ object DevTest {
         dir.resolve("rade").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { rade(it) } // RADE: a recording off air
         if (dir.resolve("kb").exists()) kb()           // RTTY / PSK / Olivia: send and receive through the JNI
         dir.resolve("wefax").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { wefax(it) } // weather fax: a broadcast
+        if (dir.resolve("aprs").exists()) aprs()       // APRS / packet: send and receive through Dire Wolf
         Log.i(TAG, "dev test done")
     }.start()
 }

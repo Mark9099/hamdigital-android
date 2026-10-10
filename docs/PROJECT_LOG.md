@@ -2,6 +2,36 @@
 
 Newest first.
 
+## 2026-10-10: 0.16.0 (APRS / packet)
+
+- **Item 4 of the new-modes list.** Dire Wolf (wb2osz/direwolf eda1383, 1.8.2, GPL v2 or later - compatible with
+  GPL v3; the header wording spans two lines, so a one-line grep missed it at first).
+- **Taken:** the sources of its `atest` (receive) and `gen_packets` (send) tools, copied unchanged into `cpp/direwolf/`.
+  - `dw_glue.c` replaces their main programs, used the way they use the code: samples to
+    `multi_modem_process_sample`, frames in `dlq_rec_frame` (formatted + `decode_aprs`, one tab-separated line), and
+    transmit with `ax25_from_text` / `layer2_send_frame`, the audio collected from `audio_put`.
+  - Details in `direwolf/ANDROID_CHANGES.txt`.
+- **Build:**
+  - A static library `direwolf_hd`, with `HAVE_STRLCPY` / `HAVE_STRLCAT`. Without them `direwolf.h` renames strlcpy
+    to its own and clashes with bionic's.
+  - No symbol clashes with the other decoders.
+  - A Windows PC build is not practical (Dire Wolf's Windows path needs its MinGW set-up), so it is tested on the
+    phone.
+- **Radio:** `RigMode.FM_D` (CI-V 06 05 + DATA on); `Mode.rigMode` gives FM-D for APRS above 30 MHz.
+- **App:**
+  - `AprsNative`, `core/Aprs.kt`: heard list, stations, places, messages to you.
+  - Sending: a beacon from the locator's middle (`=` with symbol and comment) and numbered messages; TOCALL APZHDM;
+    path WIDE1-1,WIDE2-1 on 2 m, WIDE2-1 on HF.
+  - `AprsScreen`: speed follows the radio (1200 above 30 MHz, else 300), Heard / Stations / Messages tabs, Map,
+    Beacon with symbol chips and comment.
+  - Mode dials: 2 m 144.800, ISS 145.825, 30 m 10147.6.
+- **Phone (DevTest `files/test/aprs/`):**
+  - 1200 baud: 3 of 3 frames down to 10 dB.
+  - 300 baud: 3 of 3 down to 5 dB.
+  - Position, message and weather decoded. The device field is blank: `tocalls.yaml` is not included.
+- **On air:** the page tuned 144.800 FM-D at 1200 baud; nothing was heard in 3 minutes. The phone then showed the
+  Wi-Fi panel (the user using it, or the WiFi changed), so testing stopped there. To do: listen with a 2 m antenna.
+
 ## 2026-10-10: 0.15.0 (weather fax), and Olivia / PSK63 on the phone
 
 - **Item 3 of the new-modes list: WEFAX receive.**

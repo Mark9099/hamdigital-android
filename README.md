@@ -1,7 +1,7 @@
 # HF Digital Modes (Android)
 
 HF Digital Modes is an all-in-one Android app for amateur-radio HF digital modes: FT8, FT4, WSPR, JS8Call, RTTY, PSK31,
-CW, SSTV, FreeDV digital voice (RADE, 700D, 700E, 1600), Olivia and weather fax. It is made for the Icom IC-705, connected to the phone or tablet by a single USB lead. Each mode has its own
+CW, SSTV, FreeDV digital voice (RADE, 700D, 700E, 1600), Olivia, weather fax and APRS / packet. It is made for the Icom IC-705, connected to the phone or tablet by a single USB lead. Each mode has its own
 page, reached from a menu after the startup screen. The look matches the HF Propagation app. A logbook keeps every
 contact in ADIF, and can import, edit, search, share and save it.
 

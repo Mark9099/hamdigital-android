@@ -67,6 +67,8 @@ package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` 
     page (the keyboard page): tones / bandwidth 4/125 to 32/1000, 8/250 first. Checked on a PC; phone and air to come.
 15. **Weather fax (0.15.0).** fldigi's WEFAX receiver (GPL v3), its own page: station chips (DWD Hamburg, Northwood),
     APT / phasing / correlation, Start now / Stop, charts kept as PNGs. Checked on a PC, on the phone, and on air (DWD 7880).
+16. **APRS / packet (0.16.0).** Dire Wolf (GPL v2+): receive and send, 1200 baud FM (2 m, ISS; the IC-705 in FM-D) and
+    300 baud HF; heard, stations, map, messages, beacon from the locator. Checked on the phone (DevTest); air to come.
 
 ## Testing
 

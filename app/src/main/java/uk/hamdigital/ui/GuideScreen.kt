@@ -24,7 +24,7 @@ private const val B = "•  "                           // bullet
 private val GUIDE = listOf(
     "Getting started" to
         "HF Digital Modes brings the common HF digital modes together in one app for the Icom IC-705: FT8, FT4, WSPR, JS8Call, RTTY, " +
-        "PSK31 (and 63, 125), Olivia, CW, SSTV, FreeDV voice and weather fax. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
+        "PSK31 (and 63, 125), Olivia, CW, SSTV, FreeDV voice, weather fax and APRS / packet. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
         "1. Settings: enter your callsign and locator.\n" +
         "2. Connect the IC-705's USB-C socket to the phone or tablet (a USB-C to USB-C lead, or an OTG adapter). The menu shows " +
         "\"IC-705 connected\" when Android sees the radio's sound card.\n" +
@@ -264,6 +264,24 @@ private val GUIDE = listOf(
         B + "Settings: IOC 576 is what nearly all stations use (288 for a few); Shift 850 for DWD's older setting (800 is " +
         "standard); the filter - narrow as standard, wider for a strong, clean signal.",
 
+    "APRS / Packet" to
+        "APRS (positions, messages, weather and more, by radio) and AX.25 packet, decoded and sent by Dire Wolf (John " +
+        "Langner's software TNC).\n\n" +
+        B + "Frequencies: 2 m (144.800 MHz - APRS across Europe) and the ISS (145.825 MHz: its digipeater, when it passes " +
+        "overhead) are 1200 baud FM - the IC-705 is set to FM-D, and needs a 2 m antenna. 30 m (10.1476 MHz) is HF APRS at " +
+        "300 baud, USB-D. The speed follows the radio's frequency.\n" +
+        B + "Heard: every frame, newest first - the time (UTC), the station (and the digipeater it came through, \"via\"), " +
+        "what it is (position, weather, message, object ...) and its text; the distance from you when it gave a position. " +
+        "Stations: each station's latest. Map (top right): the stations with a position, green if heard in the last half " +
+        "hour.\n" +
+        B + "Beacon sends your position once: from your locator's middle (Settings) - so not your exact address - with the " +
+        "symbol chosen (home, car, on foot ...) and your comment. Send it now and then, not often: on 2 m every 10-30 minutes " +
+        "is plenty.\n" +
+        B + "Messages: APRS messages to you, and the ones you send. Type the station and the text, then Send; tap a message " +
+        "to reply. Messages you receive are not acknowledged automatically, so the sender may repeat them.\n" +
+        B + "Your frames go out through the digipeaters (WIDE1-1,WIDE2-1 on 2 m; WIDE2-1 on HF) as from the app " +
+        "(APZHDM). The transmit level is Settings > Transmit level, as for the other modes.",
+
     "Logbook" to
         "Every contact you make, kept in an ADIF file - the format every logging program, and the LoTW, QRZ, Club Log and eQSL upload " +
         "pages, read. Open it from the menu.\n\n" +
@@ -291,6 +309,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.16.0 (October 2026): APRS and packet - Dire Wolf's receiver and transmitter: 2 m and the ISS (1200 baud " +
+        "FM, the IC-705 in FM-D) and HF (300 baud); heard list, stations, map, messages, position beacon.\n" +
         B + "0.15.0 (October 2026): Weather fax - receive weather charts (fldigi's receiver) from DWD Hamburg and " +
         "Northwood; charts kept as pictures, with zoom. Pictures (SSTV too) can be zoomed full size.\n" +
         B + "0.14.0 (October 2026): Olivia - robust keyboard chat (fldigi's modem with Pawel Jalocha's MFSK engine), " +

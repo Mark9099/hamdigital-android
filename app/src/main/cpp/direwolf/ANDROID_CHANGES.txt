@@ -1,0 +1,32 @@
+Dire Wolf for HF Digital Modes: where these files come from, and what was changed.
+
+Dire Wolf, an amateur-radio packet TNC, by John Langner WB2OSZ (github.com/wb2osz/direwolf, commit eda1383, 2026-05-19,
+version 1.8.2). GPL v2 "or (at your option) any later version" (LICENSE; every file's header), so it can be part of
+this GPL v3 app.
+
+Copied unchanged from src/: the sources of Dire Wolf's own test tools - atest (the receiver: demod, demod_afsk,
+demod_psk, demod_9600, dsp, multi_modem, hdlc_rec, hdlc_rec2, rrbb, fcs_calc, fx25_*, il2p_*, ax25_pad, ax25_pad2,
+decode_aprs, deviceid, telemetry, latlong, symbols, tt_text, dwgps, dwgpsnmea, serial_port, dtime_now, textcolor, ais)
+and gen_packets (the transmitter: hdlc_send, gen_tone, fx25_send, il2p_send, morse, dtmf, encode_aprs) - and all of
+src/*.h (some are only included, not used).
+
+Written for this app:
+  dw_glue.c / dw_glue.h  In place of atest.c and gen_packets.c (their main programs are not included). Receive the way
+                atest does it: Dire Wolf's audio configuration (atest's defaults - profile A, no fix-bits, the APRS sanity
+                test; 1200 baud 1200/2200 Hz, or 300 baud 1600/1800 Hz with seven demodulators 30 Hz apart, as Dire
+                Wolf's user guide suggests for HF), samples straight to multi_modem_process_sample, and each good frame
+                in dlq_rec_frame - formatted (ax25_format_addrs, the station heard, the audio level) and decoded
+                (decode_aprs) into one tab-separated line for the app. Transmit the way gen_packets does it: a frame in
+                TNC2 monitor format (ax25_from_text), layer2_preamble_postamble / layer2_send_frame, the audio collected
+                from audio_put. Stand-ins for ptt_set, get_input and audio_get (not used here).
+  ../aprs_jni.c The JNI bridge (uk.hamdigital.engine.AprsNative), with a lock (Dire Wolf is not thread-safe).
+
+Build (../CMakeLists.txt): a static library of its own (its header names - audio.h, dsp.h ... - stay apart), with the
+definitions Dire Wolf's CMakeLists.txt sets (MAJOR_VERSION 1, MINOR_VERSION 8, PATCH_VERSION 2, _GNU_SOURCE) and
+HAVE_STRLCPY / HAVE_STRLCAT (Android's C library has them, as its check_symbol_exists would find).
+
+Not included: tocalls.yaml (the device / application table deviceid.c reads), so the device field is left empty.
+
+Checked on the S23 (DevTest, files/test/aprs/): a position report, a message and a weather report, sent at 1200 and
+300 baud with noise and received again - all three at 1200 baud down to 10 dB SNR (2500 Hz), at 300 baud down to 5 dB,
+with positions, the message and the weather decoded.

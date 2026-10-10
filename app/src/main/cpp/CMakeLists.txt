@@ -32,6 +32,16 @@ target_compile_options(codec2_hd PRIVATE -O2 -w)     # optimised; upstream's war
 target_include_directories(codec2_hd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # (<codec2/version.h> is in codec2/codec2/)
 set_source_files_properties(freedv_jni.c PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # codec2's headers for the bridge alone (theirs and ft8_lib's share names)
 
+# Dire Wolf (John Langner WB2OSZ, GPL v2 or later; wb2osz/direwolf at eda1383): APRS / AX.25 packet, the demodulators,
+# HDLC, AX.25 and APRS decoding of its atest tool and the transmit side of its gen_packets tool, with dw_glue.c in place
+# of their main programs (direwolf/ANDROID_CHANGES.txt). Its own static library: its header names (audio.h, dsp.h ...)
+# stay apart from the others'.
+file(GLOB DW_SOURCES CONFIGURE_DEPENDS direwolf/*.c)
+add_library(direwolf_hd STATIC ${DW_SOURCES})
+target_compile_definitions(direwolf_hd PUBLIC HAVE_STRLCPY HAVE_STRLCAT PRIVATE MAJOR_VERSION=1 MINOR_VERSION=8 PATCH_VERSION=2 DIREWOLF_VERSION="1.8.2" _GNU_SOURCE) # (as its CMakeLists.txt sets them; Android's C library has strlcpy / strlcat)
+target_compile_options(direwolf_hd PRIVATE -O2 -w -ffast-math) # (its own flags; upstream's warnings are not ours)
+set_source_files_properties(aprs_jni.c PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/direwolf COMPILE_DEFINITIONS "HAVE_STRLCPY;HAVE_STRLCAT") # Dire Wolf's headers for the bridge alone
+
 add_library(hamdigital SHARED
     cw/cw_decoder.cpp                                # CW decoder (from HamPropCore)
     cw_jni.cpp                                       # CW decoder: JNI
@@ -45,6 +55,7 @@ add_library(hamdigital SHARED
     ${FLDIGI_SOURCES}                                # RTTY, PSK31
     fldigi_jni.cpp                                   # RTTY, PSK, Olivia: JNI
     wefax_jni.cpp                                    # weather fax: JNI
+    aprs_jni.c                                       # APRS / packet (Dire Wolf): JNI
     ${JS8_SOURCES}                                   # JS8
     js8/jsc_map.cpp                                  # JS8: the JSC word table
     js8_jni.cpp                                      # JS8: JNI
@@ -54,7 +65,7 @@ target_include_directories(hamdigital PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cw ${C
     ${CMAKE_CURRENT_SOURCE_DIR}/fftw_kiss)           # <fftw3.h> is the stand-in
 set_source_files_properties(${FT8_SOURCES} ${WSPR_SOURCES} ${FLDIGI_SOURCES} PROPERTIES COMPILE_OPTIONS "-w") # upstream's warnings are not ours to change
 target_compile_options(hamdigital PRIVATE -O2)       # optimised (the decoders run in real time)
-target_link_libraries(hamdigital codec2_hd log m)    # FreeDV, logcat, maths
+target_link_libraries(hamdigital codec2_hd direwolf_hd log m) # FreeDV, APRS, logcat, maths
 
 # FreeDV RADE V1 (rade/ANDROID_CHANGES.txt): rade_c (BSD-2) and the parts of Opus it uses (BSD-3: LPCNet features,
 # pitch DNN, FARGAN, the nnet core), with their trained weights compiled in. A library of its own, libhamrade.so: the

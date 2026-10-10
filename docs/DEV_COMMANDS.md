@@ -26,6 +26,7 @@ Other folders the check reads:
   RADE included, with noise at 5 dB, and received again; the callsign M7JVY goes in the text / end-of-over frame.
 - `files/test/kb/` (any file): RTTY, PSK31 / 63 / 125 and each Olivia setting sent and received through the JNI.
 - `files/test/wefax/*.wav`: an 11025 Hz weather-fax recording (tools/test's `wefax_broadcast.wav`): states, the chart kept.
+- `files/test/aprs/` (any file): APRS frames sent at 1200 and 300 baud with noise and received again through Dire Wolf.
 - `files/test/rade/*.wav`: an 8 kHz RADE recording is decoded as the FreeDV page does it: callsigns, frames in sync,
   and the time taken as a share of real time. rade_c's `FDV_offair.wav` is 48 kHz: resample it to 8 kHz first.
 

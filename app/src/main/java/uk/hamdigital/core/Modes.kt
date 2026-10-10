@@ -32,15 +32,19 @@ enum class Mode(
         listOf("80" to 3643.0, "40" to 7177.0, "20" to 14236.0, "17" to 18118.0, "15" to 21313.0, "12" to 24933.0, "10" to 28330.0)),
     WEFAX("Weather fax", "Weather charts by radio (receive)", 11025, "fldigi (GPL v3)", 0, // (stations by name: the dial 1.9 kHz below the station, USB, puts the fax at 1900 Hz)
         listOf("DWD 3855" to 3853.1, "DWD 7880" to 7878.1, "DWD 13882" to 13880.6, // Deutscher Wetterdienst, Hamburg / Pinneberg
-            "GYA 2618" to 2616.6, "GYA 4610" to 4608.1, "GYA 8040" to 8038.1, "GYA 11086" to 11084.6)); // Joint Operational Meteorology and Oceanography Centre, Northwood (UK)
+            "GYA 2618" to 2616.6, "GYA 4610" to 4608.1, "GYA 8040" to 8038.1, "GYA 11086" to 11084.6)), // Joint Operational Meteorology and Oceanography Centre, Northwood (UK)
+    APRS("APRS / Packet", "Positions, messages and packet: 2 m FM or HF", 12000, "Dire Wolf (GPL v2+)", 0, // (2 m / ISS: 1200 baud FM-D; HF: 300 baud USB-D)
+        listOf("2 m" to 144800.0, "ISS" to 145825.0, "30 m" to 10147.6)); // Europe's APRS frequency; the ISS digipeater; HF APRS (300 baud, tones 1600 / 1800 Hz)
 
     val working get() = stage == 0                    // decoder in this version?
 
     /** How the radio is set for this mode on [khz]: CW for CW; SSTV is lower sideband below 10 MHz (as it is sent
-     *  there); everything else upper sideband - all with DATA on, so the audio comes and goes over the lead / WiFi. */
+     *  there); APRS above 30 MHz is FM (FM-D); everything else upper sideband - all with DATA on, so the audio comes and
+     *  goes over the lead / WiFi. */
     fun rigMode(khz: Double): uk.hamdigital.rig.RigMode = when {
         this == CW -> uk.hamdigital.rig.RigMode.CW
         this == SSTV && khz < 10_000 -> uk.hamdigital.rig.RigMode.LSB_D
+        this == APRS && khz >= 30_000 -> uk.hamdigital.rig.RigMode.FM_D
         else -> uk.hamdigital.rig.RigMode.USB_D
     }
 }

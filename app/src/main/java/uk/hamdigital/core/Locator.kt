@@ -27,6 +27,12 @@ object Locator {
         return (c * 6371.0).roundToInt()             // Earth's mean radius
     }
 
+    /** Great-circle distance in km between two points (degrees): APRS positions. */
+    fun distanceKm(la1: Double, lo1: Double, la2: Double, lo2: Double): Double {
+        val p1 = Math.toRadians(la1); val p2 = Math.toRadians(la2); val dl = Math.toRadians(lo2 - lo1)
+        return acos((sin(p1) * sin(p2) + cos(p1) * cos(p2) * cos(dl)).coerceIn(-1.0, 1.0)) * 6371.0
+    }
+
     /** Bearing in degrees from a to b, or null. */
     fun bearing(a: String, b: String): Int? {
         val (la1, lo1) = toLatLon(a) ?: return null; val (la2, lo2) = toLatLon(b) ?: return null

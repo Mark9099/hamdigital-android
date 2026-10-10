@@ -2,6 +2,27 @@
 
 Newest first.
 
+## 2026-10-10: 0.17.1 (WiFi receive audio kept in sequence)
+
+- **From the user's SSTV screenshots** (14.230 MHz, 07:01-08:19 UTC, six grabs):
+  - Real pictures were being received (a cup, a face, "CQ CQ DE IK0...", "Buongiorno QRZ", "SSTV de Z...").
+  - No VIS code was ever caught, so no picture was saved.
+  - The scope showed Robot36's raw (grey, embossed) lines, broken into bands with cyan "picture changed" bars, each
+    band shifted sideways, and one picture strongly slanted.
+- **Cause:**
+  - FT8CN's `IcomAudioUdp.onDataReceived` handed each audio packet on as it arrived. There was no reordering and no
+    retransmit request (FT8CN's own "todo" comments in `IcomUdpBase`).
+  - Every lost or late UDP packet shifted the timing of all that followed. SSTV's line timing breaks, Robot36 cannot
+    match a mode, and the VIS code is mangled.
+  - FT8, FT4 and the weather fax tolerate this much better.
+- **Fix:** `rxInOrder` / `rxRelease`, as wfview does it.
+  - Packets are held up to 5 deep (about 100 ms) in sequence-number order and played in order.
+  - A missing packet is asked for again (control packet type 0x01 with its seq).
+  - If it still has not come, its 20 ms is filled with silence, so the timing holds.
+  - Counts (received / lost / recovered / late) are on every page's audio line.
+- **Not yet checked on air:** the phone was disconnected. To check: SSTV on 14.230, watching the "WiFi audio: N
+  lost, M recovered" line and whether pictures are now caught (VIS) and straight.
+
 ## 2026-10-10: 0.17.0 (FreeDATA signalling)
 
 - **Item 5 of the new-modes list.** FreeDATA (DJ2LS, GPL v3, 2b3f037) is Python around codec2's data modems.

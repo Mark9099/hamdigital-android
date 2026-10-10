@@ -146,8 +146,57 @@ public class IcomAudioUdp extends AudioUdp {
         //接收到的是12000采样率的数据
         if (!IComPacketTypes.AudioPacket.isAudioPacket(data)) return;
         byte[] audioData = IComPacketTypes.AudioPacket.getAudioData(data);
-        if (onStreamEvents != null) {
-            onStreamEvents.OnReceivedAudioData(audioData);
+        rxInOrder(IComPacketTypes.ControlPacket.getSeq(data) & 0xFFFF, audioData); // (HF Digital Modes: in order, gaps asked for again or filled)
+    }
+
+    // ---- HF Digital Modes: receive audio in sequence (ANDROID_CHANGES.txt) ----
+    // FT8CN passed audio packets on as they arrived. Over WiFi some are lost or come late, and every one lost shifted the
+    // timing of all that followed - SSTV pictures broke into bands, each shifted sideways. Now, as wfview does it: the
+    // packets are held briefly in sequence order; a missing one is asked for again (a retransmit request, type 0x01 with
+    // its sequence number); if it has still not come when its turn is up (RX_HOLD packets later), its 20 ms is filled
+    // with silence, so everything after it keeps its time.
+    private static final int RX_HOLD = 5;                        // packets held for a missing one (about 100 ms)
+    private final java.util.TreeMap<Integer, byte[]> rxHeld = new java.util.TreeMap<>(); // waiting, by distance from rxNext
+    private final java.util.HashSet<Integer> rxAsked = new java.util.HashSet<>(); // sequence numbers asked for again
+    private int rxNext = -1;                                     // the sequence number due next (-1: not yet known)
+    private int rxLastLen = 0;                                   // a packet's audio bytes (for a silent one)
+    public volatile long rxPackets, rxLost, rxRecovered, rxLate;  // counts: received, filled with silence, recovered by asking, too late (dropped)
+
+    private synchronized void rxInOrder(int seq, byte[] audio) {
+        rxPackets++; rxLastLen = audio.length;
+        if (rxNext < 0) rxNext = seq;
+        int d = (seq - rxNext) & 0xFFFF;                         // how far ahead of the one due
+        if (d >= 0x8000) { rxLate++; return; }                   // behind: already played (or filled) - dropped
+        if (d > 200) { rxFlush(); rxNext = seq; d = 0; }         // a big jump (the stream restarted): start again from here
+        if (rxAsked.remove(seq)) rxRecovered++;
+        rxHeld.put(d, audio);
+        rxRelease();
+    }
+
+    private void rxRelease() {                                   // (under the lock) play what is in order; ask for / fill gaps
+        while (!rxHeld.isEmpty()) {
+            byte[] next = rxHeld.remove(0);
+            if (next == null) {                                  // the one due is missing
+                int newest = rxHeld.lastKey();
+                for (int k = 0; k < newest; k++) {               // ask for each missing one, once
+                    int s = (rxNext + k) & 0xFFFF;
+                    if (!rxHeld.containsKey(k) && rxAsked.add(s))
+                        sendUntrackedPacket(IComPacketTypes.ControlPacket.toBytes(IComPacketTypes.CMD_RETRANSMIT, (short) s, localId, remoteId));
+                }
+                if (newest < RX_HOLD) return;                    // wait for it a little
+                next = new byte[rxLastLen]; rxLost++;            // too long: its time in silence
+                rxAsked.remove(rxNext);
+            }
+            if (onStreamEvents != null) onStreamEvents.OnReceivedAudioData(next);
+            rxNext = (rxNext + 1) & 0xFFFF;                      // the next one is due: shift the waiting ones down
+            java.util.TreeMap<Integer, byte[]> moved = new java.util.TreeMap<>();
+            for (java.util.Map.Entry<Integer, byte[]> e : rxHeld.entrySet()) moved.put(e.getKey() - 1, e.getValue());
+            rxHeld.clear(); rxHeld.putAll(moved);
         }
+    }
+
+    private void rxFlush() {                                     // (under the lock) play all that is held, in order
+        for (byte[] a : rxHeld.values()) if (onStreamEvents != null) onStreamEvents.OnReceivedAudioData(a);
+        rxHeld.clear(); rxAsked.clear();
     }
 }

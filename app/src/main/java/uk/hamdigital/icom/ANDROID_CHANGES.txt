@@ -33,3 +33,11 @@ recording at a time and cannot take speech as it is made. sendTxAudioData itself
 
 Added (0.12.0, for FreeDV RADE): IcomAudioUdp.txQueued - how many samples are still queued, so the app can wait for the
 end of an over (RADE's end-of-over frame, with the callsign) to go out before it stops the stream and drops PTT.
+
+Changed (0.17.1, receive audio in sequence): IcomAudioUdp.onDataReceived no longer passes each audio packet on as it
+arrives. rxInOrder / rxRelease hold packets briefly by their sequence number (0x06), play them in order, ask the radio
+again for a missing one (a retransmit request: a control packet, type 0x01, with its sequence number - as wfview does,
+and as the "todo" comments in IcomUdpBase suggest), and if it still has not come when RX_HOLD (5) later packets are
+waiting, fill its time with silence. Counts (rxPackets, rxLost, rxRecovered, rxLate) are shown on each page's audio line.
+Why: SSTV pictures received over WiFi broke into bands, each shifted sideways - every lost packet shifted the timing of
+all the audio after it.

@@ -82,11 +82,13 @@ fun rememberRx(rate: Int, block: Int, choice: AudioChoice, sink: (ShortArray, In
 fun RxStatus(rx: RxState, extra: String = "") {
     var lvl by remember { mutableFloatStateOf(0f) }   // input level, refreshed
     var link by remember { mutableStateOf("") }       // the WiFi link's state while it is not up ("" = up, or not WiFi)
+    var loss by remember { mutableStateOf("") }       // WiFi audio packets lost / recovered (shown once any are)
     LaunchedEffect(Unit) { while (true) { lvl = AudioIn.level
         link = if (AudioIn.wifi && !uk.hamdigital.rig.IcomNet.loggedIn) "WiFi: ${uk.hamdigital.rig.IcomNet.status.value.ifEmpty { "not connected - Settings > Connection" }}" else ""
+        loss = if (AudioIn.wifi) uk.hamdigital.rig.IcomNet.rxAudioStats()?.takeIf { it[1] + it[2] > 0 }?.let { "  •  WiFi audio: %d lost, %d recovered of %d".format(it[1], it[2], it[0]) } ?: "" else ""
         delay(100) } }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(rx.error ?: link.ifEmpty { if (rx.running) "Audio: ${AudioIn.sourceName}" else "Starting audio..." }, color = if (rx.error != null) Pal.Red else if (link.isNotEmpty()) Pal.Amber else Pal.Text2,
+        Text(rx.error ?: link.ifEmpty { if (rx.running) "Audio: ${AudioIn.sourceName}$loss" else "Starting audio..." }, color = if (rx.error != null) Pal.Red else if (link.isNotEmpty()) Pal.Amber else Pal.Text2,
             fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 2)
         if (extra.isNotEmpty()) Text(extra, color = Pal.Amber, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp)) // the page's own note
         val db = if (lvl > 0.001f) 20 * log10(lvl) else -60f // level in dB

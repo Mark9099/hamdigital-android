@@ -61,11 +61,16 @@ object IcomNet {
      *  then, or Android cuts the app off the network before the radio hears it leave (0.8.5). */
     fun disconnect(then: (() -> Unit)? = null) { target = null; watchdog?.cancel(); watchdog = null; close("WiFi connection closed", then) }
 
-    private fun watchWifi(app: Context) {             // follow the phone's WiFi network
+    private fun watchWifi(app: Context) {             // follow the phone's WiFi network - and keep it
         if (callbackOn) return; callbackOn = true
         val c = app.getSystemService(ConnectivityManager::class.java) ?: return; cm = c
-        val req = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build()
-        c.registerNetworkCallback(req, object : ConnectivityManager.NetworkCallback() {
+        // Requested, not just watched (0.17.1): a WiFi network with no internet (a radio's own access point, or a home
+        // router whose internet is down) is "unwanted" to Android once nothing asks for it, and it drops it for mobile
+        // data - found on the phone's log (CMD_UNWANTED_NETWORK), taking the radio link with it every few minutes. A
+        // request for WiFi without the internet capability says this app needs that network, internet or not.
+        val req = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+        c.requestNetwork(req, object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 Log.d(TAG, "phone WiFi up: $network"); wifi = network
                 c.bindProcessToNetwork(network)       // the app's traffic over WiFi, whatever Android's default

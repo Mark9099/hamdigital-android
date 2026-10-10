@@ -323,7 +323,9 @@ private val GUIDE = listOf(
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
         B + "0.17.1 (October 2026): over WiFi, the radio's audio is now kept in order: a packet lost on the way is asked " +
         "for again, or its moment filled with silence, so nothing after it slips. SSTV pictures over WiFi broke into " +
-        "shifted bands because of this. The audio line shows any packets lost or recovered.\n" +
+        "shifted bands because of this. The audio line shows any packets lost or recovered. And the phone keeps its WiFi " +
+        "to the radio even when that network has no internet: Android was dropping it every few minutes for mobile data, " +
+        "taking the radio link with it.\n" +
         B + "0.17.0 (October 2026): FreeDATA - hear FreeDATA stations' CQs, beacons and pings and send your own, in " +
         "FreeDATA's format (codec2's DATAC13 modem); answers CQs and pings if you choose.\n" +
         B + "0.16.0 (October 2026): APRS and packet - Dire Wolf's receiver and transmitter: 2 m and the ISS (1200 baud " +

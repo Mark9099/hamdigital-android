@@ -20,8 +20,21 @@ Newest first.
   - A missing packet is asked for again (control packet type 0x01 with its seq).
   - If it still has not come, its 20 ms is filled with silence, so the timing holds.
   - Counts (received / lost / recovered / late) are on every page's audio line.
-- **Not yet checked on air:** the phone was disconnected. To check: SSTV on 14.230, watching the "WiFi audio: N
-  lost, M recovered" line and whether pictures are now caught (VIS) and straight.
+- **On the phone (10:15-10:25 local, SSTV page on 14.230):**
+  - Losses come in bursts: usually none, then 47 missing in 15 s (10:24). 27 of those were recovered by asking the
+    radio again, which works.
+  - The link itself dropped four times in 10 minutes. The log showed "The phone's WiFi dropped" (10:20:13) and
+    "radio quiet" (8 s with no CI-V) at 10:19:52, 10:24:48 and 10:25:24.
+  - The phone's WiFi log had `CMD_UNWANTED_NETWORK` on the home network (VM6213438, 5 GHz, RSSI -66 to -72,
+    "Internet not available"). Android drops a WiFi network with no internet once no app requests it.
+- **Second fix:** `IcomNet.watchWifi` now uses `requestNetwork` (WiFi, without NET_CAPABILITY_INTERNET) instead of
+  `registerNetworkCallback`. The app needs that network, internet or not, so Android keeps it.
+- **After both fixes (10:28-10:40 local, 12 minutes on the SSTV page):**
+  - No link drops at all, against 4 in the 10 minutes before.
+  - 318 packets of 35,909 went missing (0.9%). 142 were recovered by retransmit and 176 filled with silence (0.5%);
+    the worst burst was about 1 s.
+  - No SSTV was sent in that time, so pictures are still to be confirmed.
+- Released as v0.17.1.
 
 ## 2026-10-10: 0.17.0 (FreeDATA signalling)
 

@@ -152,6 +152,29 @@ object DevTest {
         }
     }
 
+    /** FreeDATA: the frame fields against FreeDATA's own helpers.py results (run on a PC: callsign M7JVY-0 = 0007476a6a40,
+     *  IO91CC = 13c5b042, CRC-24 of M7JVY-0 = 0f7cbf), then a CQ and a ping sent in DATAC13 with noise and received. */
+    private fun freedata() {
+        val F = uk.hamdigital.core.FreeData; val N = uk.hamdigital.engine.FreeDataNative
+        fun hx(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
+        Log.i(TAG, "freedata call ${hx(F.encodeCall("M7JVY-0"))} (0007476a6a40), decode ${F.decodeCall(F.encodeCall("DJ2LS-3"), 0)} (DJ2LS-3), grid ${hx(F.encodeGrid("IO91CC"))} (13c5b042), ${F.decodeGrid(F.encodeGrid("JN48LL"), 0)} (JN48LL), crc24 ${hx(F.crc24("M7JVY-0"))} (0f7cbf)")
+        F.myCall = "M7JVY"; F.myGrid = "IO91CC"; F.ssid = 0
+        val rnd = java.util.Random(8)
+        for (snr in listOf(10.0, 0.0, -5.0)) {
+            var got = ""
+            for ((what, fr) in listOf("CQ" to F.buildCq(), "ping" to F.buildPing("M7JVY-0"))) {
+                val a = N.encode(N.DATAC13, fr) ?: continue
+                var p = 0.0; a.forEach { p += it * it.toDouble() }; p /= a.size
+                val sd = Math.sqrt(p / Math.pow(10.0, snr / 10) * 4000.0 / 2500.0)
+                val s = ShortArray(a.size + 16000) { i -> ((if (i in 4000 until 4000 + a.size) a[i - 4000].toInt() else 0) + rnd.nextGaussian() * sd).toInt().coerceIn(-32768, 32767).toShort() }
+                var i = 0; while (i < s.size) { val n = minOf(320, s.size - i); N.process(s.copyOfRange(i, i + n), n); i += n }
+                val r = N.take(); var k = 0
+                while (k + 3 <= r.size) { val len = r[k + 2].toInt() and 0xFF; F.parse(r[k].toInt() and 0xFF, r[k + 1] / 10.0, r.copyOfRange(k + 3, k + 3 + len), 0)?.let { got += "[$what -> ${it.from} ${it.grid} ${it.text} %.0f dB] ".format(it.snr) }; k += 3 + len }
+            }
+            Log.i(TAG, "freedata DATAC13 SNR %+.0f dB: %s".format(snr, got.ifEmpty { "nothing" }))
+        }
+    }
+
     fun run(ctx: Context) = Thread {
         val dir = File(ctx.filesDir, "test")       // (the app's own folder: adb copies in with run-as)
         Log.i(TAG, "dev test: ${dir.absolutePath}")
@@ -181,6 +204,7 @@ object DevTest {
         if (dir.resolve("kb").exists()) kb()           // RTTY / PSK / Olivia: send and receive through the JNI
         dir.resolve("wefax").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { wefax(it) } // weather fax: a broadcast
         if (dir.resolve("aprs").exists()) aprs()       // APRS / packet: send and receive through Dire Wolf
+        if (dir.resolve("freedata").exists()) freedata() // FreeDATA: frame fields, and DATAC13 through the modem
         Log.i(TAG, "dev test done")
     }.start()
 }

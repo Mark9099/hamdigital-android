@@ -2,6 +2,35 @@
 
 Newest first.
 
+## 2026-10-10: 0.17.0 (FreeDATA signalling)
+
+- **Item 5 of the new-modes list.** FreeDATA (DJ2LS, GPL v3, 2b3f037) is Python around codec2's data modems.
+  - Signalling (CQ 200, QRV 201, BEACON 250, PING 210, PING_ACK 211, session openings 12/13/30) goes in DATAC13;
+    signalling acks in DATAC14.
+  - Data (ARQ bursts) goes in FreeDATA's own custom OFDM modes via `freedv_open_advanced`.
+  - The app's codec2 (310777b) has DATAC13/14 and the custom mode, so no new library is needed.
+- **First step: signalling.**
+  - `fdata_jni.c`: DATAC13 + DATAC14 receivers fed by `freedv_nin`. A frame counts when `freedv_rawdatarx` returns
+    the whole frame (CRC good). Transmit: preamble + frame (padded, `freedv_gen_crc16` big-endian) + postamble.
+  - `FreeData.kt`: FreeDATA's `data_frame_factory` and `helpers` (encode/decode_call, encode/decode_grid, CRC-24,
+    SNR byte) rewritten in Kotlin.
+  - `FreeDataScreen`: Heard / Stations, CQ, Beacon, Ping, and Answer (QRV to CQ after a random 0-5 s, ack to pings
+    for us - off as standard).
+  - Mode dials: suggestions in the IARU R1 data segments (3.595, 7.048, 10.145, 14.093). FreeDATA lists no
+    frequencies, and a web search found none.
+- **Found:** FreeDATA's `build_ping_ack` takes the CRC-24 of the received origin CRC's hex text, while its
+  `is_frame_for_me` checks the CRC of the callsign, so its own ping-acks would not match.
+  - The app sends the received origin CRC as the destination, which passes FreeDATA's check.
+  - The app accepts either form.
+- **Found:** receiving needs `freedv_set_frames_per_burst(f, 1)` (FreeDATA's `demodulator.py` does it). Without it
+  nothing decoded even at +10 dB; with it, CQ and ping decode at +10, 0 and -5 dB with the right SNR.
+- **Checked:**
+  - Fields against FreeDATA's own `helpers.py`, run with PlatformIO's Python on a PC: M7JVY-0 = 0007476a6a40,
+    IO91CC = 13c5b042, CRC-24 of M7JVY-0 = 0f7cbf. The app's Kotlin gives the same bytes (DevTest `files/test/freedata/`).
+- **Not yet:** ARQ messaging and files (FreeDATA's session protocol and custom OFDM modes), and on air.
+- **The phone (09:56 local):** the app's WiFi link said "Connecting to 192.168.0.39 (try 3)... IC-705 not
+  connected", so the radio was not reachable then. That probably explains APRS hearing nothing.
+
 ## 2026-10-10: 0.16.0 (APRS / packet)
 
 - **Item 4 of the new-modes list.** Dire Wolf (wb2osz/direwolf eda1383, 1.8.2, GPL v2 or later - compatible with

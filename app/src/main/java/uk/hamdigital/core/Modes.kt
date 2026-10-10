@@ -34,7 +34,9 @@ enum class Mode(
         listOf("DWD 3855" to 3853.1, "DWD 7880" to 7878.1, "DWD 13882" to 13880.6, // Deutscher Wetterdienst, Hamburg / Pinneberg
             "GYA 2618" to 2616.6, "GYA 4610" to 4608.1, "GYA 8040" to 8038.1, "GYA 11086" to 11084.6)), // Joint Operational Meteorology and Oceanography Centre, Northwood (UK)
     APRS("APRS / Packet", "Positions, messages and packet: 2 m FM or HF", 12000, "Dire Wolf (GPL v2+)", 0, // (2 m / ISS: 1200 baud FM-D; HF: 300 baud USB-D)
-        listOf("2 m" to 144800.0, "ISS" to 145825.0, "30 m" to 10147.6)); // Europe's APRS frequency; the ISS digipeater; HF APRS (300 baud, tones 1600 / 1800 Hz)
+        listOf("2 m" to 144800.0, "ISS" to 145825.0, "30 m" to 10147.6)), // Europe's APRS frequency; the ISS digipeater; HF APRS (300 baud, tones 1600 / 1800 Hz)
+    FREEDATA("FreeDATA", "Hear and call FreeDATA stations (codec2 data)", 8000, "FreeDATA protocol (GPL v3), codec2 (LGPL 2.1)", 0, // (suggestions in IARU Region 1's data segments, USB-D)
+        listOf("80" to 3595.0, "40" to 7048.0, "30" to 10145.0, "20" to 14093.0));
 
     val working get() = stage == 0                    // decoder in this version?
 

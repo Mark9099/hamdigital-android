@@ -63,6 +63,7 @@ private fun ModePageFor(vm: MainViewModel, m: Mode) = when (m) {
     Mode.FREEDV -> FreeDvScreen(vm)                            // working: codec2's FreeDV
     Mode.WEFAX -> WefaxScreen(vm)                              // working: fldigi's WEFAX receiver
     Mode.APRS -> AprsScreen(vm)                                // working: Dire Wolf
+    Mode.FREEDATA -> FreeDataScreen(vm)                        // working: FreeDATA's signalling
     else -> ComingScreen(vm, m)                                // the waterfall until its decoder arrives
 }
 

@@ -28,6 +28,8 @@ page. The decoders are reused open-source code rather than written from scratch.
 | FreeDV RADE V1 | [rade_c](https://github.com/freedv/rade_c) + [Opus](https://github.com/xiph/opus) (LPCNet, FARGAN), `rade_text` from [wfweb](https://github.com/adecarolis/wfweb) | BSD 2-Clause, BSD 3-Clause | `cpp/rade` (its own library, libhamrade.so; weights compiled in) |
 | IC-705 USB serial (CI-V) | [usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android) | MIT | CDC-ACM driver for the IC-705's USB serial ports |
 | IC-705 WiFi | FT8CN's `icom` package (Icom network protocol) | MIT | Stage 8 |
+| APRS / packet | [Dire Wolf](https://github.com/wb2osz/direwolf) (John Langner WB2OSZ) | GPL v2 or later | `cpp/direwolf`: its atest / gen_packets sources, own glue |
+| FreeDATA | [FreeDATA](https://github.com/DJ2LS/FreeDATA)'s frame format (rewritten in Kotlin) + codec2's DATAC13 | GPL v3, LGPL 2.1 | Signalling only so far |
 
 The upstream copies used for reference are in `Documents\AndroidStudioProjects\_upstream`, as shallow git clones that
 are not part of this repository. Each copied library goes into `app/src/main/cpp/<name>/` (native code) or its own Java
@@ -69,6 +71,9 @@ package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` 
     APT / phasing / correlation, Start now / Stop, charts kept as PNGs. Checked on a PC, on the phone, and on air (DWD 7880).
 16. **APRS / packet (0.16.0).** Dire Wolf (GPL v2+): receive and send, 1200 baud FM (2 m, ISS; the IC-705 in FM-D) and
     300 baud HF; heard, stations, map, messages, beacon from the locator. Checked on the phone (DevTest); air to come.
+17. **FreeDATA (0.17.0).** Its signalling, written from FreeDATA's Python (GPL v3): CQ / QRV / beacon / ping / ping-ack /
+    session openings in DATAC13 (codec2, already in the app), answers optional. Fields checked against FreeDATA's own helpers,
+    DATAC13 round trip on the phone to -5 dB. Not yet: FreeDATA's ARQ messaging and files, on air.
 
 ## Testing
 

@@ -19,7 +19,7 @@ import uk.hamdigital.ui.HamDigitalTheme
 import uk.hamdigital.ui.SplashScreen
 
 /** The app's version, for the startup screen and Settings (kept here so it is not tied to the generated BuildConfig). */
-object BuildConfigInfo { const val VERSION = "0.16.0" }
+object BuildConfigInfo { const val VERSION = "0.17.0" }
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()     // state (survives rotation)

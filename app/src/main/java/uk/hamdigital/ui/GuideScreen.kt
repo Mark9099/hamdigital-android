@@ -24,7 +24,7 @@ private const val B = "•  "                           // bullet
 private val GUIDE = listOf(
     "Getting started" to
         "HF Digital Modes brings the common HF digital modes together in one app for the Icom IC-705: FT8, FT4, WSPR, JS8Call, RTTY, " +
-        "PSK31 (and 63, 125), Olivia, CW, SSTV, FreeDV voice, weather fax and APRS / packet. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
+        "PSK31 (and 63, 125), Olivia, CW, SSTV, FreeDV voice, weather fax, APRS / packet and FreeDATA. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
         "1. Settings: enter your callsign and locator.\n" +
         "2. Connect the IC-705's USB-C socket to the phone or tablet (a USB-C to USB-C lead, or an OTG adapter). The menu shows " +
         "\"IC-705 connected\" when Android sees the radio's sound card.\n" +
@@ -282,6 +282,18 @@ private val GUIDE = listOf(
         B + "Your frames go out through the digipeaters (WIDE1-1,WIDE2-1 on 2 m; WIDE2-1 on HF) as from the app " +
         "(APZHDM). The transmit level is Settings > Transmit level, as for the other modes.",
 
+    "FreeDATA" to
+        "FreeDATA (DJ2LS and others) is a program for sending messages and files over HF with codec2's data modems. This " +
+        "page speaks its signalling: it hears FreeDATA stations' CQs, QRVs (\"ready\"), beacons and pings, and the start of " +
+        "their sessions, and sends CQ, beacon and ping in FreeDATA's own format (codec2's DATAC13 modem), so FreeDATA stations " +
+        "see you. Messages and files themselves (FreeDATA's ARQ sessions) are not handled yet.\n\n" +
+        B + "Tune: the band chips are suggestions in each band's data segment (3.595, 7.048, 10.145, 14.093 MHz, USB-D); " +
+        "FreeDATA users arrange frequencies among themselves. A FreeDATA burst is a short, narrow block around 1500 Hz.\n" +
+        B + "Heard: the time (UTC), the station (CALL-SSID), its locator, what it sent and the SNR. Stations: each one's " +
+        "latest, with the distance; Ping sends a ping to it. You are your callsign with SSID 0 (as FreeDATA's default).\n" +
+        B + "Answer (off as standard): when on, the app replies as FreeDATA does - a QRV to a CQ (after a random 0-5 s, " +
+        "against collisions) and an acknowledgement to a ping for you. It then transmits by itself while the page is open.",
+
     "Logbook" to
         "Every contact you make, kept in an ADIF file - the format every logging program, and the LoTW, QRZ, Club Log and eQSL upload " +
         "pages, read. Open it from the menu.\n\n" +
@@ -309,6 +321,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.17.0 (October 2026): FreeDATA - hear FreeDATA stations' CQs, beacons and pings and send your own, in " +
+        "FreeDATA's format (codec2's DATAC13 modem); answers CQs and pings if you choose.\n" +
         B + "0.16.0 (October 2026): APRS and packet - Dire Wolf's receiver and transmitter: 2 m and the ISS (1200 baud " +
         "FM, the IC-705 in FM-D) and HF (300 baud); heard list, stations, map, messages, position beacon.\n" +
         B + "0.15.0 (October 2026): Weather fax - receive weather charts (fldigi's receiver) from DWD Hamburg and " +

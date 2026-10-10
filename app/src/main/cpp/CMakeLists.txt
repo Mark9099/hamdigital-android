@@ -30,7 +30,7 @@ target_compile_definitions(codec2_hd PRIVATE GIT_HASH="310777b"
     encode=c2_ldpc_encode)                           # (its LDPC encode, as wsprd's fano.c has an encode)
 target_compile_options(codec2_hd PRIVATE -O2 -w)     # optimised; upstream's warnings are not ours to change
 target_include_directories(codec2_hd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # (<codec2/version.h> is in codec2/codec2/)
-set_source_files_properties(freedv_jni.c PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # codec2's headers for the bridge alone (theirs and ft8_lib's share names)
+set_source_files_properties(freedv_jni.c fdata_jni.c PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/codec2) # codec2's headers for the bridge alone (theirs and ft8_lib's share names)
 
 # Dire Wolf (John Langner WB2OSZ, GPL v2 or later; wb2osz/direwolf at eda1383): APRS / AX.25 packet, the demodulators,
 # HDLC, AX.25 and APRS decoding of its atest tool and the transmit side of its gen_packets tool, with dw_glue.c in place
@@ -56,6 +56,7 @@ add_library(hamdigital SHARED
     fldigi_jni.cpp                                   # RTTY, PSK, Olivia: JNI
     wefax_jni.cpp                                    # weather fax: JNI
     aprs_jni.c                                       # APRS / packet (Dire Wolf): JNI
+    fdata_jni.c                                      # FreeDATA (codec2 data modes): JNI
     ${JS8_SOURCES}                                   # JS8
     js8/jsc_map.cpp                                  # JS8: the JSC word table
     js8_jni.cpp                                      # JS8: JNI

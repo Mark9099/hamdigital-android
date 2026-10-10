@@ -106,3 +106,31 @@ int tx_roundtrip()
     return 0;
 }
 static int run_tx = tx_roundtrip();                  // (runs before main)
+
+// ---- Olivia (olivia_kb.cxx): the app's transmitter into its receiver, and noise alone ----
+#include "olivia_kb.h"
+static std::string olivia_rx(OliviaRx &rx, const std::vector<double> &s) { std::string got; for (size_t i = 0; i < s.size(); i += 512) { rx.rx_process(&s[i], (int)std::min<size_t>(512, s.size() - i)); got += rx.take_text(); } return got; }
+int olivia_test()
+{
+    const std::string t = "CQ CQ DE M7JVY M7JVY IO91 K";
+    std::mt19937 rng(4); std::normal_distribution<double> g(0, 1);
+    int set[][2] = {{8, 250}, {8, 500}, {16, 500}, {32, 1000}, {4, 125}};
+    for (auto &ts : set)
+        for (double snr : {0.0, -6.0, -10.0, -13.0}) { // (SNR in 2500 Hz)
+            auto a = olivia_tx_audio(t, ts[0], ts[1], 1500, 0.3); double p = 0; for (auto v : a) p += (v / 32768.0) * (v / 32768.0); p /= a.size();
+            double sd = sqrt(p / pow(10.0, snr / 10.0) * (SR / 2) / 2500.0);
+            std::vector<double> s; for (auto v : a) s.push_back(v / 32768.0 + sd * g(rng));
+            for (int k = 0; k < 10 * 8000; k++) s.push_back(sd * g(rng)); // 10 s of band noise after it (the decoder's pipeline runs on)
+            OliviaRx rx(ts[0], ts[1]); rx.set_freq(snr == -6.0 ? 1520 : 1500); rx.set_squelch(5); // (at -6 dB tuned 20 Hz off: the sync searches)
+            std::string got = olivia_rx(rx, s);
+            printf("Olivia %2d/%-4d %+5.1f dB: [%s]  (%.1f s, sync s/n %.1f, offset %+.1f Hz)\n", ts[0], ts[1], snr, got.c_str(), a.size() / SR, rx.get_sync_snr(), rx.get_offset());
+        }
+    for (double sq : {0.0, 5.0, 10.0, 20.0}) {      // a minute of noise alone: how much rubbish each squelch lets through
+        std::vector<double> s(60 * 8000); for (auto &v : s) v = 0.1 * g(rng);
+        OliviaRx rx(8, 250); rx.set_freq(1500); rx.set_squelch(sq);
+        std::string got = olivia_rx(rx, s);
+        printf("Olivia noise, squelch %2.0f: %d characters in 60 s\n", sq, (int)got.size());
+    }
+    return 0;
+}
+static int run_olivia = olivia_test();

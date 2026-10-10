@@ -21,7 +21,7 @@ page. The decoders are reused open-source code rather than written from scratch.
 | FT8, FT4 | [ft8_lib](https://github.com/kgoba/ft8_lib) (Kārlis Goba) | MIT | C, no dependencies. FT8CN (MIT, an Android FT8 app with IC-705 support) uses it too |
 | WSPR | `lib/wsprd` from WSJT-X | GPL v3 | C; needs FFTW (single precision), built from source with the NDK |
 | JS8Call | `JS8.cpp` + `varicode.cpp` from [JS8Call](https://github.com/js8call/js8call) | GPL v3 | C++20 decoder (no longer Fortran). Needs Eigen (vendored), Boost headers (CRC, multi_index) and FFTW. Qt is removed from the parts used |
-| RTTY, PSK31 | `rtty.cxx`, `psk.cxx`, filters from [fldigi](https://github.com/w1hkj/fldigi) | GPL v3 | The modem DSP is separated from fldigi's FLTK UI and settings with small stand-ins |
+| RTTY, PSK31 / 63 / 125, Olivia | `rtty.cxx`, `psk.cxx`, `olivia.cxx` + Pawel Jalocha's MFSK, filters from [fldigi](https://github.com/w1hkj/fldigi) | GPL v3 | The modem DSP is separated from fldigi's FLTK UI and settings with small stand-ins |
 | CW | HamPropCore `cw_decoder.cpp` (from Tab5CWDecoder), copied into `cpp/cw/` | own (GPL v3 here) | Shared with HF Propagation and the Tab5 (`cw/ORIGIN.txt`) |
 | SSTV | [Robot36](https://github.com/xdsopl/robot36) (receive), [SSTV Encoder 2](https://github.com/olgamiller/SSTVEncoder2) (send) | 0BSD, Apache 2.0 | Java, copied unchanged |
 | FreeDV 700D / 700E / 1600 | [codec2](https://github.com/drowe67/codec2) | LGPL 2.1 | `cpp/codec2`, codebooks generated on a PC |
@@ -63,6 +63,8 @@ package (Robot36, SSTV Encoder 2) with its LICENSE and an `ANDROID_CHANGES.txt` 
     as a fourth mode; the end of an over is drained to the radio before PTT drops (`rade/ANDROID_CHANGES.txt`).
 13. **PSK63 / PSK125 (0.13.0).** Asked for by the user (the new-modes list: PSK63/125, Olivia, WEFAX, APRS and packet,
     FreeDATA). A speed choice on the PSK31 page, fldigi's settings for each speed. Checked on a PC and on the phone.
+14. **Olivia (0.14.0).** fldigi's olivia modem around Pawel Jalocha's MFSK engine (GPL v3), receive and send, on its own
+    page (the keyboard page): tones / bandwidth 4/125 to 32/1000, 8/250 first. Checked on a PC; phone and air to come.
 
 ## Testing
 

@@ -38,3 +38,21 @@ every speed, as in fldigi: decimation to 16 samples a symbol, timing recovery, t
 psk31_tx_audio takes the speed too (symbol length; preamble and postamble of dcdbits symbols).
 PC test (tools/test/test_fldigi.cxx, the app's transmitter into its receiver 3 Hz off): PSK31 copies fully to -7 dB SNR
 (2500 Hz), PSK63 to -4 dB (one character wrong at -7), PSK125 to -4 dB.
+
+0.14.0: Olivia.
+  jalocha/pj_*.h   Pawel Jalocha's MFSK transmitter and receiver (fldigi src/include/jalocha, fldigi 4.1.23), unchanged.
+  olivia_kb.h / olivia_kb.cxx  from src/olivia/olivia.cxx + src/include/olivia.h:
+    kept    - restart() (tones, bandwidth, fldigi's default sync margin 8 and integration 4 FEC blocks, sample rate 8000,
+              the first carrier from the centre: (f - fc_offset) / 500), rx_process (the squelch slider as the sync S/N
+              threshold: s/5 + 3, 0 when off; unescape of 8-bit characters, fldigi's default; codes below 8 dropped;
+              metric 5 x (sync S/N - 3)), rx_init, send_tones (the start / stop tones at the band edges, fldigi's
+              raised-cosine shaping, TONE_DURATION 16 x 512 samples), tx_process (start tones, a leading NUL, the text a
+              character at a time while the encoder wants more, Stop, run until not Running, stop tones, a block of
+              silence).
+    removed - the user interface, progdefaults / progStatus (now the constructor's tones / bandwidth, set_freq,
+              set_squelch), reverse, the waterfall-based s/n, the 8-bit transmit escape (characters over 127 are sent as
+              '.').
+PC test (tools/test/test_fldigi.cxx, the app's transmitter into its receiver, noise in 2500 Hz, 10 s of noise after):
+4/125, 8/250, 16/500 and 32/1000 copy the whole message to -13 dB SNR, 8/500 to -10 dB; tuned 20 Hz off it is found.
+A minute of noise alone prints 54 characters with the squelch off, none at 5 and above (the page starts at 5). As in
+fldigi, a few random characters can appear as a signal starts and ends.

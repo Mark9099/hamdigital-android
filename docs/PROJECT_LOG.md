@@ -2,6 +2,26 @@
 
 Newest first.
 
+## 2026-10-10: 0.14.0 (Olivia)
+
+- **Item 2 of the new-modes list.**
+  - fldigi's `olivia.cxx` was cut down to `fldigi/olivia_kb.cxx` (receive and send, no UI or settings).
+  - Pawel Jalocha's MFSK engine (`fldigi/jalocha/pj_*.h`) is copied unchanged. Details in `fldigi/ANDROID_CHANGES.txt`.
+- **App:**
+  - `Mode.OLIVIA` (its own menu tile and page), using the keyboard page with `KbNative.OLIVIA` = 2.
+  - Tones / Hz chips: 4/125, 8/250 (first), 8/500, 16/500, 16/1000, 32/1000.
+  - Red marks at the band edges, "sync" (the synchroniser's S/N) instead of s/n, no AFC chip, squelch 5.
+  - Logged as `OLIVIA 8/250` etc. (ADIF MODE=OLIVIA with that SUBMODE), 599.
+  - Band dials put the usual Olivia centres (3583.5, 7072.5, 14072.5 ...) at 1500 Hz.
+- **PC test** (`test_fldigi.cxx`, 10 s of noise after each message, since the decoder's FEC pipeline needs audio after
+  the signal - without it the last characters stay inside):
+  - 4/125, 8/250, 16/500 and 32/1000 copy all of it at -13 dB; 8/500 at -10 dB.
+  - Tuned 20 Hz off, it is found.
+  - Noise alone: 54 characters a minute with the squelch off, none at 5 or more.
+  - A few random characters at a signal's start and end, as in fldigi.
+- DevTest `files/test/kb/`: every keyboard mode and setting through the JNI on the phone (to run when it is connected).
+- **Not yet done:** on the phone, on air.
+
 ## 2026-10-09: 0.13.0 (PSK63 and PSK125)
 
 - **Asked for by the user:** a new-modes list - "aprs and packet, freedata, olivia, wefax and aprrs along with

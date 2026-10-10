@@ -22,6 +22,8 @@ enum class Mode(
         listOf("80" to 3580.0, "40" to 7040.0, "30" to 10140.0, "20" to 14080.0, "17" to 18100.0, "15" to 21080.0, "10" to 28080.0)),
     PSK31("PSK31", "Keyboard chat: PSK31, PSK63, PSK125", 8000, "fldigi (GPL v3)", 0,
         listOf("80" to 3580.0, "40" to 7040.0, "30" to 10142.0, "20" to 14070.0, "17" to 18100.0, "15" to 21070.0, "12" to 24920.0, "10" to 28120.0)),
+    OLIVIA("Olivia", "Robust keyboard chat through fading and noise", 8000, "fldigi + Pawel Jalocha's MFSK (GPL v3)", 0, // (the dials put the usual Olivia centres at 1500 Hz)
+        listOf("80" to 3582.0, "40" to 7071.0, "30" to 10140.0, "20" to 14071.0, "17" to 18102.0, "15" to 21071.0, "10" to 28121.0)),
     CW("CW", "Morse decoder", 16000, "HamPropCore CW decoder (from Tab5CWDecoder)", 0,
         listOf("80" to 3560.0, "40" to 7030.0, "30" to 10116.0, "20" to 14060.0, "17" to 18086.0, "15" to 21060.0, "12" to 24906.0, "10" to 28060.0)),
     SSTV("SSTV", "Pictures by radio: receive and send", 12000, "Robot36 (0BSD) and SSTV Encoder 2 (Apache 2.0)", 0, // (LSB below 10 MHz, as SSTV is sent there)

@@ -99,6 +99,25 @@ object DevTest {
         e.close(h)
     }
 
+    /** Keyboard modes through the JNI, as the page does: each mode's transmit audio (RTTY, PSK31 / 63 / 125, Olivia's
+     *  tones / bandwidths) with a little noise and 5 s of noise after, fed back to its receiver 256 samples at a time. */
+    private fun kb() {
+        val t = "CQ CQ DE M7JVY M7JVY IO91 K"; val rnd = java.util.Random(5); val K = uk.hamdigital.engine.KbNative
+        val runs = listOf(Triple(K.RTTY, 170.0, 45.45), Triple(K.PSK31, 0.0, 31.0), Triple(K.PSK31, 0.0, 63.0), Triple(K.PSK31, 0.0, 125.0)) +
+            listOf(4 to 125, 8 to 250, 8 to 500, 16 to 500, 16 to 1000, 32 to 1000).map { Triple(K.OLIVIA, it.first.toDouble(), it.second.toDouble()) }
+        for ((k, a1, a2) in runs) {
+            val t0 = System.currentTimeMillis()
+            when (k) { K.PSK31 -> K.control(k, 7, a2); K.OLIVIA -> { K.control(k, 8, a1 * 10000 + a2); K.control(k, 2, 5.0) }; else -> K.control(k, 5, a1) }
+            K.control(k, 0, 1500.0); K.control(k, 4, 0.0); K.text(k)
+            val a = K.encode(k, if (k == K.RTTY) "\n$t\n" else " $t ", 1500.0, a1, a2, 0.3)
+            val s = ShortArray(a.size + 5 * 8000) { i -> ((if (i < a.size) a[i].toInt() else 0) + rnd.nextGaussian() * 300).toInt().coerceIn(-32768, 32767).toShort() }
+            var got = ""; var i = 0
+            while (i < s.size) { val n = minOf(256, s.size - i); K.process(k, s.copyOfRange(i, i + n), n); got += K.text(k); i += n }
+            Log.i(TAG, "kb ${when (k) { K.RTTY -> "RTTY"; K.PSK31 -> "PSK${a2.toInt()}"; else -> "Olivia ${a1.toInt()}/${a2.toInt()}" }}: %.1f s -> [%s] in %d ms".format(a.size / 8000.0, got.trim().replace('\n', '|'), System.currentTimeMillis() - t0))
+        }
+        K.control(K.PSK31, 7, 31.0); K.control(K.OLIVIA, 8, 80250.0); K.control(K.OLIVIA, 0, 1500.0) // (back to the pages' starting settings)
+    }
+
     fun run(ctx: Context) = Thread {
         val dir = File(ctx.filesDir, "test")       // (the app's own folder: adb copies in with run-as)
         Log.i(TAG, "dev test: ${dir.absolutePath}")
@@ -125,6 +144,7 @@ object DevTest {
         if (dir.resolve("sstv").exists()) sstv()       // SSTV: each mode encoded (SSTV Encoder 2) and decoded (Robot36) - the same picture back?
         dir.resolve("freedv").listFiles { f -> f.name.endsWith(".raw") }?.forEach { freedv(it) } // FreeDV: speech through each mode and back
         dir.resolve("rade").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { rade(it) } // RADE: a recording off air
+        if (dir.resolve("kb").exists()) kb()           // RTTY / PSK / Olivia: send and receive through the JNI
         Log.i(TAG, "dev test done")
     }.start()
 }

@@ -24,7 +24,7 @@ private const val B = "•  "                           // bullet
 private val GUIDE = listOf(
     "Getting started" to
         "HF Digital Modes brings the common HF digital modes together in one app for the Icom IC-705: FT8, FT4, WSPR, JS8Call, RTTY, " +
-        "PSK31 and CW. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
+        "PSK31 (and 63, 125), Olivia, CW, SSTV and FreeDV voice. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
         "1. Settings: enter your callsign and locator.\n" +
         "2. Connect the IC-705's USB-C socket to the phone or tablet (a USB-C to USB-C lead, or an OTG adapter). The menu shows " +
         "\"IC-705 connected\" when Android sees the radio's sound card.\n" +
@@ -176,6 +176,21 @@ private val GUIDE = listOf(
         "(the receiver rests while you send, so it is not printed a second time from the radio's own audio). " +
         "RTTY sends capitals, figures and common punctuation (Baudot); PSK31 sends any text. The TRANSMITTING bar has Halt.",
 
+    "Olivia" to
+        "Keyboard chat that gets through deep fading, flutter and interference, and copies signals well below the noise " +
+        "(down to about -13 dB in 2500 Hz). It is slow - about 1.5 characters a second at 8/250 - so keep messages short. Decoded " +
+        "by fldigi's Olivia modem with Pawel Jalocha's MFSK engine. The page works like RTTY and PSK31 (above).\n\n" +
+        B + "Tones / Hz: the number of tones and the bandwidth; both stations must use the same. 8/250 and 8/500 are the most " +
+        "used on HF; more tones or less bandwidth is slower and copes with weaker signals.\n" +
+        B + "Tune: the band chips put the usual Olivia frequencies in the middle of the waterfall. An Olivia signal is a busy " +
+        "block 125-1000 Hz wide; tap its middle. The red lines show the band the receiver looks at; it finds a signal a few " +
+        "tones either side by itself (there is no AFC chip).\n" +
+        B + "Text starts a few seconds after a signal does (the error correction works on blocks), and a few random " +
+        "characters can appear as a signal starts and ends - fldigi does the same. sync is the receiver's measure of the " +
+        "signal: about 3 and over is a signal. The squelch (5 as standard) keeps noise from printing rubbish.\n" +
+        B + "Sending: as RTTY and PSK31. A transmission starts and ends with two short tones at the band edges (as fldigi " +
+        "sends them), which help the other station tune. A contact is logged as OLIVIA 8/250 (and so on), 599.",
+
     "JS8Call" to
         "Receives JS8 (the JS8Call keyboard-chat mode, Normal speed: 15 s slots like FT8) with JS8Call's own decoder.\n\n" +
         B + "At the end of each slot the frames heard are decoded and turned into text as JS8Call shows it: heartbeats " +
@@ -257,6 +272,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.14.0 (October 2026): Olivia - robust keyboard chat (fldigi's modem with Pawel Jalocha's MFSK engine), " +
+        "receive and send, on its own page, tones / bandwidth 4/125 to 32/1000.\n" +
         B + "0.13.0 (October 2026): PSK63 and PSK125 - a Speed choice on the PSK31 page (fldigi's settings for each), " +
         "receive and send, logged as PSK63 / PSK125.\n" +
         B + "0.12.1 (October 2026): SSTV receive has a proper picture frame (4:3, with the list of pictures right under " +

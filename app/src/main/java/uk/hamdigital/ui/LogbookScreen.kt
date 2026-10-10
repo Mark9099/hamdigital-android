@@ -62,7 +62,7 @@ fun logMode(m: Mode) = if (m == Mode.JS8) "JS8" else m.title
 
 /** A new contact for [mode]: now, the radio's frequency, your station, the usual report for the mode. */
 fun newQso(mode: String, s: Settings): Qso {
-    val now = System.currentTimeMillis(); val rst = when (mode) { "CW", "RTTY", "PSK31", "PSK63", "PSK125" -> "599"; "SSB", "FM", "AM" -> "59"; else -> "" }
+    val now = System.currentTimeMillis(); val rst = when { mode in setOf("CW", "RTTY", "PSK31", "PSK63", "PSK125") || mode.startsWith("OLIVIA", true) -> "599"; mode in setOf("SSB", "FM", "AM") -> "59"; else -> "" }
     return Qso("", "", mode, rst, rst, now, now, Ic705.state.value.freqHz, s.callsign, s.locator)
 }
 

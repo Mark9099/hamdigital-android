@@ -57,7 +57,7 @@ private fun ModePageFor(vm: MainViewModel, m: Mode) = when (m) {
     Mode.CW -> CwScreen(vm)                                    // working: the Morse decoder
     Mode.FT8, Mode.FT4 -> Ft8Screen(vm, m)                     // working: ft8_lib
     Mode.WSPR -> WsprScreen(vm)                                // working: wsprd
-    Mode.RTTY, Mode.PSK31 -> KeyboardScreen(vm, m)             // working: fldigi
+    Mode.RTTY, Mode.PSK31, Mode.OLIVIA -> KeyboardScreen(vm, m) // working: fldigi
     Mode.JS8 -> Js8Screen(vm)                                  // working: JS8Call's decoder
     Mode.SSTV -> SstvScreen(vm)                                // working: Robot36 + SSTV Encoder 2
     Mode.FREEDV -> FreeDvScreen(vm)                            // working: codec2's FreeDV

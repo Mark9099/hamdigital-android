@@ -112,7 +112,8 @@ object Logbook {
     private fun f(tag: String, v: String) = if (v.isEmpty()) "" else "<$tag:${v.length}>$v " // one field
     private val DATE = DateTimeFormatter.ofPattern("yyyyMMdd"); private val TIME = DateTimeFormatter.ofPattern("HHmmss")
     private val SUBMODES = mapOf("FT4" to "MFSK", "JS8" to "MFSK", "FST4" to "MFSK", "Q65" to "MFSK", "MFSK16" to "MFSK", // ADIF's submodes and their modes
-        "PSK31" to "PSK", "PSK63" to "PSK", "PSK125" to "PSK", "QPSK31" to "PSK", "USB" to "SSB", "LSB" to "SSB")
+        "PSK31" to "PSK", "PSK63" to "PSK", "PSK125" to "PSK", "QPSK31" to "PSK", "USB" to "SSB", "LSB" to "SSB",
+        "OLIVIA 4/125" to "OLIVIA", "OLIVIA 4/250" to "OLIVIA", "OLIVIA 8/250" to "OLIVIA", "OLIVIA 8/500" to "OLIVIA", "OLIVIA 16/500" to "OLIVIA", "OLIVIA 16/1000" to "OLIVIA", "OLIVIA 32/1000" to "OLIVIA")
     /** The fields the app has boxes for (everything else goes to extra; OPERATOR is kept there too, as well as standing in
      *  for STATION_CALLSIGN when that is missing). */
     private val KNOWN = setOf("CALL", "GRIDSQUARE", "MODE", "SUBMODE", "RST_SENT", "RST_RCVD", "QSO_DATE", "TIME_ON", "QSO_DATE_OFF", "TIME_OFF",

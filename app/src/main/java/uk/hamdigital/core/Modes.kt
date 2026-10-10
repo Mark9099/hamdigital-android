@@ -29,7 +29,10 @@ enum class Mode(
     SSTV("SSTV", "Pictures by radio: receive and send", 12000, "Robot36 (0BSD) and SSTV Encoder 2 (Apache 2.0)", 0, // (LSB below 10 MHz, as SSTV is sent there)
         listOf("80" to 3735.0, "40" to 7165.0, "20" to 14230.0, "15" to 21340.0, "10" to 28680.0)),
     FREEDV("FreeDV", "Digital voice: RADE, 700D, 700E, 1600", 8000, "rade_c + Opus FARGAN (BSD), codec2 / FreeDV API (LGPL 2.1)", 0, // (FreeDV's calling frequencies, always USB)
-        listOf("80" to 3643.0, "40" to 7177.0, "20" to 14236.0, "17" to 18118.0, "15" to 21313.0, "12" to 24933.0, "10" to 28330.0));
+        listOf("80" to 3643.0, "40" to 7177.0, "20" to 14236.0, "17" to 18118.0, "15" to 21313.0, "12" to 24933.0, "10" to 28330.0)),
+    WEFAX("Weather fax", "Weather charts by radio (receive)", 11025, "fldigi (GPL v3)", 0, // (stations by name: the dial 1.9 kHz below the station, USB, puts the fax at 1900 Hz)
+        listOf("DWD 3855" to 3853.1, "DWD 7880" to 7878.1, "DWD 13882" to 13880.6, // Deutscher Wetterdienst, Hamburg / Pinneberg
+            "GYA 2618" to 2616.6, "GYA 4610" to 4608.1, "GYA 8040" to 8038.1, "GYA 11086" to 11084.6)); // Joint Operational Meteorology and Oceanography Centre, Northwood (UK)
 
     val working get() = stage == 0                    // decoder in this version?
 

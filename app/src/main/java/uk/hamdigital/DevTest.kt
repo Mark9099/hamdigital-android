@@ -118,6 +118,19 @@ object DevTest {
         K.control(K.PSK31, 7, 31.0); K.control(K.OLIVIA, 8, 80250.0); K.control(K.OLIVIA, 0, 1500.0) // (back to the pages' starting settings)
     }
 
+    /** A weather-fax recording (11025 Hz WAV, e.g. tools/test's wefax_broadcast.wav) through the JNI as the page feeds it:
+     *  the receiver's states, the chart kept (size), and the time taken against the recording's length. */
+    private fun wefax(f: File) {
+        val s = pcm(f); val W = uk.hamdigital.engine.WefaxNative; val size = IntArray(2)
+        W.control(3, 576.0); W.control(0, 1900.0); W.control(5, 0.0) // (a fresh start)
+        val t0 = System.currentTimeMillis(); var last = -1; val states = StringBuilder(); var kept = ""
+        var i = 0
+        while (i < s.size) { val n = minOf(512, s.size - i); W.process(s.copyOfRange(i, i + n), n); i += n
+            val st = W.state()[0]; if (st != last) { last = st; states.append("${arrayOf("APTstart", "APTstop", "phasing", "image", "idle")[st]}@${i / 11025}s ") }
+            W.finished(size)?.let { kept += "${size[0]}x${size[1]} at ${i / 11025}s " } }
+        Log.i(TAG, "wefax ${f.name}: %.0f s -> %s| kept: %s| %d ms".format(s.size / 11025.0, states, kept.ifEmpty { "none" }, System.currentTimeMillis() - t0))
+    }
+
     fun run(ctx: Context) = Thread {
         val dir = File(ctx.filesDir, "test")       // (the app's own folder: adb copies in with run-as)
         Log.i(TAG, "dev test: ${dir.absolutePath}")
@@ -145,6 +158,7 @@ object DevTest {
         dir.resolve("freedv").listFiles { f -> f.name.endsWith(".raw") }?.forEach { freedv(it) } // FreeDV: speech through each mode and back
         dir.resolve("rade").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { rade(it) } // RADE: a recording off air
         if (dir.resolve("kb").exists()) kb()           // RTTY / PSK / Olivia: send and receive through the JNI
+        dir.resolve("wefax").listFiles { f -> f.name.endsWith(".wav", true) }?.forEach { wefax(it) } // weather fax: a broadcast
         Log.i(TAG, "dev test done")
     }.start()
 }

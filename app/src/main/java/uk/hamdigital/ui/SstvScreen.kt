@@ -18,6 +18,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -120,28 +125,33 @@ private fun SstvReceive(mod: Modifier) {
     open?.let { f -> PictureDialog(f) { open = null } }
 }
 
-/** A received picture, small. */
+/** A received picture, small (SSTV and weather fax). */
 @Composable
-private fun Thumb(f: File, onClick: () -> Unit) {
+internal fun Thumb(f: File, onClick: () -> Unit) {
     val bmp by produceState<Bitmap?>(null, f) { value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = 4 }) } }
     Box(Modifier.size(width = 96.dp, height = 74.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         bmp?.let { Image(it.asImageBitmap(), f.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
     }
 }
 
-/** A received picture full size: Share, Save to Photos, Delete. */
+/** A received picture full size - pinch to zoom, drag to move, double-tap to fit again: Share, Save to Photos, Delete
+ *  (SSTV and weather fax: [prefix] is taken off the file name for the title; [onDelete] forgets it). */
 @Composable
-private fun PictureDialog(f: File, onClose: () -> Unit) {
+internal fun PictureDialog(f: File, prefix: String = "SSTV_", onDelete: (File) -> Unit = { SstvRx.delete(it) }, onClose: () -> Unit) {
     val ctx = LocalContext.current; val scope = rememberCoroutineScope()
     val bmp by produceState<Bitmap?>(null, f) { value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(f.path) } }
     var note by remember { mutableStateOf("") }
     var ask by remember { mutableStateOf(false) }
+    var zoom by remember { mutableFloatStateOf(1f) }; var pan by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) } // the view
     Dialog(onClose, DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = Pal.Bg) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
-                Text(f.name.removePrefix("SSTV_").removeSuffix(".png").replace('_', ' '), color = Pal.Cyan, fontWeight = FontWeight.Bold, fontSize = 15.sp) // date, time (UTC), mode
-                Box(Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                    bmp?.let { Image(it.asImageBitmap(), f.name, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+                Text(f.name.removePrefix(prefix).removeSuffix(".png").replace('_', ' '), color = Pal.Cyan, fontWeight = FontWeight.Bold, fontSize = 15.sp) // date, time (UTC), mode / station
+                Box(Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp).clipToBounds()
+                    .pointerInput(Unit) { detectTransformGestures { _, p, z, _ -> zoom = (zoom * z).coerceIn(1f, 8f); pan = if (zoom == 1f) androidx.compose.ui.geometry.Offset.Zero else pan + p } }
+                    .pointerInput(Unit) { detectTapGestures(onDoubleTap = { zoom = 1f; pan = androidx.compose.ui.geometry.Offset.Zero }) },
+                    contentAlignment = Alignment.Center) {
+                    bmp?.let { Image(it.asImageBitmap(), f.name, Modifier.fillMaxSize().graphicsLayer(scaleX = zoom, scaleY = zoom, translationX = pan.x, translationY = pan.y), contentScale = ContentScale.Fit) }
                 }
                 if (note.isNotEmpty()) Text(note, color = Pal.Green, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
@@ -154,13 +164,13 @@ private fun PictureDialog(f: File, onClose: () -> Unit) {
                 }
             }
         }
-        if (ask) AlertDialog({ ask = false }, confirmButton = { TextButton({ SstvRx.delete(f); ask = false; onClose() }) { Text("Delete", color = Pal.Red) } },
+        if (ask) AlertDialog({ ask = false }, confirmButton = { TextButton({ onDelete(f); ask = false; onClose() }) { Text("Delete", color = Pal.Red) } },
             dismissButton = { TextButton({ ask = false }) { Text("Keep it") } }, title = { Text("Delete this picture?") })
     }
 }
 
 /** Copy a picture into Photos (Pictures/HF Digital Modes). Android 10 and newer. */
-private fun savePhoto(ctx: android.content.Context, f: File): String = try {
+internal fun savePhoto(ctx: android.content.Context, f: File): String = try {
     val v = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, f.name); put(MediaStore.Images.Media.MIME_TYPE, "image/png")
         put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/HF Digital Modes")

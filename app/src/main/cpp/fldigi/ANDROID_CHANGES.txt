@@ -56,3 +56,24 @@ PC test (tools/test/test_fldigi.cxx, the app's transmitter into its receiver, no
 4/125, 8/250, 16/500 and 32/1000 copy the whole message to -13 dB SNR, 8/500 to -10 dB; tuned 20 Hz off it is found.
 A minute of noise alone prints 54 characters with the squelch off, none at 5 and above (the page starts at 5). As in
 fldigi, a few random characters can appear as a signal starts and ends.
+
+0.15.0: weather fax (WEFAX) receive.
+  wefax_rx.h / wefax_rx.cxx  from src/wefax/wefax.cxx (fax_implementation), receive only:
+    kept    - the ACfax input filters (narrow / medium / wide, copied unchanged), the FM demodulator (rx_new_samples),
+              decode, decode_apt (APT start 300 Hz / 675 Hz and stop 450 Hz by counting black-white transitions each
+              half second, with fldigi's tolerances), decode_phasing (phasing lines: about 5 % white, 95 % black; four of
+              them set the line start and centre the picture), decode_image (pixels averaged per column), skip_apt_rx,
+              skip_phasing_to_image(_save), end_rx, the line-to-line correlation (correlation_update / calc / state,
+              fldigi's defaults: threshold 0.05 over 15 rows) and save_automatic's rules for keeping a picture (size,
+              correlation, average and spread of the grey levels); IOC 576 / 288, 11025 Hz, 800 Hz shift, 4000 rows max.
+    removed - the picture window (wefax-pic: the pixels are kept in a vector here, and a finished picture is handed
+              over with take_finished), fax_signal's waterfall power tests (only its correlation part is kept), the
+              AFC (it read the waterfall), transmit, file saving, XML-RPC, logging.
+    changed - lpm_set keeps the exact samples per line (fldigi's lpm_to_samples rounds to a whole number - 5512 for
+              5512.5 at 120 lpm - which slants the picture by half a sample a line; fldigi has a slant control for it);
+              the correlation sums are doubles (fldigi used int); the sine / cosine tables are a phase accumulator.
+PC test (tools/test/test_wefax.cxx: a generated broadcast - APT start, 30 s of phasing, a 300-line test picture, APT stop,
+a minute of noise): at 20, 10 and 5 dB SNR (2500 Hz) the picture is found, phased and kept (APT stop at 20 dB, the
+correlation ending it at 10 and 5), within 7-13 pixels of the right place, no slant; noise afterwards is not kept.
+On the S23 the same broadcast gives the same result (250 s of audio in 0.5 s), and DWD Hamburg on 7880 kHz was received
+on air (2026-10-10).

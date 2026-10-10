@@ -24,7 +24,7 @@ private const val B = "•  "                           // bullet
 private val GUIDE = listOf(
     "Getting started" to
         "HF Digital Modes brings the common HF digital modes together in one app for the Icom IC-705: FT8, FT4, WSPR, JS8Call, RTTY, " +
-        "PSK31 (and 63, 125), Olivia, CW, SSTV and FreeDV voice. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
+        "PSK31 (and 63, 125), Olivia, CW, SSTV, FreeDV voice and weather fax. Each mode has its own page; the menu, after the startup screen, opens them.\n\n" +
         "1. Settings: enter your callsign and locator.\n" +
         "2. Connect the IC-705's USB-C socket to the phone or tablet (a USB-C to USB-C lead, or an OTG adapter). The menu shows " +
         "\"IC-705 connected\" when Android sees the radio's sound card.\n" +
@@ -245,6 +245,25 @@ private val GUIDE = listOf(
         "audio is fuller than the data modes': start low and watch the radio's ALC). Transmitting stops after 5 minutes, " +
         "if the radio link goes, or with Halt.",
 
+    "Weather fax" to
+        "Weather charts (surface pressure, forecasts, sea state, satellite pictures) sent by radio all day by meteorological " +
+        "services, received with fldigi's weather-fax receiver. Receive only.\n\n" +
+        B + "Stations: the chips tune the radio for Deutscher Wetterdienst, Hamburg (DWD 3855, 7880 and 13882.5 kHz - 7880 " +
+        "by day is the most reliable in Europe) and Northwood, UK (GYA 2618.5, 4610, 8040, 11086.5 kHz). The dial is 1.9 kHz " +
+        "below the station, in USB-D, so the fax sits in the middle of the waterfall: black at 1500 Hz, white at 2300 Hz (the " +
+        "grey lines). Each station sends to a timetable (on its website); a chart takes about 10 minutes.\n" +
+        B + "A chart starts with a start signal (the receiver says \"Waiting for a start signal\" until then), some " +
+        "lining-up lines (\"Phasing\": these set where each line begins, so the chart is not split down the middle), then " +
+        "the chart itself, line by line, and a stop signal. Tuned in part way through? Tap Start now - the chart starts at " +
+        "once, though it may need lining up. Stop ends it.\n" +
+        B + "corr (correlation) is how alike each line is to the last: a real chart is about 0.1 and over, noise near 0. " +
+        "The receiver uses it to start a chart whose start signal it missed, and to end one whose stop it missed.\n" +
+        B + "A finished chart is kept if it is worth keeping (not blank, not noise - fldigi's rules) and joins the strip at " +
+        "the bottom: tap one to see it full size - pinch to zoom, drag to move, double-tap to fit - share it, save it to " +
+        "Photos or delete it.\n" +
+        B + "Settings: IOC 576 is what nearly all stations use (288 for a few); Shift 850 for DWD's older setting (800 is " +
+        "standard); the filter - narrow as standard, wider for a strong, clean signal.",
+
     "Logbook" to
         "Every contact you make, kept in an ADIF file - the format every logging program, and the LoTW, QRZ, Club Log and eQSL upload " +
         "pages, read. Open it from the menu.\n\n" +
@@ -272,6 +291,8 @@ private val GUIDE = listOf(
 
     "Version history" to
         "This is version ${BuildConfigInfo.VERSION}.\n\n" +
+        B + "0.15.0 (October 2026): Weather fax - receive weather charts (fldigi's receiver) from DWD Hamburg and " +
+        "Northwood; charts kept as pictures, with zoom. Pictures (SSTV too) can be zoomed full size.\n" +
         B + "0.14.0 (October 2026): Olivia - robust keyboard chat (fldigi's modem with Pawel Jalocha's MFSK engine), " +
         "receive and send, on its own page, tones / bandwidth 4/125 to 32/1000.\n" +
         B + "0.13.0 (October 2026): PSK63 and PSK125 - a Speed choice on the PSK31 page (fldigi's settings for each), " +

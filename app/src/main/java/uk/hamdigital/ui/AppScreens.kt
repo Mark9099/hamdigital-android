@@ -61,6 +61,7 @@ private fun ModePageFor(vm: MainViewModel, m: Mode) = when (m) {
     Mode.JS8 -> Js8Screen(vm)                                  // working: JS8Call's decoder
     Mode.SSTV -> SstvScreen(vm)                                // working: Robot36 + SSTV Encoder 2
     Mode.FREEDV -> FreeDvScreen(vm)                            // working: codec2's FreeDV
+    Mode.WEFAX -> WefaxScreen(vm)                              // working: fldigi's WEFAX receiver
     else -> ComingScreen(vm, m)                                // the waterfall until its decoder arrives
 }
 

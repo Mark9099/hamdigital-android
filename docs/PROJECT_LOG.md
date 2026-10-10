@@ -2,6 +2,34 @@
 
 Newest first.
 
+## 2026-10-10: 0.15.0 (weather fax), and Olivia / PSK63 on the phone
+
+- **Item 3 of the new-modes list: WEFAX receive.**
+  - fldigi's `wefax.cxx` was cut down to `fldigi/wefax_rx.cxx` (details in `fldigi/ANDROID_CHANGES.txt`). Kept: ACfax
+    filters, FM demodulator, APT start/stop, phasing, pixels, correlation, and the keep-or-discard rules. Removed:
+    the picture window, waterfall power tests, AFC and transmit.
+  - Fixed at the root: fldigi rounds samples per line to a whole number (5512 for 5512.5 at 120 lpm), which slanted
+    the test picture 45 pixels over 300 lines. `lpm_set` keeps the exact value.
+- **App:**
+  - `wefax_jni.cpp` and `WefaxNative`; `core/Wefax.kt` saves kept charts as PNGs in `files/wefax/` on its own thread.
+  - `WefaxScreen`: station chips, the state line, "corr", Start now / Stop / IOC / Shift / Filter, and the chart
+    arriving, drawn from the growing bitmap with a cropping BitmapPainter (no copy).
+  - Station chips: `Mode.WEFAX` dials are named stations (DWD 3855/7880/13882, GYA 2618/4610/8040/11086), 1.9 kHz
+    below each, USB-D. RigBar now adds " m" only to numeric band names.
+  - The SSTV picture viewer is shared (`internal`) and gained pinch zoom, drag and double-tap to fit.
+- **Tests:**
+  - PC (`tools/test/test_wefax.cxx`, generated broadcast): kept at 20/10/5 dB, within 7-13 pixels of position, no
+    slant.
+  - Phone (DevTest `files/test/wefax/`): the same, 250 s of audio in 0.5 s.
+  - **On air, 2026-10-10 08:23 UTC:** DWD 7880 kHz. The page found the chart by correlation (we joined part way),
+    and kept 1809x495, a recognisable surface chart (coasts, isobars, labels) under noise. Joined mid-chart, it is
+    not lined up (no phasing lines), so the margin falls part way across.
+- **zig:** the scratchpad copy lost files (Windows temp clean-up: "sub-compilation of compiler_rt failed"). A fresh
+  0.14.1 is now in `Documents\AndroidStudioProjects\_tools\zig-x86_64-windows-0.14.1`.
+- **Olivia and PSK on the phone** (DevTest `files/test/kb/`, through the JNI):
+  - PSK31 / 63 / 125 copy perfectly.
+  - Every Olivia setting copies; the last characters stay in the pipeline with only 5 s after (as on the PC).
+
 ## 2026-10-10: 0.14.0 (Olivia)
 
 - **Item 2 of the new-modes list.**

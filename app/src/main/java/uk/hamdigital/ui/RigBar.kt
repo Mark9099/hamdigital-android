@@ -80,6 +80,6 @@ fun RigBar(m: Mode) {
         }
     }
     Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { // bands
-        m.dialsKHz.forEach { (b, khz) -> SmallChip("$b m", b == shown) { picked = b; if (on) Ic705.tune(khz, m.rigMode(khz)) } } // tap: tune the radio
+        m.dialsKHz.forEach { (b, khz) -> SmallChip(if (b.all { it.isDigit() }) "$b m" else b, b == shown) { picked = b; if (on) Ic705.tune(khz, m.rigMode(khz)) } } // tap: tune the radio (a band, or a station by name)
     }
 }

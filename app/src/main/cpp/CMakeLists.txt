@@ -12,7 +12,7 @@ file(GLOB FT8_SOURCES CONFIGURE_DEPENDS ft8_lib/ft8/*.c ft8_lib/fft/*.c ft8_lib/
 set(WSPR_SOURCES wsprd/wsprd.c wsprd/wsprd_utils.c wsprd/wsprsim_utils.c wsprd/fano.c wsprd/jelinek.c wsprd/nhash.c wsprd/tab.c) # wsprd from WSJT-X (GPL v3); metric_tables.c is included by wsprd.c
 set_source_files_properties(wsprd/wsprd.c PROPERTIES COMPILE_DEFINITIONS "main=wsprd_main") # its main() becomes a callable function
 
-set(FLDIGI_SOURCES fldigi/rtty_rx.cxx fldigi/psk31_rx.cxx fldigi/olivia_kb.cxx fldigi/kb_tx.cxx fldigi/fftfilt.cxx fldigi/filters.cxx fldigi/pskcoeff.cxx fldigi/pskvaricode.cxx) # fldigi (GPL v3): RTTY / PSK / Olivia (Jalocha MFSK) + its filters
+set(FLDIGI_SOURCES fldigi/rtty_rx.cxx fldigi/psk31_rx.cxx fldigi/olivia_kb.cxx fldigi/wefax_rx.cxx fldigi/kb_tx.cxx fldigi/fftfilt.cxx fldigi/filters.cxx fldigi/pskcoeff.cxx fldigi/pskvaricode.cxx) # fldigi (GPL v3): RTTY / PSK / Olivia (Jalocha MFSK) / WEFAX receive + its filters
 set_source_files_properties(${FLDIGI_SOURCES} PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/fldigi) # its headers by plain name
 
 set(JS8_SOURCES js8/JS8.cpp js8/js8_run.cpp js8/js8_unpack.cpp js8/js8_pack.cpp) # JS8Call's decoder (GPL v3; C++20, Eigen) + its message unpacking
@@ -43,7 +43,8 @@ add_library(hamdigital SHARED
     wspr_run.c                                       # WSPR: a slot at a time
     wspr_jni.c                                       # WSPR: JNI
     ${FLDIGI_SOURCES}                                # RTTY, PSK31
-    fldigi_jni.cpp                                   # RTTY, PSK31: JNI
+    fldigi_jni.cpp                                   # RTTY, PSK, Olivia: JNI
+    wefax_jni.cpp                                    # weather fax: JNI
     ${JS8_SOURCES}                                   # JS8
     js8/jsc_map.cpp                                  # JS8: the JSC word table
     js8_jni.cpp                                      # JS8: JNI
